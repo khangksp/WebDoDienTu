@@ -6,6 +6,7 @@ import Cart from "./pages/Cart";
 import Contact from "./pages/Contact";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PokemonAPI from "./pages/Pokemon";
+import Login from "./pages/Login";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/cart" element={<Cart />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/pokemon" element={<PokemonAPI/>}/>
+        <Route path="/login" element={<Login />}/>
       </Routes>
     </Router>
   );

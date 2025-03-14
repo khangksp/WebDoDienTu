@@ -11,3 +11,23 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Tùy chỉnh màu sắc cho thanh cuộn */
+::-webkit-scrollbar {
+    width: 12px; /* Đặt độ rộng của thanh cuộn */
+}
+
+/* Tùy chỉnh màu nền của thanh cuộn */
+::-webkit-scrollbar-track {
+    background-color: #24262b;
+}
+
+/* Tùy chỉnh màu của phần trượt trong thanh cuộn */
+::-webkit-scrollbar-thumb {
+    background-color: #505050;
+}
+
+/* Tùy chỉnh màu của phần nền khi di chuột vào thanh cuộn */
+::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+}
