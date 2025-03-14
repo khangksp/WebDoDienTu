@@ -2,11 +2,11 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap/dist/css/bootstrap.min.css";
-
+import logo from "../assets/logo.png";
 function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
-
+ 
   useEffect(() => {
     fetch("http://127.0.0.1:8000/api/check-login/", {
       credentials: "include",
@@ -24,9 +24,7 @@ function Navbar() {
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-light">
       <div className="container-fluid">
-        <Link className="navbar-brand" to="/">
-          Web Bán Đồ Điện Tử
-        </Link>
+      <img src={logo} alt="Logo" width="100" />
         <button
           className="navbar-toggler"
           type="button"
