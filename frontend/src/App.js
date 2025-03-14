@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import Cart from "./pages/Cart";
@@ -7,6 +9,7 @@ import Contact from "./pages/Contact";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PokemonAPI from "./pages/Pokemon";
 import Login from "./pages/Login";
+import About from "./pages/About";
 
 function App() {
   return (
@@ -19,7 +22,9 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/pokemon" element={<PokemonAPI/>}/>
         <Route path="/login" element={<Login />}/>
+        <Route path="/aboutus" element={<About />} />
       </Routes>
+      <Footer />
     </Router>
   );
 }

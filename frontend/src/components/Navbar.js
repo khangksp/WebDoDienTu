@@ -7,7 +7,6 @@ import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
 
 import "./Navbar.css";
 
-
 function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
@@ -51,6 +50,9 @@ function Navbar() {
             </li>
             <li className="nav-item">
               <Link className="nav-link" to="/products">Sản Phẩm</Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link" to="/aboutus">Giới thiệu</Link>
             </li>
             <li className="nav-item">
               <Link className="nav-link" to="/contact">Liên Hệ</Link>
