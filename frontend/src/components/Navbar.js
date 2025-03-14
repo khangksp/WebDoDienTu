@@ -2,7 +2,11 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCartShopping } from "@fortawesome/free-solid-svg-icons"; 
+
 import "./Navbar.css";
+
 
 function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -49,14 +53,12 @@ function Navbar() {
               <Link className="nav-link" to="/products">Sản Phẩm</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/cart">Giỏ Hàng</Link>
-            </li>
-            <li className="nav-item">
               <Link className="nav-link" to="/contact">Liên Hệ</Link>
             </li>
             <li className="nav-item">
               <Link className="nav-link" to="/pokemon">Test API</Link>
             </li>
+            
 
             {/* Dropdown Menu */}
             <li className="nav-item dropdown">
@@ -82,13 +84,19 @@ function Navbar() {
                 )}
               </ul>
             </li>
-          </ul>
+          
 
           {/* Search Form */}
           <form className="d-flex">
             <input className="form-control me-2" type="search" placeholder="Tìm kiếm..." aria-label="Search" />
-            <button className="btn btn-outline-success" type="submit">Tìm</button>
           </form>
+
+            <li className="nav-item">
+              <Link className="nav-link" to="/cart">
+                <FontAwesomeIcon icon={faCartShopping} />
+              </Link>
+            </li>
+          </ul>  
         </div>
       </div>
     </nav>
