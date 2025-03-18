@@ -1,0 +1,6 @@
+.cangiua{
+    display: flex;
+    justify-content: center; /* Ngang */
+    align-items: center; /* Dọc */
+    height: 100vh; /* Chiều cao toàn màn hình */
+}
