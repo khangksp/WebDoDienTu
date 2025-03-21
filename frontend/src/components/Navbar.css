@@ -1,46 +1,102 @@
+/* Navbar */
 .navbar {
-    padding: 10px 0;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  .logo {
-    width: 100px;
-    height: auto;
-  }
-  
-  /* Tabs */
-  .navbar-nav {
-    display: flex;
-    gap: 20px;
-    position: relative;
-  }
-  
-  .nav-link {
-    font-size: 16px;
-    color: black;
-    font-weight: 500;
-    position: relative;
-    text-decoration: none;
-    padding: 5px 0;
-    transition: color 0.3s ease-in-out;
-  }
-  
-  .nav-link.active {
-    color: #007bff;
-  }
-  .nav-icon {
-    font-size: 20px;
-    margin-left: 20px;
-    cursor: pointer;
-    color: black;
+  padding: 10px 0;
+  border-bottom: 1px solid #ddd;
 }
-  /* Thanh gạch dưới có animation */
-  .indicator {
-    position: absolute;
-    bottom: -5px;
-    height: 4px;
-    background-color: #000000;
-    transition: all 0.3s ease-in-out;
-    border-radius: 4px;
-  }
-  
+
+.logo {
+  width: 100px;
+  height: auto;
+}
+
+/* Tabs */
+.navbar-nav {
+  display: flex;
+  gap: 20px;
+  position: relative;
+}
+
+.nav-link {
+  font-size: 16px;
+  color: black;
+  font-weight: 500;
+  position: relative;
+  text-decoration: none;
+  padding: 5px 0;
+  transition: color 0.3s ease-in-out;
+}
+
+.nav-link.active {
+  color: #007bff;
+}
+
+/* Thanh gạch dưới có animation */
+.indicator {
+  position: absolute;
+  bottom: -5px;
+  height: 4px;
+  background-color: #000000;
+  transition: all 0.3s ease-in-out;
+  border-radius: 4px;
+}
+
+/* Navbar Toggler */
+.navbar-toggler {
+  width: 30px;
+  height: 25px;
+  position: absolute;
+  transition: .5s ease-in-out;
+  border: none;
+  background: none;
+  cursor: pointer;
+  top: 1px;
+  margin: 20px;
+  z-index: 10;
+}
+
+.toggler-icon {
+  display: block;
+  position: absolute;
+  height: 5px;
+  width: 100%;
+  background: #d35;
+  border-radius: 1px;
+  opacity: 1;
+  left: 0;
+  transition: .25s ease-in-out;
+}
+
+.navbar-toggler .top-bar {
+  top: 0;
+  transform: rotate(0deg);
+}
+
+.navbar-toggler .middle-bar {
+  top: 10px;
+  opacity: 1;
+}
+
+.navbar-toggler .bottom-bar {
+  top: 20px;
+  transform: rotate(0deg);
+}
+
+/* Khi mở menu */
+.navbar-toggler:not(.collapsed) .top-bar {
+  transform: rotate(135deg);
+  top: 10px;
+}
+
+.navbar-toggler:not(.collapsed) .middle-bar {
+  opacity: 0;
+}
+
+.navbar-toggler:not(.collapsed) .bottom-bar {
+  transform: rotate(-135deg);
+  top: 10px;
+}
+
+button:focus, button:active {
+  outline: none !important;
+  box-shadow: none !important;
+}

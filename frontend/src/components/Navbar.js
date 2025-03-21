@@ -11,7 +11,8 @@ function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [indicatorStyle, setIndicatorStyle] = useState({});
-  const location = useLocation(); // Xác định đường dẫn hiện tại
+  const [isToggled, setIsToggled] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     fetch("http://127.0.0.1:8000/api/check-login/", { credentials: "include" })
@@ -26,7 +27,6 @@ function Navbar() {
   }, []);
 
   useEffect(() => {
-    // Tìm tab đang active và cập nhật indicator
     const activeTab = document.querySelector(".nav-link.active");
     if (activeTab) {
       setIndicatorStyle({
@@ -34,36 +34,69 @@ function Navbar() {
         width: `${activeTab.offsetWidth}px`,
       });
     }
-  }, [location.pathname]); // Chạy lại khi đường dẫn thay đổi
+  }, [location.pathname]);
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-white">
+      {/* Navbar toggler */}
+      <button
+        className={`navbar-toggler ${isToggled ? "" : "collapsed"}`}
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded={isToggled}
+        aria-label="Toggle navigation"
+        onClick={() => setIsToggled(!isToggled)}
+      >
+        <span className="toggler-icon top-bar"></span>
+        <span className="toggler-icon middle-bar"></span>
+        <span className="toggler-icon bottom-bar"></span>
+      </button>
+      
       <div className="container">
         <Link className="navbar-brand" to="/">
           <img src="/assets/logO.png" alt="Logo" className="logo" />
         </Link>
-        <div className="navbar-nav mx-auto position-relative">
-          <Link className={`nav-link ${location.pathname === "/" ? "active" : ""}`} to="/">
-            Trang chủ
-          </Link>
-          <Link className={`nav-link ${location.pathname === "/about" ? "active" : ""}`} to="/about">
-            Giới thiệu
-          </Link>
-          <Link className={`nav-link ${location.pathname === "/products" ? "active" : ""}`} to="/products">
-            Sản phẩm
-          </Link>
-          <Link className={`nav-link ${location.pathname === "/contact" ? "active" : ""}`} to="/contact">
-            Liên hệ
-          </Link>
-          {/* Thanh gạch dưới */}
-          <div className="indicator" style={indicatorStyle}></div>
+        
+
+        {/* Navbar items */}
+        <div className={`collapse navbar-collapse ${isToggled ? "show" : ""}`} id="navbarNav">
+          <div className="navbar-nav mx-auto position-relative">
+            <Link className={`nav-link ${location.pathname === "/" ? "active" : ""}`} to="/">
+              Trang chủ
+            </Link>
+            <Link className={`nav-link ${location.pathname === "/about" ? "active" : ""}`} to="/about">
+              Giới thiệu
+            </Link>
+            <Link className={`nav-link ${location.pathname === "/products" ? "active" : ""}`} to="/products">
+              Sản phẩm
+            </Link>
+            <Link className={`nav-link ${location.pathname === "/contact" ? "active" : ""}`} to="/contact">
+              Liên hệ
+            </Link>
+            <div className="indicator" style={indicatorStyle}></div>
+          </div>
         </div>
 
-        {/* Icon tìm kiếm, tài khoản, giỏ hàng */}
+        {/* Icons */}
         <div className="d-flex align-items-center">
           <FontAwesomeIcon icon={faSearch} className="nav-icon" />
-          <FontAwesomeIcon icon={faUser} className="nav-icon" />
-          <Link className="nav-link" to="/cart">
+          <div className="dropdown ms-3">
+            <FontAwesomeIcon icon={faUser} className="nav-icon dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown" />
+            <ul className="dropdown-menu" aria-labelledby="userDropdown">
+              {isAuthenticated ? (
+                <>
+                  {/* <li><span className="dropdown-item">Xin chào, {username}</span></li>
+                  <li><hr className="dropdown-divider" /></li>
+                  <li><a className="dropdown-item" href="#">Đăng xuất</a></li> */}
+                </>
+              ) : (
+                <li><a className="dropdown-item" href="#">Đăng nhập</a></li>
+              )}
+            </ul>
+          </div>
+          <Link className="nav-link ms-3" to="/cart">
             <FontAwesomeIcon icon={faCartShopping} className="nav-icon" />
           </Link>
         </div>
