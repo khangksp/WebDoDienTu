@@ -55,6 +55,16 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+# RabbitMQ Config
+RABBITMQ = {
+    "HOST": "rabbitmq",  # Tên service RabbitMQ trong Docker Compose
+    "PORT": 5672,        # Cổng mặc định của RabbitMQ
+    "USER": "guest",      # User mặc định của RabbitMQ
+    "PASSWORD": "guest",  # Password mặc định của RabbitMQ
+    "QUEUE": "order_queue",  # Tên hàng đợi cho đơn hàng
+}
+
+
 ROOT_URLCONF = 'product_service.urls'
 
 TEMPLATES = [

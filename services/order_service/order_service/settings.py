@@ -56,6 +56,16 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'order_service.urls'
 
 CORS_ALLOW_ALL_ORIGINS = True
+# RabbitMQ Config
+RABBITMQ = {
+    "HOST": "rabbitmq",
+    "PORT": 5672,
+    "USER": "guest",
+    "PASSWORD": "guest",
+    "QUEUE": "order_queue",
+}
+
+
 
 TEMPLATES = [
     {
