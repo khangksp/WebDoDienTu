@@ -100,3 +100,33 @@ button:focus, button:active {
   outline: none !important;
   box-shadow: none !important;
 }
+
+
+.search-container {
+  width: 450px; /* Kích thước phù hợp */
+}
+
+.input-group-text {
+  background: white;
+  border-right: none;
+}
+
+.form-control {
+  border-left: none;
+  box-shadow: none;
+}
+
+.form-control:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: #ddd !important; 
+}
+
+
+@media (max-width: 992px) {
+  .search-container {
+    width: 100%;
+    margin: 10px 0;
+  }
+}
+

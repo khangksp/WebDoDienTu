@@ -10,8 +10,8 @@ import "./Navbar.css";
 function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
-  const [indicatorStyle, setIndicatorStyle] = useState({});
   const [isToggled, setIsToggled] = useState(false);
+  const [indicatorStyle, setIndicatorStyle] = useState({});
   const location = useLocation();
 
   useEffect(() => {
@@ -26,6 +26,7 @@ function Navbar() {
       .catch((error) => console.error("Lỗi API:", error));
   }, []);
 
+  // Effect for animating the indicator
   useEffect(() => {
     const activeTab = document.querySelector(".nav-link.active");
     if (activeTab) {
@@ -38,30 +39,42 @@ function Navbar() {
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-white">
-      {/* Navbar toggler */}
-      <button
-        className={`navbar-toggler ${isToggled ? "" : "collapsed"}`}
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#navbarNav"
-        aria-controls="navbarNav"
-        aria-expanded={isToggled}
-        aria-label="Toggle navigation"
-        onClick={() => setIsToggled(!isToggled)}
-      >
-        <span className="toggler-icon top-bar"></span>
-        <span className="toggler-icon middle-bar"></span>
-        <span className="toggler-icon bottom-bar"></span>
-      </button>
-      
       <div className="container">
+        {/* Logo */}
         <Link className="navbar-brand" to="/">
           <img src="/assets/logO.png" alt="Logo" className="logo" />
         </Link>
-        
+
+        {/* Toggler button */}
+        <button
+          className={`navbar-toggler ${isToggled ? "" : "collapsed"}`}
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded={isToggled}
+          aria-label="Toggle navigation"
+          onClick={() => setIsToggled(!isToggled)}
+        >
+          <span className="toggler-icon top-bar"></span>
+          <span className="toggler-icon middle-bar"></span>
+          <span className="toggler-icon bottom-bar"></span>
+        </button>
 
         {/* Navbar items */}
         <div className={`collapse navbar-collapse ${isToggled ? "show" : ""}`} id="navbarNav">
+          
+          {/* Thanh tìm kiếm khi thu nhỏ màn hình */}
+          <div className="d-lg-none mb-3">
+            <div className="input-group">
+              <span className="input-group-text">
+                <FontAwesomeIcon icon={faSearch} />
+              </span>
+              <input type="text" className="form-control" placeholder="Tìm kiếm sản phẩm ...." />
+            </div>
+          </div>
+
+          {/* Menu chính */}
           <div className="navbar-nav mx-auto position-relative">
             <Link className={`nav-link ${location.pathname === "/" ? "active" : ""}`} to="/">
               Trang chủ
@@ -77,27 +90,50 @@ function Navbar() {
             </Link>
             <div className="indicator" style={indicatorStyle}></div>
           </div>
+
+          {/* Icon User + Cart khi màn hình nhỏ */}
+          <div className="d-lg-none d-flex justify-content-end">
+            <Link className="nav-link me-3" to="/user">
+              <FontAwesomeIcon icon={faUser} className="nav-icon d-inline d-lg-none" />
+              <span className="d-none d-lg-inline ms-1">Tài khoản</span>
+            </Link>
+            <Link className="nav-link" to="/cart">
+              <FontAwesomeIcon icon={faCartShopping} className="nav-icon d-inline d-lg-none" />
+              <span className="d-none d-lg-inline ms-1">Giỏ hàng</span>
+            </Link>
+          </div>
         </div>
 
-        {/* Icons */}
-        <div className="d-flex align-items-center">
-          <FontAwesomeIcon icon={faSearch} className="nav-icon" />
+        {/* Thanh tìm kiếm + Icons khi màn hình lớn */}
+        <div className="d-none d-lg-flex align-items-center">
+          <div className="input-group search-container">
+            <span className="input-group-text">
+              <FontAwesomeIcon icon={faSearch} />
+            </span>
+            <input type="text" className="form-control" placeholder="Tìm kiếm sản phẩm ...." />
+          </div>
+
           <div className="dropdown ms-3">
-            <FontAwesomeIcon icon={faUser} className="nav-icon dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown" />
+            <Link className="nav-link dropdown-toggle d-flex align-items-center" id="userDropdown" data-bs-toggle="dropdown">
+              <FontAwesomeIcon icon={faUser} className="nav-icon me-1" />
+              <span>Tài khoản</span>
+            </Link>
             <ul className="dropdown-menu" aria-labelledby="userDropdown">
               {isAuthenticated ? (
                 <>
-                  {/* <li><span className="dropdown-item">Xin chào, {username}</span></li>
+                  <li><span className="dropdown-item">Xin chào, {username}</span></li>
                   <li><hr className="dropdown-divider" /></li>
-                  <li><a className="dropdown-item" href="#">Đăng xuất</a></li> */}
+                  <li><a className="dropdown-item" href="#">Đăng xuất</a></li>
                 </>
               ) : (
                 <li><a className="dropdown-item" href="#">Đăng nhập</a></li>
               )}
             </ul>
           </div>
-          <Link className="nav-link ms-3" to="/cart">
-            <FontAwesomeIcon icon={faCartShopping} className="nav-icon" />
+
+          <Link className="nav-link ms-3 d-flex align-items-center" to="/cart">
+            <FontAwesomeIcon icon={faCartShopping} className="nav-icon me-1" />
+            <span>Giỏ hàng</span>
           </Link>
         </div>
       </div>

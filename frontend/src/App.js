@@ -22,7 +22,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/pokemon" element={<PokemonAPI/>}/>
         <Route path="/login" element={<Login />}/>
-        <Route path="/aboutus" element={<About />} />
+        <Route path="/about" element={<About />} />
       </Routes>
       <Footer />
     </Router>

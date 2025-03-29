@@ -1,35 +1,92 @@
 .footer {
-    background: #24262b;
-    color: white;
-    text-align: center;
-    padding: 20px 0;
-    position: relative;
-    width: 100%;
-    bottom: 0;
-}
-
-.footer-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.footer-content p {
-    margin: 0;
+    background-color: #f8f8f8;
+    padding: 40px 0;
     font-size: 14px;
+    color: #333;
 }
 
-.social-icons {
+.footer .container {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.footer .footer-left {
+    max-width: 300px;
+}
+
+.footer .footer-left h2 {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.footer .footer-left p {
+    margin-top: 5px;
+    color: #666;
+}
+
+.footer .social-icons {
     margin-top: 10px;
 }
 
-.social-icons a {
-    color: white;
+.footer .social-icons a {
+    margin-right: 10px;
     font-size: 20px;
-    margin: 0 10px;
-    transition: 0.3s;
+    color: #333;
+    transition: color 0.3s ease;
 }
 
-.social-icons a:hover {
-    color: #f8b400;
+.footer .social-icons a:hover {
+    color: #007bff;
+}
+
+.footer-column {
+    flex: 1;
+    min-width: 150px;
+}
+
+.footer-column h4 {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.footer-column ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-column ul li {
+    margin-bottom: 5px;
+}
+
+.footer-column ul li a {
+    text-decoration: none;
+    color: #666;
+    transition: color 0.3s ease;
+}
+
+.footer-column ul li a:hover {
+    color: #007bff;
+}
+
+.footer-bottom {
+    display: flex;
+    justify-content: space-between; /* Chữ sát trái, icon sát phải */
+    align-items: center;
+    width: 100%; /* Giữ nội dung không quá sát mép màn hình */
+    margin: 0 auto; /* Canh giữa nội dung */
+}
+
+.payment-icons {
+    display: flex;
+    gap: 15px; /* Khoảng cách giữa các icon */
+}
+
+.footer-divider {
+    width: 100%;
+    border: none;
+    border-top: 4px solid #cacaca; /* Màu và độ dày đường kẻ */
+    margin: 20px 0; /* Khoảng cách trên dưới */
 }

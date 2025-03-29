@@ -18,14 +18,29 @@ const Products = () => {
     }, []);
 
     return (
-        <div>
-            <h2>Danh sách sản phẩm</h2>
-            {loading ? <p>Đang tải...</p> : (
-                <ul>
+        <div className="container mt-4">
+            <h1 className="text-center mb-4">Danh sách sản phẩm</h1>
+
+            {loading ? (
+                <div className="text-center">
+                    <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Đang tải...</span>
+                    </div>
+                </div>
+            ) : (
+                <div className="row">
                     {products.map(product => (
-                        <li key={product.id}>{product.name} - {product.price} VND</li>
+                        <div key={product.id} className="col-md-4 mb-4">
+                            <div className="card shadow-sm">
+                                <div className="card-body">
+                                    <h5 className="card-title">{product.name}</h5>
+                                    <p className="card-text text-muted">{product.price.toLocaleString()} VND</p>
+                                    <button className="btn btn-primary">Mua ngay</button>
+                                </div>
+                            </div>
+                        </div>
                     ))}
-                </ul>
+                </div>
             )}
         </div>
     );

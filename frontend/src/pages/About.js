@@ -1,45 +1,56 @@
 import React from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faShoppingCart, faQuestionCircle, faPhone } from '@fortawesome/free-solid-svg-icons';
 
 function About() {
     return (
-        <div className="about-container container mt-4">
-            <h1>Giới thiệu về Web Bán Đồ Điện Tử</h1>
-            <p className="lead">
-                Chào mừng bạn đến với trang web bán đồ điện tử của chúng tôi! Chúng tôi tự hào là một trong những nhà cung cấp hàng đầu về các sản phẩm điện tử chất lượng cao và dịch vụ khách hàng tuyệt vời.
-            </p>
-            <div className="row">
-                <div className="col-md-6">
-                    <h2>Sứ mệnh của chúng tôi</h2>
-                    <p>
-                        Sứ mệnh của chúng tôi là cung cấp cho khách hàng những sản phẩm điện tử tốt nhất với giá cả hợp lý. Chúng tôi cam kết mang đến cho bạn trải nghiệm mua sắm trực tuyến tuyệt vời và dịch vụ hậu mãi chu đáo.
+        <div className="container mt-5">
+            {/* Khối 1: Giới thiệu */}
+            <div className="p-5 mb-4 w-100 mx-auto bg-light rounded border border-secondary-subtle shadow-lg">
+                <p className="mb-0">
+                    <strong>[Tên cửa hàng]</strong> được thành lập với sứ mệnh mang đến cho khách hàng
+                    những sản phẩm công nghệ chất lượng cao, chính hãng với mức giá tốt nhất.
+                    Chúng tôi luôn cập nhật các xu hướng công nghệ mới nhất để đáp ứng nhu cầu của bạn.
+                </p>
+            </div>
+
+            {/* Khối 2: Sản phẩm cung cấp */}
+            <div className="p-5 mb-4 w-100 mx-auto bg-light rounded border border-secondary-subtle shadow-lg d-flex align-items-center">
+                <div className="flex-grow-1">
+                    <p className="mb-0">
+                        Chúng tôi cung cấp đa dạng các sản phẩm:
+                        <br />Laptop, PC, Gaming Gear – Hiệu suất cao, phục vụ học tập, làm việc và giải trí.
+                        <br />Điện thoại, Tablet, Phụ kiện – Chính hãng, đa dạng mẫu mã.
+                        <br />Thiết bị thông minh – Loa Bluetooth, Smartwatch, Camera giám sát...
                     </p>
                 </div>
-                <div className="col-md-6">
-                    <h2>Tầm nhìn của chúng tôi</h2>
-                    <p>
-                        Tầm nhìn của chúng tôi là trở thành nhà bán lẻ điện tử hàng đầu tại Việt Nam, nơi khách hàng có thể tìm thấy mọi thứ họ cần với chất lượng và giá trị tốt nhất.
+                <FontAwesomeIcon icon={faShoppingCart} className="ms-3 text-primary" size="3x" />
+            </div>
+
+            {/* Khối 3: Chính sách 1 */}
+            <div className="p-5 mb-4 w-100 mx-auto bg-light rounded border border-secondary-subtle shadow-lg d-flex align-items-center">
+                <FontAwesomeIcon icon={faQuestionCircle} className="me-3 text-danger" size="3x" />
+                <div className="flex-grow-1">
+                    <p className="mb-0">
+                        Sản phẩm chính hãng – Cam kết 100% sản phẩm có nguồn gốc rõ ràng.
+                        <br />Giá cả cạnh tranh – Mang lại mức giá hợp lý với nhiều ưu đãi hấp dẫn.
+                        <br />Bảo hành & Hỗ trợ tận tâm – Chính sách bảo hành minh bạch, hỗ trợ kỹ thuật 24/7.
+                        <br />Giao hàng nhanh chóng – Ship toàn quốc, nhận hàng nhanh chỉ trong 24-48h.
                     </p>
                 </div>
             </div>
-            <div className="row mt-4">
-                <div className="col-md-4">
-                    <h3>Chất lượng sản phẩm</h3>
-                    <p>
-                        Chúng tôi chỉ cung cấp những sản phẩm từ các thương hiệu uy tín và được kiểm tra chất lượng kỹ lưỡng trước khi đến tay khách hàng.
+
+            {/* Khối 4: Chính sách 2 */}
+            <div className="p-5 w-100 mx-auto bg-light rounded border border-secondary-subtle shadow-lg d-flex align-items-center">
+                <div className="flex-grow-1">
+                    <p className="mb-0">
+                        Sản phẩm chính hãng – Cam kết 100% sản phẩm có nguồn gốc rõ ràng.
+                        <br />Giá cả cạnh tranh – Mang lại mức giá hợp lý với nhiều ưu đãi hấp dẫn.
+                        <br />Bảo hành & Hỗ trợ tận tâm – Chính sách bảo hành minh bạch, hỗ trợ kỹ thuật 24/7.
+                        <br />Giao hàng nhanh chóng – Ship toàn quốc, nhận hàng nhanh chỉ trong 24-48h.
                     </p>
                 </div>
-                <div className="col-md-4">
-                    <h3>Dịch vụ khách hàng</h3>
-                    <p>
-                        Đội ngũ chăm sóc khách hàng của chúng tôi luôn sẵn sàng hỗ trợ bạn 24/7. Chúng tôi luôn lắng nghe và giải quyết mọi thắc mắc của bạn một cách nhanh chóng và hiệu quả.
-                    </p>
-                </div>
-                <div className="col-md-4">
-                    <h3>Giao hàng nhanh chóng</h3>
-                    <p>
-                        Chúng tôi hợp tác với các đơn vị vận chuyển uy tín để đảm bảo rằng đơn hàng của bạn sẽ được giao đến tận nơi một cách nhanh chóng và an toàn.
-                    </p>
-                </div>
+                <FontAwesomeIcon icon={faPhone} className="me-3 text-success" size="3x" />
             </div>
         </div>
     );
