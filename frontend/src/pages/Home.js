@@ -1,45 +1,183 @@
-import { useState } from "react";
-import "./style/style.css"
-const categories = ["Tay cầm", "Tai nghe", "Gia dụng"];
-const products = {
-  "Tay cầm": ["/assets/gamepad.png", "/assets/gamepad.png", "/assets/gamepad.png"],
-  "Tai nghe": ["/assets/headphone.png", "/assets/headphone.png", "/assets/headphone.png"],
-  "Gia dụng": ["/assets/home-appliance.png", "/assets/home-appliance.png"],
-};
+import React, { useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faMobile, faLaptop, faCamera, faClock, 
+  faBlender, faFootballBall, faMotorcycle, faHome, faBook, faListAlt
+} from '@fortawesome/free-solid-svg-icons';
+import AOS from 'aos';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import 'aos/dist/aos.css';
+import "./style/style.css";
 
 function HomePage() {
-  const [selectedCategory, setSelectedCategory] = useState("Tay cầm");
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      once: true
+    });
+  }, []);
 
   return (
-    <div className="cangiua">
-    <div className="flex flex-col items-center p-6">
-      {/* Banner */}
-      <img src="/assets/banner.webp" alt="Banner" className="w-full max-w-4xl shadow-lg rounded-lg" />
-
-      {/* Danh mục */}
-      <div className="flex gap-4 my-6">
-        {categories.map((category) => (
-          <button
-            key={category}
-            className={`px-4 py-2 bg-white shadow-md rounded-lg ${
-              selectedCategory === category ? "bg-blue-500 text-white" : "text-black"
-            }`}
-            onClick={() => setSelectedCategory(category)}
-          >
-            {category}
-          </button>
-        ))}
-      </div>
-
-      {/* Sản phẩm */}
-      <div className="grid grid-cols-3 gap-6">
-        {products[selectedCategory].map((product, index) => (
-          <div key={index} className="shadow-lg p-4 rounded-lg bg-white">
-            <img src={product} alt="Sản phẩm" className="w-40 h-40 mx-auto" />
+    <div className="home-container">
+      {/* Banner or Slider would go here */}
+      <div id="carouselExample" className="carousel slide mb-8" data-bs-ride="carousel">
+        <div className="carousel-inner">
+          <div className="carousel-item active">
+            <img src="/assets/banner1.jpg" className="d-block w-100" alt="Banner 1" />
           </div>
-        ))}
+          <div className="carousel-item">
+            <img src="/assets/banner2.jpg" className="d-block w-100" alt="Banner 2" />
+          </div>
+        </div>
+        <button className="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+          <span className="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span className="visually-hidden">Previous</span>
+        </button>
+        <button className="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+          <span className="carousel-control-next-icon" aria-hidden="true"></span>
+          <span className="visually-hidden">Next</span>
+        </button>
       </div>
-    </div>
+            
+      {/* Categories Section */}
+      <section className="categories-section">
+        <div className="section-title">
+          <h2>DANH MỤC</h2>
+        </div>
+        
+        <div className="categories-grid">
+          <div className="category-item" data-aos="zoom-in" data-aos-delay="50">
+            <div className="category-icon">
+              <FontAwesomeIcon icon={faMobile} />
+            </div>
+            <p>Điện Thoại & Phụ Kiện</p>
+          </div>
+          
+          <div className="category-item" data-aos="zoom-in" data-aos-delay="100">
+            <div className="category-icon">
+              <FontAwesomeIcon icon={faListAlt} />
+            </div>
+            <p>Thiết Bị Điện Tử</p>
+          </div>
+          
+          <div className="category-item" data-aos="zoom-in" data-aos-delay="150">
+            <div className="category-icon">
+              <FontAwesomeIcon icon={faLaptop} />
+            </div>
+            <p>Máy Tính & Laptop</p>
+          </div>
+          
+          <div className="category-item" data-aos="zoom-in" data-aos-delay="200">
+            <div className="category-icon">
+              <FontAwesomeIcon icon={faCamera} />
+            </div>
+            <p>Máy Ảnh & Máy Quay Phim</p>
+          </div>
+          
+          <div className="category-item" data-aos="zoom-in" data-aos-delay="250">
+            <div className="category-icon">
+              <FontAwesomeIcon icon={faClock} />
+            </div>
+            <p>Đồng Hồ</p>
+          </div>
+          
+          <div className="category-item" data-aos="zoom-in" data-aos-delay="350">
+            <div className="category-icon">
+              <FontAwesomeIcon icon={faBlender} />
+            </div>
+            <p>Thiết Bị Điện Gia Dụng</p>
+          </div>
+          
+          <div className="category-item" data-aos="zoom-in" data-aos-delay="400">
+            <div className="category-icon">
+              <FontAwesomeIcon icon={faFootballBall} />
+            </div>
+            <p>Thể Thao & Du Lịch</p>
+          </div>
+          
+          <div className="category-item" data-aos="zoom-in" data-aos-delay="450">
+            <div className="category-icon">
+              <FontAwesomeIcon icon={faMotorcycle} />
+            </div>
+            <p>Ô Tô & Xe Máy & Xe Đạp</p>
+          </div>
+          
+          <div className="category-item" data-aos="zoom-in" data-aos-delay="600">
+            <div className="category-icon">
+              <FontAwesomeIcon icon={faHome} />
+            </div>
+            <p>Nhà Cửa & Đời Sống</p>
+          </div>
+          
+          <div className="category-item" data-aos="zoom-in" data-aos-delay="900">
+            <div className="category-icon">
+              <FontAwesomeIcon icon={faBook} />
+            </div>
+            <p>Bách Hóa Online</p>
+          </div>
+        </div>
+      </section>
+      
+      {/* Other sections could go here */}
+
+
+
+      {/* New Products Section */}
+      <section className="new-products-section">
+        <div className="section-title">
+          <h2>SẢN PHẨM MỚI</h2>
+        </div>
+        <div className="products-grid">
+          {/* Product 1 */}
+          <div className="product-card" data-aos="fade-up">
+            <div className="product-info">
+              <h3>Casio Bluetooth Wireless Over Ear Headphones With Mic Playback</h3>
+              <p className="price-label">Giá</p>
+              <p className="price">100,000 VNĐ</p>
+            </div>
+            <div className="product-image">
+              <img src="\assets\camera.jpg" alt="Camera" />
+            </div>
+          </div>
+          
+          {/* Product 2 */}
+          <div className="product-card" data-aos="fade-up" data-aos-delay="100">
+            <div className="product-info">
+              <h3>Loa Bluetooth Marshall Emberton</h3>
+              <p className="price-label">Giá</p>
+              <p className="price">2,500,000 VNĐ</p>
+            </div>
+            <div className="product-image">
+              <img src="\assets\loa.jpg" alt="Bluetooth Speaker" />
+            </div>
+          </div>
+          
+          {/* Product 3 */}
+          <div className="product-card" data-aos="fade-up" data-aos-delay="200">
+            <div className="product-info">
+              <h3>Thiết bị điện máy gia dụng Máy sấy tóc LG - PC ASUS G540M</h3>
+              <p className="price-label">Giá</p>
+              <p className="price">7,000,000 VNĐ</p>
+            </div>
+            <div className="product-image">
+              <img src="\assets\taycam.jpg" alt="Controller" />
+            </div>
+          </div>
+          
+          {/* Product 4 */}
+          <div className="product-card" data-aos="fade-up" data-aos-delay="300">
+            <div className="product-info">
+              <h3>Đồng Hồ Thông Minh Gắn Vị Trí Cho Em, Chống Nước, Số Đo Sức Khỏe Thông Minh</h3>
+              <p className="price-label">Giá</p>
+              <p className="price">399,000 VNĐ</p>
+            </div>
+            <div className="product-image">
+              <img src="\assets\headphone.png" alt="Headphone" />
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
