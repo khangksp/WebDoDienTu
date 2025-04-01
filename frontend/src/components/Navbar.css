@@ -135,8 +135,6 @@ button:focus, button:active {
 }
 
 
-/* Add this to your Navbar.css file */
-
 /* Login Modal Styles */
 .login-modal-overlay {
   position: fixed;
@@ -144,7 +142,8 @@ button:focus, button:active {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(5px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -153,16 +152,18 @@ button:focus, button:active {
 
 .login-modal {
   background: white;
-  border-radius: 8px;
+  border-radius: 12px;
   width: 100%;
-  max-width: 500px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
   position: relative;
   padding: 0;
-  animation: modalFadeIn 0.3s;
+  overflow: hidden;
 }
 
-@keyframes modalFadeIn {
+/* Modal Animation */
+@keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(-20px);
@@ -173,21 +174,27 @@ button:focus, button:active {
   }
 }
 
+.modal-animation {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
 .login-modal-header {
-  padding: 20px 25px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 20px 60px;
+  border-bottom: 1px solid #e9ecef;
   position: relative;
+  background-color: #f8f9fa;
+  border-radius: 12px 12px 0 0;
 }
 
 .login-modal-header h4 {
+  font-weight: 600;
+  color: #212529;
   margin-bottom: 5px;
-  font-size: 24px;
-  font-weight: 500;
 }
 
 .login-modal-header p {
   margin-bottom: 0;
-  color: #666;
+  color: #6c757d;
 }
 
 .close-button {
@@ -196,63 +203,75 @@ button:focus, button:active {
   right: 15px;
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: 1.2rem;
+  color: #6c757d;
   cursor: pointer;
-  color: #777;
+  transition: transform 0.2s;
+}
+
+.close-button:hover {
+  transform: rotate(90deg);
+  color: #343a40;
+}
+
+.back-button {
+  position: absolute;
+  top: 19px;
+  left: 15px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-button:hover {
+  color: #343a40;
+  transform: translateX(-3px);
 }
 
 .login-modal-body {
-  padding: 25px;
+  padding: 24px;
 }
 
-.login-modal-body input {
-  padding: 25px;
-  border: 1px solid #ddd;
-}
-
-.phone-input {
-  margin-bottom: 15px;
-}
-
-.btn-primary {
-  background-color: ghostwhite;
-  border-color: #ddd;
-  color: #353535;;
-  height: 48px;
-  font-weight: 500;
-}
-
-.btn-primary:hover {
-  color: ghostwhite;
-  background-color: #353535;
-  border-color: #353535;
-}
-
-.social-buttons {
-  margin-top: 15px;
-}
-
-.facebook-btn, .google-btn {
-  width: 48px;
-  height: 48px;
+/* Form Controls */
+.login-modal .form-control {
+  padding: 12px;
+  font-size: 16px;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 20px 10px 0 10px;
+  border: 1px solid #ced4da;
+  margin-bottom: 15px;
+  border-left: 1px solid #ced4da; /* Override navbar's style */
+  height: auto;
 }
 
-.terms {
-  color: #777;
-  font-size: 13px;
+.login-modal .form-control:focus {
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  border-color: #dc3545;
 }
 
-.terms a {
-  color: #2a73dd;
-  text-decoration: none;
+.login-modal .btn-danger {
+  background-color: #ff424e;
+  border-color: #ff424e;
+  border-radius: 8px;
+  padding: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+  color: white;
+  height: auto;
+}
+
+.login-modal .btn-danger:hover {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
 }
 
 .alternative-login {
+  border-top: 1px solid #e9ecef;
+  padding-top: 20px;
   position: relative;
   margin: 30px 0;
   text-align: center;
@@ -264,16 +283,102 @@ button:focus, button:active {
   padding: 0 15px;
   position: relative;
   z-index: 1;
-  color: #666;
+  color: #6c757d;
 }
 
-.alternative-login:before {
-  content: "";
+.social-buttons button {
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin: 0 10px;
+}
+
+.social-buttons button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.facebook-btn {
+  color: #4267B2;
+  border-color: #4267B2;
+}
+
+.google-btn {
+  color: #DB4437;
+  border-color: #DB4437;
+}
+
+.facebook-btn:hover {
+  background-color: #4267B2;
+  color: white;
+}
+
+.google-btn:hover {
+  background-color: #DB4437;
+  color: white;
+}
+
+.terms {
+  color: #6c757d;
+  font-size: 13px;
+}
+
+.terms a {
+  color: #ff424e;
+  text-decoration: none;
+}
+
+.terms a:hover {
+  text-decoration: underline;
+}
+
+/* Input with icon */
+.input-icon-wrapper {
+  position: relative;
+}
+
+.input-icon {
   position: absolute;
+  left: 12px;
   top: 50%;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: #eee;
-  z-index: 0;
+  transform: translateY(-50%);
+  color: #6c757d;
+  z-index: 10;
+}
+
+.input-icon-wrapper .form-control {
+  padding-left: 40px;
+}
+
+/* Verification code inputs */
+.verification-code-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.verification-input {
+  width: 45px;
+  height: 55px;
+  font-size: 24px;
+  text-align: center;
+  padding: 0;
+  font-weight: bold;
+}
+
+.resend-code {
+  color: #6c757d;
+}
+
+.resend-code a {
+  color: #ff424e;
+  font-weight: 500;
+}
+
+.resend-code .small {
+  font-size: 0.85rem;
 }
