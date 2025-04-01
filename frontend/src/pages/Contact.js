@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import "./style/style.css"
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHeadset, faEnvelope, faBuilding, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+
 
 function Contact() {
   const [formData, setFormData] = useState({
@@ -54,9 +56,9 @@ function Contact() {
       position: 'absolute',
       left: '50%',
       bottom: '0',
-      width: '80px',
+      width: '180px',
       height: '3px',
-      backgroundColor: '#3498db',
+      backgroundColor: '#000000',
       transform: 'translateX(-50%)'
     },
     cardHover: {
@@ -81,7 +83,7 @@ function Contact() {
       border: 'none'
     },
     formHeader: {
-      backgroundColor: '#3498db',
+      backgroundColor: '#000000',
       color: '#fff',
       padding: '20px',
       textAlign: 'center',
@@ -89,10 +91,11 @@ function Contact() {
       borderTopRightRadius: '10px'
     },
     submitButton: {
-      backgroundColor: '#3498db',
-      borderColor: '#3498db',
+      backgroundColor: '#000000',
+      borderColor: '#000000',
       borderRadius: '30px',
-      padding: '10px 30px',
+      color: '#fff',
+      padding: '10px',
       fontWeight: 'bold',
       boxShadow: '0 5px 15px rgba(52, 152, 219, 0.3)',
       transition: 'all 0.3s'
@@ -107,7 +110,7 @@ function Contact() {
       border: 'none'
     },
     mapCard: {
-      background: 'linear-gradient(135deg, #3498db, #2c3e50)',
+      background: 'linear-gradient(135deg,rgb(170, 167, 167),rgb(0, 0, 0))',
       color: 'white'
     }
   };
@@ -223,7 +226,7 @@ function Contact() {
                 </div>
                 </div>
             </div>
-</div>
+          </div>
         </div>
         
         {/* Contact Form */}
@@ -304,21 +307,21 @@ function Contact() {
                 </div>
               </div>
               
-              <div className="text-center mt-4">
-                <button 
-                  type="submit" 
-                  className="btn btn-primary px-5 py-3"
+              <div className="text-center mt-4 d-flex justify-content-center">
+                <button
+                  type="submit"
+                  className="btn btn-primary px-5 py-3 d-flex align-items-center justify-content-center"
                   style={styles.submitButton}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-3px)';
-                    e.currentTarget.style.boxShadow = '0 8px 15px rgba(52, 152, 219, 0.4)';
+                    e.currentTarget.style.transform = "translateY(-3px)";
+                    e.currentTarget.style.boxShadow = "0 8px 15px rgba(40, 42, 44, 0.4)";
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 5px 15px rgba(52, 152, 219, 0.3)';
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 5px 15px rgba(49, 49, 49, 0.3)";
                   }}
                 >
-                  <i className="fas fa-paper-plane me-2"></i>Gửi thông tin
+                  <FontAwesomeIcon icon={faPaperPlane} className="me-2" /> Gửi thông tin
                 </button>
               </div>
             </form>
@@ -331,8 +334,8 @@ function Contact() {
             <div className="card" style={styles.infoCard} onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-5px)'} onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
               <div className="card-body">
                 <div className="mb-4">
-                  <div className="bg-warning text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style={{width: '80px', height: '80px'}}>
-                    <i className="fas fa-headset fa-2x"></i>
+                  <div className="bg-warning text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style={{ width: '80px', height: '80px' }}>
+                    <FontAwesomeIcon icon={faHeadset} size="2x" />
                   </div>
                 </div>
                 <h3 className="h4 mb-3 fw-bold">Hỗ trợ 24/7</h3>
@@ -340,13 +343,13 @@ function Contact() {
               </div>
             </div>
           </div>
-          
+
           <div className="col-md-4 mb-4">
             <div className="card" style={styles.infoCard} onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-5px)'} onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
               <div className="card-body">
                 <div className="mb-4">
-                  <div className="bg-info text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style={{width: '80px', height: '80px'}}>
-                    <i className="fas fa-envelope fa-2x"></i>
+                  <div className="bg-info text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style={{ width: '80px', height: '80px' }}>
+                    <FontAwesomeIcon icon={faEnvelope} size="2x" />
                   </div>
                 </div>
                 <h3 className="h4 mb-3 fw-bold">Email</h3>
@@ -354,13 +357,13 @@ function Contact() {
               </div>
             </div>
           </div>
-          
+
           <div className="col-md-4 mb-4">
             <div className="card" style={styles.infoCard} onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-5px)'} onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
               <div className="card-body">
                 <div className="mb-4">
-                  <div className="bg-success text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style={{width: '80px', height: '80px'}}>
-                    <i className="fas fa-building fa-2x"></i>
+                  <div className="bg-success text-white rounded-circle mx-auto d-flex align-items-center justify-content-center" style={{ width: '80px', height: '80px' }}>
+                    <FontAwesomeIcon icon={faBuilding} size="2x" />
                   </div>
                 </div>
                 <h3 className="h4 mb-3 fw-bold">Trụ sở chính</h3>
