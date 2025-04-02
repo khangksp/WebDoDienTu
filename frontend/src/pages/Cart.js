@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faTrash, 
@@ -19,6 +20,8 @@ import 'aos/dist/aos.css';
 import "./style/style.css";
 
 function Cart() {
+  const navigate = useNavigate(); // Add navigate hook for routing
+
   // Initialize AOS animation library
   useEffect(() => {
     AOS.init({
@@ -36,25 +39,28 @@ function Cart() {
       quantity: 1,
       image: '/assets/headphone.png',
       colors: ['gray', 'white', 'lightblue'],
-      selectedColor: 'gray'
+      selectedColor: 'gray',
+      size: 'Standard'
     },
     {
       id: 2,
-      name: 'Croma Bluetooth Wireless Over Ear Headphones With Mic Playback',
-      price: 100000,
+      name: 'Loa Bluetooth Marshall Emberton',
+      price: 2500000,
       quantity: 1,
       image: '/assets/loa.jpg',
       colors: ['gray', 'white', 'lightblue'],
-      selectedColor: 'lightblue'
+      selectedColor: 'lightblue',
+      size: 'Standard'
     },
     {
       id: 3,
-      name: 'Croma Bluetooth Wireless Over Ear Headphones With Mic Playback',
-      price: 100000,
+      name: 'Thiết bị điện máy gia dụng Máy sấy tóc LG',
+      price: 700000,
       quantity: 1,
       image: '/assets/taycam.jpg',
       colors: ['gray', 'white', 'lightblue'],
-      selectedColor: 'lightblue'
+      selectedColor: 'lightblue',
+      size: 'Standard'
     }
   ]);
 
@@ -105,11 +111,18 @@ function Cart() {
     setSelectedPayment(paymentId);
   };
 
-  // Complete payment
+  // Complete payment - UPDATED to navigate to checkout
   const completePayment = () => {
     if (selectedPayment) {
-      // Here you would normally process the payment
-      alert(`Đã chọn phương thức thanh toán: ${paymentMethods.find(p => p.id === selectedPayment).name}`);
+      // Navigate to checkout page with cart items and payment method
+      navigate('/checkout', {
+        state: {
+          cartItems,
+          paymentMethod: selectedPayment
+        }
+      });
+      
+      // Close the modal
       setShowModal(false);
     } else {
       alert('Vui lòng chọn phương thức thanh toán');
@@ -282,7 +295,12 @@ function Cart() {
           <FontAwesomeIcon icon={faShoppingCart} size="4x" className="text-muted mb-3" />
           <h4>Giỏ hàng của bạn đang trống</h4>
           <p>Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</p>
-          <button className="btn btn-primary">Tiếp tục mua sắm</button>
+          <button 
+            className="btn btn-primary"
+            onClick={() => navigate('/')} // Navigate to homepage
+          >
+            Tiếp tục mua sắm
+          </button>
         </div>
       )}
 

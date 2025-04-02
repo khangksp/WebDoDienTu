@@ -6,6 +6,8 @@ import Home from "./pages/Home";
 import Products from "./pages/Products";
 import Cart from "./pages/Cart";
 import Contact from "./pages/Contact";
+import Detail from "./pages/Detail"; 
+import Checkout from "./pages/Checkout"; // Import the new Checkout component
 import "bootstrap/dist/css/bootstrap.min.css";
 import PokemonAPI from "./pages/Pokemon";
 import Login from "./pages/Login";
@@ -20,6 +22,8 @@ function App() {
         <Route path="/products" element={<Products />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/detail" element={<Detail />} />
+        <Route path="/checkout" element={<Checkout />} /> {/* Add checkout route */}
         <Route path="/pokemon" element={<PokemonAPI/>}/>
         <Route path="/login" element={<Login />}/>
         <Route path="/about" element={<About />} />

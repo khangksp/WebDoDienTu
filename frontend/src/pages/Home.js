@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faMobile, faLaptop, faCamera, faClock, 
@@ -11,12 +12,19 @@ import 'aos/dist/aos.css';
 import "./style/style.css";
 
 function HomePage() {
+  const navigate = useNavigate(); // Initialize navigate hook
+
   useEffect(() => {
     AOS.init({
       duration: 800,
       once: true
     });
   }, []);
+
+  // Function to handle product click and navigate to detail page
+  const handleProductClick = (productId) => {
+    navigate(`/detail?id=${productId}`);
+  };
 
   return (
     <div className="home-container">
@@ -121,8 +129,6 @@ function HomePage() {
       
       {/* Other sections could go here */}
 
-
-
       {/* New Products Section */}
       <section className="new-products-section">
         <div className="section-title">
@@ -130,7 +136,12 @@ function HomePage() {
         </div>
         <div className="products-grid">
           {/* Product 1 */}
-          <div className="product-card" data-aos="fade-up">
+          <div 
+            className="product-card" 
+            data-aos="fade-up"
+            onClick={() => handleProductClick(1)}
+            style={{ cursor: 'pointer' }}
+          >
             <div className="product-info">
               <h3>Casio Bluetooth Wireless Over Ear Headphones With Mic Playback</h3>
               <p className="price-label">Giá</p>
@@ -142,7 +153,13 @@ function HomePage() {
           </div>
           
           {/* Product 2 */}
-          <div className="product-card" data-aos="fade-up" data-aos-delay="100">
+          <div 
+            className="product-card" 
+            data-aos="fade-up" 
+            data-aos-delay="100"
+            onClick={() => handleProductClick(2)}
+            style={{ cursor: 'pointer' }}
+          >
             <div className="product-info">
               <h3>Loa Bluetooth Marshall Emberton</h3>
               <p className="price-label">Giá</p>
@@ -154,7 +171,13 @@ function HomePage() {
           </div>
           
           {/* Product 3 */}
-          <div className="product-card" data-aos="fade-up" data-aos-delay="200">
+          <div 
+            className="product-card" 
+            data-aos="fade-up" 
+            data-aos-delay="200"
+            onClick={() => handleProductClick(3)}
+            style={{ cursor: 'pointer' }}
+          >
             <div className="product-info">
               <h3>Thiết bị điện máy gia dụng Máy sấy tóc LG - PC ASUS G540M</h3>
               <p className="price-label">Giá</p>
@@ -166,7 +189,13 @@ function HomePage() {
           </div>
           
           {/* Product 4 */}
-          <div className="product-card" data-aos="fade-up" data-aos-delay="300">
+          <div 
+            className="product-card" 
+            data-aos="fade-up" 
+            data-aos-delay="300"
+            onClick={() => handleProductClick(4)}
+            style={{ cursor: 'pointer' }}
+          >
             <div className="product-info">
               <h3>Đồng Hồ Thông Minh Gắn Vị Trí Cho Em, Chống Nước, Số Đo Sức Khỏe Thông Minh</h3>
               <p className="price-label">Giá</p>
