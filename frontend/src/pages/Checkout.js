@@ -156,11 +156,21 @@ function Checkout() {
       <div className="container py-5">
         <div className="row">
           <div className="col-12 mb-4">
+            {/* Fixed back button with improved styling */}
             <button 
-              className="btn btn-outline-secondary back-button"
+              className="btn btn-outline-secondary px-4 py-2"
               onClick={goBackToCart}
+              style={{ 
+                fontSize: '16px', 
+                fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontWeight: '500'
+              }}
             >
-              <FontAwesomeIcon icon={faArrowLeft} className="me-2" /> Quay lại giỏ hàng
+              <FontAwesomeIcon icon={faArrowLeft} /> 
+              <span>Quay lại giỏ hàng</span>
             </button>
             <h2 className="checkout-title mt-3">Thanh toán</h2>
           </div>
