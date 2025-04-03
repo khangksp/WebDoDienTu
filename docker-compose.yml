@@ -1,57 +1,145 @@
 version: '3.8'
 
 services:
-  rabbitmq:
-    image: "rabbitmq:3-management"
-    container_name: "rabbitmq"
-    ports:
-      - "5672:5672"   # Cổng cho message broker
-      - "15672:15672" # Cổng quản lý web
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    networks:
-      - app_network
-
-  gateway:
-    build: ./api_gateway
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: microservices
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
     ports:
-      - "8000:8000"
-    depends_on:
-      - user_service
-      - order_service
-      - product_service
-      - rabbitmq
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
     networks:
-      - app_network
+      - microservice_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  user_service:
-    build: ./services/user_service
+  auth_service:
+    build: ./auth_service
+    container_name: auth_service
+    restart: always
+    volumes:
+      - ./auth_service:/app
     ports:
-      - "8001:8001"
+      - "8001:8000"
     depends_on:
-      - rabbitmq
+      mysql:
+        condition: service_healthy
+    environment:
+      - DB_NAME=auth_db
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - SECRET_KEY=django-insecure-auth-service-key
+      - DEBUG=True
     networks:
-      - app_network
-
-  order_service:
-    build: ./services/order_service
-    ports:
-      - "8002:8002"
-    depends_on:
-      - rabbitmq
-    networks:
-      - app_network
+      - microservice_network
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
 
   product_service:
-    build: ./services/product_service
+    build: ./product_service
+    container_name: product_service
+    restart: always
+    volumes:
+      - ./product_service:/app
     ports:
-      - "8003:8003"
+      - "8002:8000"
     depends_on:
-      - rabbitmq
+      mysql:
+        condition: service_healthy
+    environment:
+      - DB_NAME=product_db
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - SECRET_KEY=django-insecure-product-service-key
+      - DEBUG=True
     networks:
-      - app_network
+      - microservice_network
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  order_service:
+    build: ./order_service
+    container_name: order_service
+    restart: always
+    volumes:
+      - ./order_service:/app
+    ports:
+      - "8003:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - DB_NAME=order_db
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - SECRET_KEY=django-insecure-order-service-key
+      - DEBUG=True
+    networks:
+      - microservice_network
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - microservice_network
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  seed_data:
+    build: ./seed_data
+    container_name: seed_data
+    volumes:
+      - ./seed_data:/app
+    depends_on:
+      mysql:
+        condition: service_healthy
+      auth_service:
+        condition: service_started
+      product_service:
+        condition: service_started
+      order_service:
+        condition: service_started
+    environment:
+      - AUTH_SERVICE_URL=http://auth_service:8000
+      - PRODUCT_SERVICE_URL=http://product_service:8000
+      - ORDER_SERVICE_URL=http://order_service:8000
+    networks:
+      - microservice_network
+    command: ["python", "seed.py"]
 
 networks:
-  app_network:
+  microservice_network:
     driver: bridge
+
+volumes:
+  mysql_data:
