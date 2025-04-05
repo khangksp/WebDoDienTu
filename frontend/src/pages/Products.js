@@ -215,7 +215,7 @@ const styles = `
     
     .product-title {
         font-weight: 600;
-        height: 50px;
+        height: auto;
         overflow: hidden;
         display: -webkit-box;
         -webkit-line-clamp: 2;

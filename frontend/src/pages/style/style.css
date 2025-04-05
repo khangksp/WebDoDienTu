@@ -494,7 +494,7 @@ body {
   font-weight: 600;
   font-size: 1.1rem;
   margin-bottom: 10px;
-  height: 50px;
+  height: auto;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -519,8 +519,8 @@ body {
 
 /* Thiết lập cho nút mua ngay */
 .buy-now-btn {
-  background-color: #0d6efd;
-  border-color: #0d6efd;
+  background-color: #757575;
+  border-color: #757575;
   transition: all 0.3s ease;
   font-weight: 500;
   font-size: 0.9rem;
@@ -528,8 +528,8 @@ body {
 }
 
 .buy-now-btn:hover {
-  background-color: #0b5ed7;
-  border-color: #0a58ca;
+  background-color: rgb(98, 98, 98);
+  border-color: rgb(98, 98, 98);
 }
 
 /* Thiết lập cho nút chi tiết */
