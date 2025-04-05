@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faMobile, faLaptop, faCamera, faClock, 
-  faBlender, faFootballBall, faMotorcycle, faHome, faBook, faListAlt
+  faBlender, faFootballBall, faMotorcycle, faHome, faBook, faListAlt,
+  faShoppingCart, faInfoCircle
 } from '@fortawesome/free-solid-svg-icons';
+import axios from 'axios';
 import AOS from 'aos';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
@@ -12,7 +14,11 @@ import 'aos/dist/aos.css';
 import "./style/style.css";
 
 function HomePage() {
-  const navigate = useNavigate(); // Initialize navigate hook
+  const navigate = useNavigate();
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     AOS.init({
@@ -21,9 +27,78 @@ function HomePage() {
     });
   }, []);
 
+  // Fetch danh mục sản phẩm
+  useEffect(() => {
+    axios.get("http://localhost:8002/api/products/categories/")
+      .then(response => {
+        setCategories(response.data);
+      })
+      .catch(error => {
+        console.error("Lỗi khi tải danh mục:", error);
+      });
+  }, []);
+
+  // Fetch sản phẩm
+  useEffect(() => {
+    setLoading(true);
+    axios.get("http://localhost:8002/api/products/products/")
+      .then(response => {
+        console.log("Dữ liệu API:", response.data);
+        setProducts(response.data);
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error("Lỗi khi gọi API:", error);
+        setError("Không thể tải dữ liệu sản phẩm");
+        setLoading(false);
+      });
+  }, []);
+
   // Function to handle product click and navigate to detail page
   const handleProductClick = (productId) => {
     navigate(`/detail?id=${productId}`);
+  };
+
+  // Function to handle buy now button
+  const handleBuyNow = (e, productId) => {
+    e.stopPropagation(); // Prevent triggering the parent onClick
+    // Implement buy now functionality or navigate to checkout
+    console.log(`Mua ngay sản phẩm: ${productId}`);
+    // navigate(`/checkout?product=${productId}`);
+  };
+
+  // Function to handle view details button
+  const handleViewDetails = (e, productId) => {
+    e.stopPropagation(); // Prevent triggering the parent onClick
+    navigate(`/detail?id=${productId}`);
+  };
+
+  // Lấy 4 sản phẩm mới nhất
+  const newProducts = products.slice(0, 8);
+  
+  // Map category icon
+  const getCategoryIcon = (name) => {
+    const iconMap = {
+      'Điện Thoại': faMobile,
+      'Máy Tính': faLaptop,
+      'Máy Ảnh': faCamera,
+      'Đồng Hồ': faClock,
+      'Thiết Bị Điện Gia Dụng': faBlender,
+      'Thể Thao': faFootballBall,
+      'Xe Máy': faMotorcycle,
+      'Đồ Gia Dụng': faHome,
+      'Sách': faBook
+    };
+    
+    // Tìm icon phù hợp dựa vào tên danh mục (tìm kiếm theo từng phần)
+    for (const [key, value] of Object.entries(iconMap)) {
+      if (name.toLowerCase().includes(key.toLowerCase())) {
+        return value;
+      }
+    }
+    
+    // Nếu không tìm thấy, trả về icon mặc định
+    return faListAlt;
   };
 
   return (
@@ -55,156 +130,107 @@ function HomePage() {
         </div>
         
         <div className="categories-grid">
-          <div className="category-item" data-aos="zoom-in" data-aos-delay="50">
-            <div className="category-icon">
-              <FontAwesomeIcon icon={faMobile} />
+          {categories.map((category, index) => (
+            <div 
+              key={category.id} 
+              className="category-item" 
+              data-aos="zoom-in" 
+              data-aos-delay={(index % 10) * 50}
+              onClick={() => navigate(`/products?category=${category.id}`)}
+              style={{ cursor: 'pointer' }}
+            >
+              <div className="category-icon">
+                <FontAwesomeIcon icon={getCategoryIcon(category.name)} />
+              </div>
+              <p>{category.name}</p>
             </div>
-            <p>Điện Thoại & Phụ Kiện</p>
-          </div>
-          
-          <div className="category-item" data-aos="zoom-in" data-aos-delay="100">
-            <div className="category-icon">
-              <FontAwesomeIcon icon={faListAlt} />
-            </div>
-            <p>Thiết Bị Điện Tử</p>
-          </div>
-          
-          <div className="category-item" data-aos="zoom-in" data-aos-delay="150">
-            <div className="category-icon">
-              <FontAwesomeIcon icon={faLaptop} />
-            </div>
-            <p>Máy Tính & Laptop</p>
-          </div>
-          
-          <div className="category-item" data-aos="zoom-in" data-aos-delay="200">
-            <div className="category-icon">
-              <FontAwesomeIcon icon={faCamera} />
-            </div>
-            <p>Máy Ảnh & Máy Quay Phim</p>
-          </div>
-          
-          <div className="category-item" data-aos="zoom-in" data-aos-delay="250">
-            <div className="category-icon">
-              <FontAwesomeIcon icon={faClock} />
-            </div>
-            <p>Đồng Hồ</p>
-          </div>
-          
-          <div className="category-item" data-aos="zoom-in" data-aos-delay="350">
-            <div className="category-icon">
-              <FontAwesomeIcon icon={faBlender} />
-            </div>
-            <p>Thiết Bị Điện Gia Dụng</p>
-          </div>
-          
-          <div className="category-item" data-aos="zoom-in" data-aos-delay="400">
-            <div className="category-icon">
-              <FontAwesomeIcon icon={faFootballBall} />
-            </div>
-            <p>Thể Thao & Du Lịch</p>
-          </div>
-          
-          <div className="category-item" data-aos="zoom-in" data-aos-delay="450">
-            <div className="category-icon">
-              <FontAwesomeIcon icon={faMotorcycle} />
-            </div>
-            <p>Ô Tô & Xe Máy & Xe Đạp</p>
-          </div>
-          
-          <div className="category-item" data-aos="zoom-in" data-aos-delay="600">
-            <div className="category-icon">
-              <FontAwesomeIcon icon={faHome} />
-            </div>
-            <p>Nhà Cửa & Đời Sống</p>
-          </div>
-          
-          <div className="category-item" data-aos="zoom-in" data-aos-delay="900">
-            <div className="category-icon">
-              <FontAwesomeIcon icon={faBook} />
-            </div>
-            <p>Bách Hóa Online</p>
-          </div>
+          ))}
         </div>
       </section>
       
-      {/* Other sections could go here */}
-
       {/* New Products Section */}
       <section className="new-products-section">
         <div className="section-title">
           <h2>SẢN PHẨM MỚI</h2>
         </div>
-        <div className="products-grid">
-          {/* Product 1 */}
-          <div 
-            className="product-card" 
-            data-aos="fade-up"
-            onClick={() => handleProductClick(1)}
-            style={{ cursor: 'pointer' }}
-          >
-            <div className="product-info">
-              <h3>Casio Bluetooth Wireless Over Ear Headphones With Mic Playback</h3>
-              <p className="price-label">Giá</p>
-              <p className="price">100,000 VNĐ</p>
-            </div>
-            <div className="product-image">
-              <img src="\assets\camera.jpg" alt="Camera" />
+        
+        {loading ? (
+          <div className="text-center p-5">
+            <div className="spinner-border text-secondary" role="status">
+              <span className="visually-hidden">Đang tải...</span>
             </div>
           </div>
-          
-          {/* Product 2 */}
-          <div 
-            className="product-card" 
-            data-aos="fade-up" 
-            data-aos-delay="100"
-            onClick={() => handleProductClick(2)}
-            style={{ cursor: 'pointer' }}
-          >
-            <div className="product-info">
-              <h3>Loa Bluetooth Marshall Emberton</h3>
-              <p className="price-label">Giá</p>
-              <p className="price">2,500,000 VNĐ</p>
-            </div>
-            <div className="product-image">
-              <img src="\assets\loa.jpg" alt="Bluetooth Speaker" />
-            </div>
+        ) : error ? (
+          <div className="alert alert-danger">{error}</div>
+        ) : (
+          <div className="row">
+            {newProducts.map((product, index) => (
+              <div key={product.id} className="col-md-3 mb-4" data-aos="fade-up" data-aos-delay={index * 100}>
+                <div className="card home-product-card h-100" onClick={() => handleProductClick(product.id)}>
+                  <div className="product-image-container">
+                    <img 
+                      src={product.image_url} 
+                      className="card-img-top product-image" 
+                      alt={product.name}
+                    />
+                  </div>
+                  <div className="card-body d-flex flex-column">
+                    <h5 className="card-title product-title">{product.name}</h5>
+                    
+                    {product.description && (
+                      <p className="card-text product-description">
+                        {product.description.substring(0, 60)}...
+                      </p>
+                    )}
+                    
+                    <div className="product-details">
+                      {product.hang_san_xuat_name && (
+                        <p className="card-text mb-1">
+                          <strong>Hãng:</strong> {product.hang_san_xuat_name}
+                        </p>
+                      )}
+                      
+                      {product.thong_so_name && (
+                        <p className="card-text mb-1">
+                          <strong>Thông số:</strong> {product.thong_so_name}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <p className="card-text text-danger fw-bold mt-auto fs-5">
+                      {Number(product.price).toLocaleString()} VND
+                    </p>
+                    
+                    <div className="d-flex justify-content-between mt-2">
+                      <button 
+                        className="btn btn-primary buy-now-btn"
+                        onClick={(e) => handleBuyNow(e, product.id)}
+                      >
+                        <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
+                        Mua ngay
+                      </button>
+                      <button 
+                        className="btn btn-outline-secondary details-btn"
+                        onClick={(e) => handleViewDetails(e, product.id)}
+                      >
+                        <FontAwesomeIcon icon={faInfoCircle} className="me-1" />
+                        Chi tiết
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-          
-          {/* Product 3 */}
-          <div 
-            className="product-card" 
-            data-aos="fade-up" 
-            data-aos-delay="200"
-            onClick={() => handleProductClick(3)}
-            style={{ cursor: 'pointer' }}
+        )}
+        
+        <div className="text-center mt-4">
+          <button 
+            className="btn btn-outline-dark btn-lg"
+            onClick={() => navigate('/products')}
           >
-            <div className="product-info">
-              <h3>Thiết bị điện máy gia dụng Máy sấy tóc LG - PC ASUS G540M</h3>
-              <p className="price-label">Giá</p>
-              <p className="price">7,000,000 VNĐ</p>
-            </div>
-            <div className="product-image">
-              <img src="\assets\taycam.jpg" alt="Controller" />
-            </div>
-          </div>
-          
-          {/* Product 4 */}
-          <div 
-            className="product-card" 
-            data-aos="fade-up" 
-            data-aos-delay="300"
-            onClick={() => handleProductClick(4)}
-            style={{ cursor: 'pointer' }}
-          >
-            <div className="product-info">
-              <h3>Đồng Hồ Thông Minh Gắn Vị Trí Cho Em, Chống Nước, Số Đo Sức Khỏe Thông Minh</h3>
-              <p className="price-label">Giá</p>
-              <p className="price">399,000 VNĐ</p>
-            </div>
-            <div className="product-image">
-              <img src="\assets\headphone.png" alt="Headphone" />
-            </div>
-          </div>
+            Xem tất cả sản phẩm
+          </button>
         </div>
       </section>
     </div>
