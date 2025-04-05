@@ -1,154 +1,119 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faShoppingCart, faStar as fasStar, faChevronLeft, faChevronRight
+  faShoppingCart, faStar as fasStar, faChevronLeft, faChevronRight,
+  faTags, faBoxOpen, faExchangeAlt, faMinus, faPlus
 } from '@fortawesome/free-solid-svg-icons';
 import { faStar as farStar } from '@fortawesome/free-regular-svg-icons';
+import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import './style/detail.css';
 
 function Detail() {
   const location = useLocation();
+  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const productId = queryParams.get('id');
   
   // State variables for product details
-  // BACKEND INTEGRATION POINT 1: Replace this initial state with data from your API
-  const [product, setProduct] = useState({
-    id: 1,
-    name: 'Croma Bluetooth Wireless Over Ear Headphones With Mic Playback',
-    price: '100,000 VNĐ',
-    rating: 4.5,
-    ratingCounts: [150, 30, 10, 25, 10], // Counts for 5, 4, 3, 2, 1 stars
-    description: 'Mở tất cả các thiết bị tương thích với Kết nối đơn giản qua Bluetooth 5.2, hỗ trợ Google Fast Pair và Microsoft Swift Pair',
-    features: {
-      'Nghe 50h': true,
-      'Sạc 3h': true,
-      'Bluetooth 5.2': true,
-      'Cổng sạc Type C': true,
-    },
-    availableSizes: ['S', 'M', 'L', 'XL'],
-    availableColors: ['#e0e0e0', '#f5f5dc', '#000000'],
-    images: [
-      '/assets/headphone.png',
-      '/assets/Loa-marshall-Emberton-1-600x600-1.png',
-      '/assets/headphone.png',
-    ],
-    relatedProducts: [
-      {
-        id: 2,
-        name: 'Croma Bluetooth Wireless Over Ear Headphones With Mic Playback',
-        price: '100,000 VNĐ',
-        image: '/assets/camera.jpg'
-      },
-      {
-        id: 3,
-        name: 'Loa Bluetooth Marshall Emberton',
-        price: '2,800,000 VNĐ',
-        image: '/assets/loa.jpg'
-      },
-      {
-        id: 4,
-        name: 'Đồng Hồ Thông Minh Gắn Vị Trí Cho Em, Chống Nước, Số Đo Sức Khỏe',
-        price: '799,000 VNĐ',
-        image: '/assets/dong-ho-thong-minh-dinh-vi-y31-3-1.jpg'
-      },
-      {
-        id: 5,
-        name: 'Tai nghe dây chất lượng cao chống ồn ANC2 ODANTIC G10sMk2',
-        price: '1,350,000 VNĐ',
-        image: '/assets/headphone.png'
-      }
-    ]
-  });
-
-  // State for selected image, size, and color
-  const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedSize, setSelectedSize] = useState('M');
-  const [selectedColor, setSelectedColor] = useState('#e0e0e0');
+  const [product, setProduct] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [totalSlides, setTotalSlides] = useState(0);
 
-  // BACKEND INTEGRATION POINT 2: Fetch product data based on ID
+  // Thêm states cho slider sản phẩm ngẫu nhiên
+  const [randomProducts, setRandomProducts] = useState([]);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const productsPerSlide = 4;
+
+  // Fetch product data based on ID
   useEffect(() => {
-    // If no productId is found, you might want to redirect or show an error
     if (!productId) {
-      console.error('No product ID found in URL');
+      setError("Không tìm thấy ID sản phẩm");
+      setLoading(false);
       return;
     }
-    
-    // Fetch product data
+
     const fetchProductData = async () => {
       try {
-        // UNCOMMENT AND MODIFY THIS CODE TO CONNECT TO YOUR BACKEND
-        // const response = await fetch(`/api/products/${productId}`);
-        // if (!response.ok) {
-        //   throw new Error('Failed to fetch product data');
-        // }
-        // const data = await response.json();
-        // setProduct(data);
+        setLoading(true);
+        const response = await axios.get(`http://localhost:8002/api/products/products/${productId}/`);
+        setProduct(response.data);
         
-        // For now, we're using mock data based on ID
-        console.log(`Fetching data for product ID: ${productId}`);
-        // You might simulate different products based on ID here
+        // Sau khi lấy sản phẩm, lấy danh sách sản phẩm khác để hiển thị trong phần liên quan
+        const allProductsResponse = await axios.get(`http://localhost:8002/api/products/products/`);
+        
+        // Lọc sản phẩm liên quan (cùng danh mục nhưng khác ID)
+        const related = allProductsResponse.data.filter(p => 
+          p.category === response.data.category && p.id !== response.data.id
+        );
+        setRelatedProducts(related.slice(0, 4)); // Lấy tối đa 4 sản phẩm liên quan
+        
+        // Lấy các sản phẩm ngẫu nhiên cho slider
+        const otherProducts = allProductsResponse.data.filter(p => p.id !== response.data.id);
+        // Ngẫu nhiên hóa mảng sản phẩm
+        const shuffled = [...otherProducts].sort(() => 0.5 - Math.random());
+        const randomProductsData = shuffled.slice(0, 12); // Lấy 12 sản phẩm ngẫu nhiên
+        setRandomProducts(randomProductsData);
+        
+        // Cập nhật tổng số trang
+        setTotalSlides(Math.ceil(randomProductsData.length / productsPerSlide));
+        
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching product data:', error);
-        // You might want to show an error message to the user here
+        setError("Không thể tải thông tin sản phẩm");
+        setLoading(false);
       }
     };
-
+  
     fetchProductData();
-  }, [productId]);
+  }, [productId, productsPerSlide]);
 
-  // BACKEND INTEGRATION POINT 3: Handle adding to cart
-  const addToCart = async () => {
-    try {
-      // UNCOMMENT AND MODIFY THIS CODE TO CONNECT TO YOUR BACKEND
-      // const response = await fetch('/api/cart/add', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     productId: product.id,
-      //     quantity,
-      //     color: selectedColor,
-      //     size: selectedSize
-      //   })
-      // });
-      
-      // if (!response.ok) {
-      //   throw new Error('Failed to add item to cart');
-      // }
-      
-      // For now, just logging to console
-      console.log('Adding to cart:', {
-        productId: product.id,
-        quantity,
-        color: selectedColor,
-        size: selectedSize
-      });
-      
-      alert('Thêm vào giỏ hàng thành công!');
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      alert('Có lỗi xảy ra khi thêm vào giỏ hàng.');
-    }
+  // Xử lý khi thêm vào giỏ hàng
+  const addToCart = () => {
+    if (!product) return;
+    
+    // Đây là nơi bạn sẽ kết nối với API giỏ hàng
+    console.log('Thêm vào giỏ hàng:', {
+      productId: product.id,
+      quantity,
+      name: product.name,
+      price: product.price
+    });
+    
+    alert('Đã thêm sản phẩm vào giỏ hàng!');
   };
 
-  // BACKEND INTEGRATION POINT 4: Handle related product click
+  // Xử lý khi chọn sản phẩm liên quan
   const handleRelatedProductClick = (relatedProductId) => {
-    // Navigate to the related product's detail page
-    window.location.href = `/detail?id=${relatedProductId}`;
+    navigate(`/detail?id=${relatedProductId}`);
   };
 
-  // Render star ratings
+  // Xử lý điều hướng slider
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % totalSlides);
+  };
+  
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
+  };
+
+  // Render hiển thị đánh giá sao
   const renderStars = (rating) => {
     const stars = [];
+    const roundedRating = Math.round(rating * 2) / 2; // Làm tròn đến 0.5
+    
     for (let i = 1; i <= 5; i++) {
       stars.push(
         <FontAwesomeIcon 
           key={i} 
-          icon={i <= rating ? fasStar : farStar} 
+          icon={i <= roundedRating ? fasStar : farStar} 
           className="star-icon" 
         />
       );
@@ -156,11 +121,37 @@ function Detail() {
     return stars;
   };
 
-  // Calculate rating percentage for progress bars
+  // Giả lập dữ liệu đánh giá
+  const mockRating = {
+    average: 4.5,
+    counts: [150, 30, 10, 5, 5]
+  };
+
+  // Tính phần trăm cho thanh tiến trình đánh giá
   const calculatePercentage = (count) => {
-    const total = product.ratingCounts.reduce((acc, curr) => acc + curr, 0);
+    const total = mockRating.counts.reduce((acc, curr) => acc + curr, 0);
     return (count / total) * 100;
   };
+
+  if (loading) {
+    return (
+      <div className="text-center p-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Đang tải...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="container mt-4">
+        <div className="alert alert-danger">
+          {error || "Không tìm thấy sản phẩm"}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="product-detail-container">
@@ -171,22 +162,12 @@ function Detail() {
             <div className="product-image-gallery">
               <div className="main-image">
                 <img 
-                  src={product.images[selectedImage]} 
+                  src={product.image_url} 
                   alt={product.name} 
                   className="img-fluid rounded shadow"
                 />
               </div>
-              <div className="thumbnail-container mt-3">
-                {product.images.map((image, index) => (
-                  <div 
-                    key={index} 
-                    className={`thumbnail ${selectedImage === index ? 'active' : ''}`}
-                    onClick={() => setSelectedImage(index)}
-                  >
-                    <img src={image} alt={`Thumbnail ${index + 1}`} className="img-fluid" />
-                  </div>
-                ))}
-              </div>
+              {/* Nếu có nhiều ảnh, có thể hiển thị thêm ở đây */}
             </div>
           </div>
 
@@ -195,90 +176,84 @@ function Detail() {
             <div className="product-info p-3">
               <h1 className="product-title mb-3">{product.name}</h1>
               
-              {/* Product Features Section */}
+              {/* Thẻ thông tin sản phẩm */}
               <div className="product-features d-flex flex-wrap mb-3">
-                {Object.entries(product.features).map(([feature, value], index) => (
-                  value && (
-                    <div key={index} className="feature-badge me-3 mb-2">
-                      <span>{feature}</span>
-                    </div>
-                  )
-                ))}
+                {product.category_name && (
+                  <div className="feature-badge me-3 mb-2">
+                    <FontAwesomeIcon icon={faTags} className="me-1" />
+                    <span>{product.category_name}</span>
+                  </div>
+                )}
+                {product.hang_san_xuat_name && (
+                  <div className="feature-badge me-3 mb-2">
+                    <FontAwesomeIcon icon={faBoxOpen} className="me-1" />
+                    <span>{product.hang_san_xuat_name}</span>
+                  </div>
+                )}
+                {product.thong_so_name && (
+                  <div className="feature-badge me-3 mb-2">
+                    <FontAwesomeIcon icon={faExchangeAlt} className="me-1" />
+                    <span>{product.thong_so_name}</span>
+                  </div>
+                )}
               </div>
-
-              {/* Bluetooth version badge */}
-              <div className="bluetooth-badge mb-3">
-                <FontAwesomeIcon icon={['fab', 'bluetooth-b']} className="me-1" />
-                Bluetooth 5.2
+              
+              {/* Đánh giá sản phẩm */}
+              <div className="product-rating mb-3">
+                {renderStars(mockRating.average)}
+                <span className="ms-2">({mockRating.counts.reduce((a, b) => a + b, 0)} đánh giá)</span>
               </div>
               
               {/* Price Section */}
               <div className="product-price mb-3">
                 <h5 className="mb-1 text-muted">Giá:</h5>
-                <h3 className="price">{product.price}</h3>
+                <h3 className="price">{Number(product.price).toLocaleString()} VNĐ</h3>
               </div>
               
-              {/* Description */}
+              {/* Description - Fixed version */}
               <div className="product-description mb-3">
-                <p>{product.description}</p>
+                <h5 className="mb-1 text-muted">Mô tả sản phẩm:</h5>
+                {product.description ? (
+                  <div className="description-content">
+                    {product.description}
+                  </div>
+                ) : (
+                  <p className="text-muted">Không có mô tả chi tiết cho sản phẩm này.</p>
+                )}
               </div>
               
-              {/* Color Selection */}
-              <div className="product-colors mb-4">
-                <h5 className="mb-2">3 màu</h5>
-                <div className="color-options">
-                  {product.availableColors.map((color, index) => (
-                    <div 
-                      key={index} 
-                      className={`color-option ${selectedColor === color ? 'active' : ''}`}
-                      style={{ backgroundColor: color }}
-                      onClick={() => setSelectedColor(color)}
-                    />
-                  ))}
-                </div>
-              </div>
-              
-              {/* Size Selection */}
-              <div className="product-sizes mb-4">
-                <h5 className="mb-2">Kích cỡ:</h5>
-                <div className="size-options">
-                  {product.availableSizes.map((size, index) => (
-                    <button 
-                      key={index} 
-                      className={`size-option ${selectedSize === size ? 'active' : ''}`}
-                      onClick={() => setSelectedSize(size)}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Quantity Selection - BACKEND INTEGRATION POINT 5 */}
+              {/* Quantity Selection */}
               <div className="quantity-selection mb-4">
                 <h5 className="mb-2">Số lượng:</h5>
                 <div className="quantity-controls d-flex align-items-center">
                   <button 
-                    className="btn btn-outline-secondary"
+                    className="btn btn-outline-secondary quantity-btn"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
                   >
-                    -
+                    <FontAwesomeIcon icon={faMinus} />
                   </button>
-                  <span className="mx-3">{quantity}</span>
+                  <span className="mx-3 quantity-value">{quantity}</span>
                   <button 
-                    className="btn btn-outline-secondary"
+                    className="btn btn-outline-secondary quantity-btn"
                     onClick={() => setQuantity(quantity + 1)}
+                    disabled={quantity >= product.stock}
                   >
-                    +
+                    <FontAwesomeIcon icon={faPlus} />
                   </button>
                 </div>
+                <p className="mt-2 text-muted">Còn {product.stock} sản phẩm</p>
               </div>
               
               {/* Add to Cart Button */}
               <div className="add-to-cart-section">
-                <button className="btn-add-to-cart" onClick={addToCart}>
+                <button 
+                  className="btn-add-to-cart" 
+                  onClick={addToCart}
+                  disabled={product.stock <= 0}
+                >
                   <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
-                  Thêm vào giỏ hàng
+                  {product.stock > 0 ? 'Thêm vào giỏ hàng' : 'Hết hàng'}
                 </button>
               </div>
             </div>
@@ -289,16 +264,17 @@ function Detail() {
         <div className="row mt-5">
           <div className="col-12">
             <div className="ratings-section p-4 border rounded">
-              <h3 className="mb-4">Đánh giá sản phẩm:</h3>
+              <h3 className="mb-4">Đánh giá sản phẩm</h3>
               
               <div className="row">
                 {/* Overall Rating */}
                 <div className="col-md-3 text-center">
                   <div className="overall-rating">
                     <div className="rating-circle">
-                      <span className="rating-number">{product.rating}</span>
+                      <span className="rating-number">{mockRating.average}</span>
                       <FontAwesomeIcon icon={fasStar} className="rating-star" />
                     </div>
+                    <p className="mt-2">{mockRating.counts.reduce((a, b) => a + b, 0)} đánh giá</p>
                   </div>
                 </div>
                 
@@ -314,12 +290,13 @@ function Detail() {
                           <div 
                             className="progress-bar bg-warning" 
                             role="progressbar" 
-                            style={{ width: `${calculatePercentage(product.ratingCounts[5-star])}%` }}
-                            aria-valuenow={calculatePercentage(product.ratingCounts[5-star])}
+                            style={{ width: `${calculatePercentage(mockRating.counts[5-star])}%` }}
+                            aria-valuenow={calculatePercentage(mockRating.counts[5-star])}
                             aria-valuemin="0" 
                             aria-valuemax="100"
                           ></div>
                         </div>
+                        <span className="ms-2">{mockRating.counts[5-star]}</span>
                       </div>
                     ))}
                   </div>
@@ -330,28 +307,93 @@ function Detail() {
         </div>
         
         {/* Related Products Section */}
-        <div className="related-products mt-5">
-          <h3 className="mb-4">Sản phẩm liên quan</h3>
-          <div className="row">
-            {product.relatedProducts.map((relatedProduct, index) => (
-              <div key={index} className="col-md-3 mb-4">
-                <div 
-                  className="related-product-card p-3 border rounded"
-                  onClick={() => handleRelatedProductClick(relatedProduct.id)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="related-product-image mb-3">
-                    <img src={relatedProduct.image} alt={relatedProduct.name} className="img-fluid" />
-                  </div>
-                  <div className="related-product-info">
-                    <h5 className="related-product-title mb-2">{relatedProduct.name}</h5>
-                    <p className="related-product-price">{relatedProduct.price}</p>
+        {relatedProducts.length > 0 && (
+          <div className="related-products mt-5">
+            <h3 className="mb-4">Sản phẩm liên quan</h3>
+            <div className="row">
+              {relatedProducts.map((relatedProduct) => (
+                <div key={relatedProduct.id} className="col-md-3 mb-4">
+                  <div 
+                    className="related-product-card p-3 border rounded"
+                    onClick={() => handleRelatedProductClick(relatedProduct.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="related-product-image mb-3">
+                      <img src={relatedProduct.image_url} alt={relatedProduct.name} className="img-fluid" />
+                    </div>
+                    <div className="related-product-info">
+                      <h5 className="related-product-title mb-2">{relatedProduct.name}</h5>
+                      <p className="related-product-price">{Number(relatedProduct.price).toLocaleString()} VNĐ</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+        
+        {/* Random Products Slider */}
+        {randomProducts.length > 0 && (
+          <div className="random-products-slider mt-5 mb-5">
+            <div className="d-flex align-items-center justify-content-between mb-3">
+              <h3>Sản phẩm khác</h3>
+              <div className="slider-controls">
+                <button 
+                  className="btn btn-outline-secondary slider-control-btn me-2" 
+                  onClick={prevSlide}
+                  disabled={totalSlides <= 1}
+                >
+                  <FontAwesomeIcon icon={faChevronLeft} />
+                </button>
+                <button 
+                  className="btn btn-outline-secondary slider-control-btn" 
+                  onClick={nextSlide}
+                  disabled={totalSlides <= 1}
+                >
+                  <FontAwesomeIcon icon={faChevronRight} />
+                </button>
+              </div>
+            </div>
+            
+            <div className="random-products-container">
+              <div className="row">
+                {randomProducts.slice(
+                  currentSlide * productsPerSlide, 
+                  (currentSlide + 1) * productsPerSlide
+                ).map((randomProduct) => (
+                  <div key={randomProduct.id} className="col-md-3 mb-3">
+                    <div 
+                      className="random-product-card p-3 border rounded h-100"
+                      onClick={() => handleRelatedProductClick(randomProduct.id)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="random-product-image mb-3">
+                        <img src={randomProduct.image_url} alt={randomProduct.name} className="img-fluid" />
+                      </div>
+                      <div className="random-product-info">
+                        <h5 className="random-product-title mb-2">{randomProduct.name}</h5>
+                        <p className="random-product-price">{Number(randomProduct.price).toLocaleString()} VNĐ</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {totalSlides > 1 && (
+                <div className="slider-indicators text-center mt-3">
+                  {Array.from({ length: totalSlides }).map((_, index) => (
+                    <button 
+                      key={index}
+                      className={`slider-indicator ${currentSlide === index ? 'active' : ''}`}
+                      onClick={() => setCurrentSlide(index)}
+                      aria-label={`Trang ${index + 1}`}
+                    ></button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

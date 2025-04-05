@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShoppingCart, faInfoCircle, faFilter } from '@fortawesome/free-solid-svg-icons';
@@ -8,6 +9,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'aos/dist/aos.css';
 
 const Products = () => {
+    const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -62,6 +64,25 @@ const Products = () => {
         setSelectedCategory(categoryId === selectedCategory ? null : categoryId);
     };
 
+    // Xử lý khi click vào sản phẩm
+    const handleProductClick = (productId) => {
+        navigate(`/detail?id=${productId}`);
+    };
+
+    // Xử lý khi click vào nút mua ngay
+    const handleBuyNow = (e, productId) => {
+        e.stopPropagation(); // Ngăn chặn sự kiện click lan tỏa tới thẻ cha
+        // Có thể điều hướng đến trang thanh toán hoặc thêm vào giỏ hàng
+        console.log(`Mua ngay sản phẩm ID: ${productId}`);
+        // Ví dụ: navigate(`/checkout?product=${productId}`);
+    };
+
+    // Xử lý khi click vào nút chi tiết
+    const handleViewDetails = (e, productId) => {
+        e.stopPropagation(); // Ngăn chặn sự kiện click lan tỏa tới thẻ cha
+        navigate(`/detail?id=${productId}`);
+    };
+
     return (
         <div className="container mt-4">
             <h1 className="text-center mb-4" data-aos="fade-down">Danh sách sản phẩm</h1>
@@ -74,7 +95,7 @@ const Products = () => {
                 </div>
                 <div className="d-flex flex-wrap gap-2">
                     <button 
-                        className={`btn ${selectedCategory === null ? 'btn-primary' : 'btn-outline-primary'}`}
+                        className={`btn ${selectedCategory === null ? 'btn-secondary' : 'btn-outline-secondary'}`}
                         onClick={() => setSelectedCategory(null)}
                     >
                         Tất cả
@@ -82,7 +103,7 @@ const Products = () => {
                     {categories.map(category => (
                         <button 
                             key={category.id} 
-                            className={`btn ${selectedCategory === category.id ? 'btn-primary' : 'btn-outline-primary'}`}
+                            className={`btn ${selectedCategory === category.id ? 'btn-secondary' : 'btn-outline-secondary'}`}
                             onClick={() => handleCategoryClick(category.id)}
                         >
                             {category.name}
@@ -94,7 +115,7 @@ const Products = () => {
             {/* Hiển thị sản phẩm */}
             {loading ? (
                 <div className="text-center">
-                    <div className="spinner-border text-primary" role="status">
+                    <div className="spinner-border text-secondary" role="status">
                         <span className="visually-hidden">Đang tải...</span>
                     </div>
                 </div>
@@ -106,7 +127,11 @@ const Products = () => {
                 <div className="row">
                     {products.map((product, index) => (
                         <div key={product.id} className="col-lg-3 col-md-6 mb-4" data-aos="zoom-in" data-aos-delay={index * 100}>
-                            <div className="card shadow-sm h-100 product-card">
+                            <div 
+                                className="card shadow-sm h-100 product-card" 
+                                onClick={() => handleProductClick(product.id)}
+                                style={{ cursor: 'pointer' }}
+                            >
                                 {product.image_url && (
                                     <div className="product-image-container">
                                         <img 
@@ -133,11 +158,17 @@ const Products = () => {
                                         {Number(product.price).toLocaleString()} VND
                                     </p>
                                     <div className="d-flex justify-content-between mt-2">
-                                        <button className="btn btn-primary">
+                                        <button 
+                                            className="btn btn-secondary"
+                                            onClick={(e) => handleBuyNow(e, product.id)}
+                                        >
                                             <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
                                             Mua ngay
                                         </button>
-                                        <button className="btn btn-outline-secondary">
+                                        <button 
+                                            className="btn btn-outline-secondary"
+                                            onClick={(e) => handleViewDetails(e, product.id)}
+                                        >
                                             <FontAwesomeIcon icon={faInfoCircle} className="me-1" />
                                             Chi tiết
                                         </button>
@@ -184,7 +215,7 @@ const styles = `
     
     .product-title {
         font-weight: 600;
-        height: 50px;
+        height: auto;
         overflow: hidden;
         display: -webkit-box;
         -webkit-line-clamp: 2;
@@ -206,14 +237,14 @@ const styles = `
         transition: all 0.3s ease;
     }
     
-    .btn-primary {
-        background-color: #0d6efd;
-        border-color: #0d6efd;
+    .btn-secondary {
+        background-color: #757575;
+        border-color: #757575;
     }
     
-    .btn-primary:hover {
-        background-color: #0b5ed7;
-        border-color: #0a58ca;
+    .btn-secondary:hover {
+        background-color:rgb(98, 98, 98);
+        border-color: rgb(98, 98, 98);
     }
 </style>
 `;
