@@ -2,11 +2,14 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Cài đặt các gói phụ thuộc cho MySQLClient
+# Cài đặt các gói phụ thuộc cho MySQLClient và Pillow
 RUN apt-get update && apt-get install -y \
     default-libmysqlclient-dev \
     build-essential \
     pkg-config \
+    libjpeg-dev \
+    libpng-dev \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -14,6 +17,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+
+# Đảm bảo thư mục media tồn tại và có quyền ghi
+RUN mkdir -p /app/media/products && chmod -R 755 /app/media
 
 EXPOSE 8000
 

@@ -1,8 +1,12 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Category, Product
-from .serializers import CategorySerializer, ProductSerializer
+from rest_framework.parsers import MultiPartParser, FormParser
+from .models import Category, Product, HangSanXuat, ThongSo, KhuyenMai
+from .serializers import (
+    CategorySerializer, ProductSerializer,
+    HangSanXuatSerializer, ThongSoSerializer, KhuyenMaiSerializer
+)
 from .middleware import auth_required
 from .rabbitmq import publish_product_event
 
@@ -10,9 +14,22 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
+class HangSanXuatViewSet(viewsets.ModelViewSet):
+    queryset = HangSanXuat.objects.all()
+    serializer_class = HangSanXuatSerializer
+
+class ThongSoViewSet(viewsets.ModelViewSet):
+    queryset = ThongSo.objects.all()
+    serializer_class = ThongSoSerializer
+
+class KhuyenMaiViewSet(viewsets.ModelViewSet):
+    queryset = KhuyenMai.objects.all()
+    serializer_class = KhuyenMaiSerializer
+
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    parser_classes = (MultiPartParser, FormParser)
     
     def get_queryset(self):
         queryset = Product.objects.all()
@@ -36,6 +53,11 @@ class ProductViewSet(viewsets.ModelViewSet):
         name = self.request.query_params.get('name')
         if name:
             queryset = queryset.filter(name__icontains=name)
+        
+        # Filter by hang san xuat
+        hang_san_xuat = self.request.query_params.get('hang_san_xuat')
+        if hang_san_xuat:
+            queryset = queryset.filter(hang_san_xuat_id=hang_san_xuat)
         
         return queryset
     
@@ -68,43 +90,14 @@ class ProductViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         product_data = ProductSerializer(instance).data
         
+        # Xóa file ảnh nếu có
+        if instance.image:
+            if os.path.isfile(instance.image.path):
+                os.remove(instance.image.path)
+        
         self.perform_destroy(instance)
         
         # Publish product deleted event
         publish_product_event('deleted', product_data)
         
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
-    @action(detail=True, methods=['post'])
-    def update_stock(self, request, pk=None):
-        try:
-            product = self.get_object()
-            old_stock = product.stock
-            quantity = int(request.data.get('quantity', 0))
-            
-            if quantity < 0 and abs(quantity) > product.stock:
-                return Response(
-                    {"message": "Not enough stock available"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            product.stock += quantity
-            product.save()
-            
-            # Publish stock changed event
-            publish_product_event('stock_changed', {
-                'product_id': product.id,
-                'old_stock': old_stock,
-                'new_stock': product.stock,
-                'change': quantity
-            })
-            
-            return Response({
-                "message": f"Stock updated successfully. New stock: {product.stock}",
-                "stock": product.stock
-            })
-        except Exception as e:
-            return Response(
-                {"message": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
