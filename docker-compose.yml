@@ -54,6 +54,7 @@ services:
     restart: always
     volumes:
       - ./product_service:/app
+      - product_media:/app/media  # Volume mới cho media
     ports:
       - "8002:8000"
     depends_on:
@@ -71,7 +72,7 @@ services:
       - microservice_network
     command: >
       sh -c "python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
+            python manage.py runserver 0.0.0.0:8000"
 
   order_service:
     build: ./order_service
@@ -143,3 +144,4 @@ networks:
 
 volumes:
   mysql_data:
+  product_media:

@@ -130,3 +130,12 @@ RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'rabbitmq')
 RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', 5672)
 RABBITMQ_USER = os.environ.get('RABBITMQ_USER', 'guest')
 RABBITMQ_PASS = os.environ.get('RABBITMQ_PASS', 'guest')
+
+
+# Media files (Uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Ensure media directories exist
+PRODUCT_IMAGES_DIR = os.path.join(MEDIA_ROOT, 'products')
+os.makedirs(PRODUCT_IMAGES_DIR, exist_ok=True)
