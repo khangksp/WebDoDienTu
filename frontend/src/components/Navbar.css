@@ -1,7 +1,12 @@
 /* Navbar */
 .navbar {
-  padding: 10px 0;
-  border-bottom: 1px solid #ddd;
+  position: fixed; /* Cố định Navbar ở đầu trang */
+  top: 0; /* Đặt Navbar sát đỉnh màn hình */
+  left: 0;
+  width: 100%; /* Đảm bảo Navbar chiếm toàn bộ chiều rộng */
+  z-index: 1000; /* Đảm bảo Navbar nằm trên các phần tử khác */
+  background-color: #fff; /* Giữ màu nền trắng khi cuộn */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Tùy chọn: Thêm bóng để nổi bật */
 }
 
 .logo {
