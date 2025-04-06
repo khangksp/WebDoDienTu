@@ -1,0 +1,47 @@
+{
+    "trangChu": "Trang chủ",
+    "gioiThieu": "Giới thiệu",
+    "sanPham": "Sản phẩm",
+    "lienHe": "Liên hệ",
+    "timKiem": "Tìm kiếm sản phẩm ....",
+    "taiKhoan": "Tài khoản",
+    "gioHang": "Giỏ hàng",
+    
+    "xinChao": "Xin chào,",
+    "dangNhapHoacTaoTaiKhoan": "Đăng nhập hoặc Tạo tài khoản",
+    "soDienThoai": "Số điện thoại",
+    "tiepTuc": "Tiếp Tục",
+    "dangNhapBangEmail": "Đăng nhập bằng email",
+    "hoacTiepTucBang": "Hoặc tiếp tục bằng",
+    "dieuKhoan": "Bằng việc tiếp tục, bạn đã đọc và đồng ý với",
+    "dieuKhoanSuDung": "điều khoản sử dụng",
+    "chinhSachBaoMat": "Chính sách bảo mật thông tin cá nhân",
+    "va": "và",
+    
+    "nhapMatKhau": "Nhập mật khẩu",
+    "vuiLongNhapMatKhau": "Vui lòng nhập mật khẩu cho số điện thoại",
+    "matKhau": "Mật khẩu",
+    "dangNhap": "Đăng Nhập",
+    "quenMatKhau": "Quên mật khẩu?",
+    "dangNhapBangSMS": "Đăng nhập bằng SMS",
+    
+    "vuiLongNhapEmailVaMatKhau": "Vui lòng nhập email và mật khẩu",
+    "email": "Email",
+    
+    "vuiLongNhapThongTin": "Vui lòng nhập thông tin tài khoản để lấy lại mật khẩu",
+    "soDienThoaiEmail": "Số điện thoại/ Email",
+    "layLaiMatKhau": "Lấy lại mật khẩu",
+    "doiSoDienThoai": "Đổi số điện thoại?",
+    "lienHeHotline": "Liên hệ Hotline 1900-6035",
+    
+    "vuiLongNhapSDTNhanMa": "Vui lòng nhập số điện thoại để nhận mã xác minh",
+    
+    "nhapMaXacMinh": "Nhập mã xác minh",
+    "soDienThoaiDaCoTaiKhoan": "Số điện thoại",
+    "daCoTaiKhoan": "đã có tài khoản. Vui lòng xác thực để đăng nhập",
+    "xacMinh": "Xác Minh",
+    "guiLaiMaSau": "Gửi lại mã sau",
+    "guiLaiMa": "Gửi lại mã",
+    "maXacMinhHieuLuc": "Mã xác minh có hiệu lực trong 15 phút"
+  }
+  

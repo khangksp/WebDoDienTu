@@ -1,0 +1,47 @@
+{
+    "trangChu": "Home",
+    "gioiThieu": "About",
+    "sanPham": "Products",
+    "lienHe": "Contact",
+    "timKiem": "Search for products ...",
+    "taiKhoan": "Account",
+    "gioHang": "Cart",
+    
+    "xinChao": "Hello,",
+    "dangNhapHoacTaoTaiKhoan": "Login or Create account",
+    "soDienThoai": "Phone number",
+    "tiepTuc": "Continue",
+    "dangNhapBangEmail": "Login with email",
+    "hoacTiepTucBang": "Or continue with",
+    "dieuKhoan": "By continuing, you have read and agreed to",
+    "dieuKhoanSuDung": "terms of use",
+    "chinhSachBaoMat": "Privacy Policy",
+    "va": "and",
+    
+    "nhapMatKhau": "Enter password",
+    "vuiLongNhapMatKhau": "Please enter password for phone number",
+    "matKhau": "Password",
+    "dangNhap": "Login",
+    "quenMatKhau": "Forgot password?",
+    "dangNhapBangSMS": "Login with SMS",
+    
+    "vuiLongNhapEmailVaMatKhau": "Please enter email and password",
+    "email": "Email",
+    
+    "vuiLongNhapThongTin": "Please enter account information to recover password",
+    "soDienThoaiEmail": "Phone number/ Email",
+    "layLaiMatKhau": "Recover password",
+    "doiSoDienThoai": "Change phone number?",
+    "lienHeHotline": "Contact Hotline 1900-6035",
+    
+    "vuiLongNhapSDTNhanMa": "Please enter phone number to receive verification code",
+    
+    "nhapMaXacMinh": "Enter verification code",
+    "soDienThoaiDaCoTaiKhoan": "Phone number",
+    "daCoTaiKhoan": "already has an account. Please verify to login",
+    "xacMinh": "Verify",
+    "guiLaiMaSau": "Resend code after",
+    "guiLaiMa": "Resend code",
+    "maXacMinhHieuLuc": "Verification code is valid for 15 minutes"
+  }
+  
