@@ -7,7 +7,8 @@ CREATE TABLE ThanhToan (
     MaDonHang INT NOT NULL,
     PhuongThucThanhToan ENUM('Thanh toán khi nhận hàng', 'Chuyển khoản ngân hàng', 'Thẻ tín dụng/Ghi nợ') NOT NULL,
     NgayThanhToan TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    MaTrangThai INT NOT NULL
+    MaTrangThai INT NOT NULL,
+    DiaChi TEXT
     -- FOREIGN KEY (MaDonHang) REFERENCES DonHang(MaDonHang) ON DELETE CASCADE ON UPDATE CASCADE,
     -- FOREIGN KEY (MaTrangThai) REFERENCES TrangThai(MaTrangThai) ON DELETE RESTRICT ON UPDATE CASCADE
 );
