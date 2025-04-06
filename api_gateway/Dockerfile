@@ -1,20 +1,16 @@
-FROM python:3.9-slim
+FROM nginx:1.21-alpine
 
-WORKDIR /app
+# Remove default nginx config
+RUN rm /etc/nginx/conf.d/default.conf
 
-# Cài đặt các gói phụ thuộc cho MySQLClient
-RUN apt-get update && apt-get install -y \
-    default-libmysqlclient-dev \
-    build-essential \
-    pkg-config \
-    && rm -rf /var/lib/apt/lists/*
+# Copy custom nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
 
-COPY requirements.txt .
+# Create directory for static files if needed
+RUN mkdir -p /var/www/static
 
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
+# Expose port 8000
 EXPOSE 8000
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]

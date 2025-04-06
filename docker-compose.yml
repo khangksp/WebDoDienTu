@@ -19,10 +19,27 @@ services:
     - microservice_network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
-      interval: 10s  # Tăng interval lên 10 giây
+      interval: 10s
       timeout: 5s
-      retries: 10    # Tăng retries lên 10
-      start_period: 30s  # Thêm start_period để cho MySQL 30 giây khởi tạo trước khi bắt đầu healthcheck
+      retries: 10
+      start_period: 30s
+      
+  api_gateway:
+    build: ./api_gateway
+    container_name: api_gateway
+    restart: always
+    volumes:
+      - ./api_gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8000:8000"  # Main port that external clients will use
+    depends_on:
+      - auth_service
+      - product_service
+      - order_service
+      - payment_service
+    networks:
+      - microservice_network
+
   auth_service:
     build: ./services/auth_service
     container_name: auth_service
@@ -54,7 +71,7 @@ services:
     restart: always
     volumes:
       - ./services/product_service:/app
-      - product_media:/app/media  # Volume mới cho media
+      - product_media:/app/media
     ports:
       - "8002:8000"
     depends_on:
@@ -98,6 +115,31 @@ services:
     command: >
       sh -c "python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"
+  
+  payment_service:
+    build: ./services/payment_service
+    container_name: payment_service
+    restart: always
+    volumes:
+      - ./services/payment_service:/app
+    ports:
+      - "8004:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - DB_NAME=payment_db
+      - DB_USER=user
+      - DB_PASSWORD=password
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - SECRET_KEY=django-insecure-payment-service-key
+      - DEBUG=True
+    networks:
+      - microservice_network
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -130,22 +172,21 @@ services:
         condition: service_started
       order_service:
         condition: service_started
+      payment_service:
+        condition: service_started
     environment:
-      - AUTH_SERVICE_URL=http://auth_service:8000
-      - PRODUCT_SERVICE_URL=http://product_service:8000
-      - ORDER_SERVICE_URL=http://order_service:8000
+      - API_GATEWAY_URL=http://api_gateway:8000  # Updated to use the API Gateway
     networks:
       - microservice_network
     command: ["python", "seed.py"]
+  
   frontend:
     build: ./frontend
     container_name: frontend-app
     ports:
       - "8080:80"
     depends_on:
-      - auth_service
-      - product_service
-      - order_service
+      - api_gateway  # Changed to depend on API Gateway instead of individual services
     networks:
       - microservice_network
 
