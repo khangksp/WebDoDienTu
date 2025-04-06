@@ -11,18 +11,18 @@ services:
       MYSQL_USER: user
       MYSQL_PASSWORD: password
     ports:
-      - "3306:3306"
+    - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./mysql-init:/docker-entrypoint-initdb.d
+    - mysql_data:/var/lib/mysql
+    - ./mysql-init:/docker-entrypoint-initdb.d
     networks:
-      - microservice_network
+    - microservice_network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
-      interval: 5s
+      interval: 10s  # Tăng interval lên 10 giây
       timeout: 5s
-      retries: 5
-
+      retries: 10    # Tăng retries lên 10
+      start_period: 30s  # Thêm start_period để cho MySQL 30 giây khởi tạo trước khi bắt đầu healthcheck
   auth_service:
     build: ./auth_service
     container_name: auth_service
@@ -137,6 +137,17 @@ services:
     networks:
       - microservice_network
     command: ["python", "seed.py"]
+  frontend:
+    build: ./frontend
+    container_name: frontend-app
+    ports:
+      - "8080:80"
+    depends_on:
+      - auth_service
+      - product_service
+      - order_service
+    networks:
+      - microservice_network
 
 networks:
   microservice_network:
