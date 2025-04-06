@@ -126,7 +126,7 @@ function Contact() {
           <h1 style={styles.headerTitle}>{t('lienHe')}
             <div style={styles.headerUnderline}></div>
           </h1>
-          <p className="text-muted mt-3">Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn</p>
+          <p className="text-muted mt-3">{t('langNgheHoTro')}</p>
         </div>
         
         {/* Branch Information Cards */}
@@ -147,13 +147,13 @@ function Contact() {
                   <div style={{...styles.iconCircle, backgroundColor: '#e8f4fc'}}>
                     <i className="fas fa-home fa-2x text-primary"></i>
                   </div>
-                  <h3 className="card-title mb-0 fw-bold">Chi nhánh 1</h3>
+                  <h3 className="card-title mb-0 fw-bold">{t('chiNhanh1')}</h3>
                 </div>
                 <div className="d-flex align-items-center mb-3">
                   <div style={{...styles.iconCircle, backgroundColor: '#e6f7ef'}}>
                     <i className="fas fa-map-marker-alt fa-lg text-success"></i>
                   </div>
-                  <p className="card-text mb-0">Địa chỉ chi nhánh 1</p>
+                  <p className="card-text mb-0">{t('dcChiNhanh1')}</p>
                 </div>
                 <div className="d-flex align-items-center">
                   <div style={{...styles.iconCircle, backgroundColor: '#fdeeee'}}>
@@ -181,13 +181,13 @@ function Contact() {
                   <div style={{...styles.iconCircle, backgroundColor: '#e8f4fc'}}>
                     <i className="fas fa-home fa-2x text-primary"></i>
                   </div>
-                  <h3 className="card-title mb-0 fw-bold">Chi nhánh 2</h3>
+                  <h3 className="card-title mb-0 fw-bold">{t('chiNhanh2')}</h3>
                 </div>
                 <div className="d-flex align-items-center mb-3">
                   <div style={{...styles.iconCircle, backgroundColor: '#e6f7ef'}}>
                     <i className="fas fa-map-marker-alt fa-lg text-success"></i>
                   </div>
-                  <p className="card-text mb-0">Địa chỉ chi nhánh 2</p>
+                  <p className="card-text mb-0">{t('dcChiNhanh2')}</p>
                 </div>
                 <div className="d-flex align-items-center">
                   <div style={{...styles.iconCircle, backgroundColor: '#fdeeee'}}>
@@ -213,8 +213,8 @@ function Contact() {
                 <div className="card-body d-flex flex-column justify-content-center align-items-center">
                 <div className="text-center">
                     <i className="fas fa-map-marked-alt fa-4x mb-3"></i>
-                    <h4 className="fw-bold">Bản đồ chi nhánh</h4>
-                    <p className="mb-0 mt-2">Nhấn để xem vị trí chi nhánh</p>
+                    <h4 className="fw-bold">{t('banDo')}</h4>
+                    <p className="mb-0 mt-2">{t('xemBanDo')}</p>
                 </div>
                 <div className="mt-3 w-100">
                 <iframe 
@@ -235,14 +235,14 @@ function Contact() {
         {/* Contact Form */}
         <div className="card mb-5" style={styles.formCard}>
           <div style={styles.formHeader}>
-            <h2 className="mb-0 fw-bold">Gửi thông tin liên hệ</h2>
-            <p className="mb-0 mt-2">Hãy điền thông tin bên dưới, chúng tôi sẽ liên hệ lại với bạn sớm nhất</p>
+            <h2 className="mb-0 fw-bold">{t('guiLienHe')}</h2>
+            <p className="mb-0 mt-2">{t('hayDienThongTin')}</p>
           </div>
           
           <div className="card-body p-4 p-md-5">
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
-                <label htmlFor="name" className="form-label fw-bold">Tên của bạn</label>
+                <label htmlFor="name" className="form-label fw-bold">{t('tenBan')}</label>
                 <div className="input-group">
                   <span className="input-group-text bg-light"><i className="fas fa-user text-primary"></i></span>
                   <input
@@ -259,7 +259,7 @@ function Contact() {
               </div>
               
               <div className="mb-4">
-                <label htmlFor="content" className="form-label fw-bold">Nội dung</label>
+                <label htmlFor="content" className="form-label fw-bold">{t('noiDung')}</label>
                 <div className="input-group">
                   <span className="input-group-text bg-light"><i className="fas fa-comment text-primary"></i></span>
                   <textarea
@@ -277,7 +277,7 @@ function Contact() {
               
               <div className="row mb-4">
                 <div className="col-md-6 mb-3 mb-md-0">
-                  <label htmlFor="phone" className="form-label fw-bold">Số điện thoại của bạn</label>
+                  <label htmlFor="phone" className="form-label fw-bold">{t('sdt')}</label>
                   <div className="input-group">
                     <span className="input-group-text bg-light"><i className="fas fa-phone text-primary"></i></span>
                     <input
@@ -293,7 +293,7 @@ function Contact() {
                 </div>
                 
                 <div className="col-md-6">
-                  <label htmlFor="email" className="form-label fw-bold">Email của bạn</label>
+                  <label htmlFor="email" className="form-label fw-bold">{t('email')}</label>
                   <div className="input-group">
                     <span className="input-group-text bg-light"><i className="fas fa-envelope text-primary"></i></span>
                     <input
@@ -324,7 +324,7 @@ function Contact() {
                     e.currentTarget.style.boxShadow = "0 5px 15px rgba(49, 49, 49, 0.3)";
                   }}
                 >
-                  <FontAwesomeIcon icon={faPaperPlane} className="me-2" /> Gửi thông tin
+                  <FontAwesomeIcon icon={faPaperPlane} className="me-2" /> {t('gui')}
                 </button>
               </div>
             </form>
@@ -341,8 +341,8 @@ function Contact() {
                     <FontAwesomeIcon icon={faHeadset} size="2x" />
                   </div>
                 </div>
-                <h3 className="h4 mb-3 fw-bold">Hỗ trợ 24/7</h3>
-                <p className="text-muted mb-0">Chúng tôi luôn sẵn sàng hỗ trợ bạn mọi lúc mọi nơi</p>
+                <h3 className="h4 mb-3 fw-bold">{t('hoTro247')}</h3>
+                <p className="text-muted mb-0">{t('chungToiLuonSanSang')}</p>
               </div>
             </div>
           </div>
@@ -369,8 +369,8 @@ function Contact() {
                     <FontAwesomeIcon icon={faBuilding} size="2x" />
                   </div>
                 </div>
-                <h3 className="h4 mb-3 fw-bold">Trụ sở chính</h3>
-                <p className="text-muted mb-0">123 Đường ABC, Quận XYZ, TP HCM</p>
+                <h3 className="h4 mb-3 fw-bold">{t('truSoChinh')}</h3>
+                <p className="text-muted mb-0">{t('_truSoChinh')}</p>
               </div>
             </div>
           </div>
