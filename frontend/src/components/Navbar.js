@@ -385,18 +385,20 @@ function Navbar() {
               <input type="text" className="form-control" placeholder={t('timKiem')} />
             </div>
 
-            {/* Thêm Language Switcher trước User và Cart */}
-            <LanguageSwitcher />
+            {/* Bao LanguageSwitcher và các nút khác trong một container cố định */}
+            <div className="navbar-actions-container">
+              <LanguageSwitcher />
 
-            <a className="nav-link ms-3 d-flex align-items-center" href="#" onClick={handleAccountClick}>
-              <FontAwesomeIcon icon={faUser} className="nav-icon me-1"/>
-              <span>{t('taiKhoan')}</span>
-            </a>
+              <a className="nav-link ms-3 d-flex align-items-center" href="#" onClick={handleAccountClick}>
+                <FontAwesomeIcon icon={faUser} className="nav-icon me-1"/>
+                <span>{t('taiKhoan')}</span>
+              </a>
 
-            <Link className="nav-link ms-3 d-flex align-items-center" to="/cart">
-              <FontAwesomeIcon icon={faCartShopping} className="nav-icon me-1" />
-              <span>{t('gioHang')}</span>
-            </Link>
+              <Link className="nav-link ms-3 d-flex align-items-center" to="/cart">
+                <FontAwesomeIcon icon={faCartShopping} className="nav-icon me-1" />
+                <span>{t('gioHang')}</span>
+              </Link>
+            </div>
           </div>
         </div>
       </nav>

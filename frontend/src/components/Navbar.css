@@ -382,3 +382,49 @@ button:focus, button:active {
 .resend-code .small {
   font-size: 0.85rem;
 }
+
+
+
+
+.navbar-nav .nav-link {
+  min-width: 80px;  /* Điều chỉnh giá trị này phù hợp với UI của bạn */
+  text-align: center;
+}
+
+/* Đảm bảo các nút hành động có chiều rộng tối thiểu */
+.nav-link.ms-3 {
+  min-width: 100px; /* Điều chỉnh giá trị này phù hợp với UI của bạn */
+  display: flex;
+  justify-content: center;
+}
+
+/* Fix cho thanh tìm kiếm */
+.search-container {
+  width: 250px; /* Chiều rộng cố định cho thanh tìm kiếm */
+}
+
+/* Đảm bảo container giữ nguyên khi nội dung thay đổi */
+.navbar > .container {
+  position: relative;
+  overflow-x: hidden; /* Ngăn chặn thanh cuộn ngang nếu có */
+}
+
+
+.navbar-actions-container {
+  display: flex;
+  align-items: center;
+  min-width: 300px; /* Điều chỉnh phù hợp với layout của bạn */
+  justify-content: flex-end;
+}
+
+/* Đảm bảo các item trong container có vị trí tương đối cố định */
+.navbar-actions-container > * {
+  flex-shrink: 0;
+}
+
+/* Fix responsive */
+@media (max-width: 991.98px) {
+  .navbar-actions-container {
+    min-width: auto;
+  }
+}

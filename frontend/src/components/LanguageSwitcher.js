@@ -15,7 +15,10 @@ const LanguageSwitcher = () => {
         aria-label="Change language"
       >
         <FontAwesomeIcon icon={faGlobe} className="lang-icon" />
-        <span className="lang-text">{currentLang === 'vi' ? 'EN' : 'VI'}</span>
+        {/* Sử dụng div có chiều rộng cố định để tránh nhảy */}
+        <div className="lang-container">
+          <span className="lang-text">{currentLang === 'vi' ? 'EN' : 'VI'}</span>
+        </div>
       </button>
     </div>
   );
