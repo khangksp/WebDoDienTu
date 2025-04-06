@@ -24,11 +24,11 @@ services:
       retries: 10    # Tăng retries lên 10
       start_period: 30s  # Thêm start_period để cho MySQL 30 giây khởi tạo trước khi bắt đầu healthcheck
   auth_service:
-    build: ./auth_service
+    build: ./services/auth_service
     container_name: auth_service
     restart: always
     volumes:
-      - ./auth_service:/app
+      - ./services/auth_service:/app
     ports:
       - "8001:8000"
     depends_on:
@@ -49,11 +49,11 @@ services:
              python manage.py runserver 0.0.0.0:8000"
 
   product_service:
-    build: ./product_service
+    build: ./services/product_service
     container_name: product_service
     restart: always
     volumes:
-      - ./product_service:/app
+      - ./services/product_service:/app
       - product_media:/app/media  # Volume mới cho media
     ports:
       - "8002:8000"
@@ -75,11 +75,11 @@ services:
             python manage.py runserver 0.0.0.0:8000"
 
   order_service:
-    build: ./order_service
+    build: ./services/order_service
     container_name: order_service
     restart: always
     volumes:
-      - ./order_service:/app
+      - ./services/order_service:/app
     ports:
       - "8003:8000"
     depends_on:

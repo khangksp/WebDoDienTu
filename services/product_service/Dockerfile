@@ -1,14 +1,26 @@
-# Sử dụng Python 3.10 làm nền tảng
-FROM python:3.10
+FROM python:3.9-slim
 
-# Đặt thư mục làm việc trong container
 WORKDIR /app
 
-# Sao chép tất cả code vào container
-COPY . .
+# Cài đặt các gói phụ thuộc cho MySQLClient và Pillow
+RUN apt-get update && apt-get install -y \
+    default-libmysqlclient-dev \
+    build-essential \
+    pkg-config \
+    libjpeg-dev \
+    libpng-dev \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Cài đặt thư viện Python từ file requirements.txt
+COPY requirements.txt .
+
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Chạy Django server
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8003"]
+COPY . .
+
+# Đảm bảo thư mục media tồn tại và có quyền ghi
+RUN mkdir -p /app/media/products && chmod -R 755 /app/media
+
+EXPOSE 8000
+
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
