@@ -307,7 +307,7 @@ function Navbar() {
         <div className="container">
           {/* Logo */}
           <Link className="navbar-brand" to="/">
-            <img src="/assets/logO.png" alt="Logo" className="logo" />
+            <img src="/assets/logoweb.png" alt="Logo" className="logo" />
           </Link>
 
           {/* Toggler button */}
