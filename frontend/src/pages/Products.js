@@ -7,8 +7,13 @@ import AOS from 'aos';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'aos/dist/aos.css';
+
+import { useLanguage } from "../context/LanguageContext";
+
 import { API_URL } from "./config";
 const Products = () => {
+    const { t } = useLanguage();
+
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -85,20 +90,20 @@ const Products = () => {
 
     return (
         <div className="container mt-4">
-            <h1 className="text-center mb-4" data-aos="fade-down">Danh sách sản phẩm</h1>
+            <h1 className="text-center mb-4" data-aos="fade-down">{t('dsSanPham')}</h1>
             
             {/* Danh mục sản phẩm */}
             <div className="mb-4" data-aos="fade-up">
                 <div className="d-flex align-items-center mb-2">
                     <FontAwesomeIcon icon={faFilter} className="me-2" />
-                    <h5 className="mb-0">Danh mục sản phẩm</h5>
+                    <h5 className="mb-0">{t('dmSanPham')}</h5>
                 </div>
                 <div className="d-flex flex-wrap gap-2">
                     <button 
                         className={`btn ${selectedCategory === null ? 'btn-secondary' : 'btn-outline-secondary'}`}
                         onClick={() => setSelectedCategory(null)}
                     >
-                        Tất cả
+                        {t('tatCa')}
                     </button>
                     {categories.map(category => (
                         <button 
@@ -116,13 +121,13 @@ const Products = () => {
             {loading ? (
                 <div className="text-center">
                     <div className="spinner-border text-secondary" role="status">
-                        <span className="visually-hidden">Đang tải...</span>
+                        <span className="visually-hidden">{t('dangTai')}</span>
                     </div>
                 </div>
             ) : error ? (
                 <div className="alert alert-danger">{error}</div>
             ) : products.length === 0 ? (
-                <div className="alert alert-info">Không có sản phẩm nào</div>
+                <div className="alert alert-info">{t('koCoSanPham')}</div>
             ) : (
                 <div className="row">
                     {products.map((product, index) => (
@@ -148,10 +153,10 @@ const Products = () => {
                                     </div>
                                     <div className="product-details">
                                         <p className="card-text mb-1">
-                                            <strong>Hãng:</strong> {product.hang_san_xuat_name || "N/A"}
+                                            <strong>{t('hang')}</strong> {product.hang_san_xuat_name || "N/A"}
                                         </p>
                                         <p className="card-text mb-1">
-                                            <strong>Thông số:</strong> {product.thong_so_name || "N/A"}
+                                            <strong>{t('thongSo')}</strong> {product.thong_so_name || "N/A"}
                                         </p>
                                     </div>
                                     <p className="card-text text-danger fw-bold mt-auto fs-5">
@@ -163,14 +168,14 @@ const Products = () => {
                                             onClick={(e) => handleBuyNow(e, product.id)}
                                         >
                                             <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
-                                            Mua ngay
+                                            {t('muaNgay')}
                                         </button>
                                         <button 
                                             className="btn btn-outline-secondary"
                                             onClick={(e) => handleViewDetails(e, product.id)}
                                         >
                                             <FontAwesomeIcon icon={faInfoCircle} className="me-1" />
-                                            Chi tiết
+                                            {t('chiTiet')}
                                         </button>
                                     </div>
                                 </div>

@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
-import viTranslations from '../locales/vi.json';
-import enTranslations from '../locales/en.json';
+import viTranslations from '../locales/en.json';
+import enTranslations from '../locales/vi.json';
 
 const translations = {
   vi: viTranslations,

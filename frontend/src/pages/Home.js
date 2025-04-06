@@ -13,7 +13,10 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'aos/dist/aos.css';
 import "./style/style.css";
 
+import { useLanguage } from "../context/LanguageContext";
+
 function HomePage() {
+  const { t } = useLanguage(); // Sử dụng hook useLanguage
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -126,7 +129,7 @@ function HomePage() {
       {/* Categories Section */}
       <section className="categories-section">
         <div className="section-title">
-          <h2>DANH MỤC</h2>
+          <h2>{t('danhMuc')}</h2>
         </div>
         
         <div className="categories-grid">
@@ -151,13 +154,13 @@ function HomePage() {
       {/* New Products Section */}
       <section className="new-products-section">
         <div className="section-title">
-          <h2>SẢN PHẨM MỚI</h2>
+          <h2>{t('sanPhamMoi')}</h2>
         </div>
         
         {loading ? (
           <div className="text-center p-5">
             <div className="spinner-border text-secondary" role="status">
-              <span className="visually-hidden">Đang tải...</span>
+              <span className="visually-hidden">{t('dangTai')}</span>
             </div>
           </div>
         ) : error ? (
@@ -186,13 +189,13 @@ function HomePage() {
                     <div className="product-details">
                       {product.hang_san_xuat_name && (
                         <p className="card-text mb-1">
-                          <strong>Hãng:</strong> {product.hang_san_xuat_name}
+                          <strong>{t('hang')}</strong> {product.hang_san_xuat_name}
                         </p>
                       )}
                       
                       {product.thong_so_name && (
                         <p className="card-text mb-1">
-                          <strong>Thông số:</strong> {product.thong_so_name}
+                          <strong>{t('thongSo')}</strong> {product.thong_so_name}
                         </p>
                       )}
                     </div>
@@ -207,14 +210,14 @@ function HomePage() {
                         onClick={(e) => handleBuyNow(e, product.id)}
                       >
                         <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
-                        Mua ngay
+                        {t('muaNgay')}
                       </button>
                       <button 
                         className="btn btn-outline-secondary details-btn"
                         onClick={(e) => handleViewDetails(e, product.id)}
                       >
                         <FontAwesomeIcon icon={faInfoCircle} className="me-1" />
-                        Chi tiết
+                        {t('chiTiet')}
                       </button>
                     </div>
                   </div>
@@ -229,7 +232,7 @@ function HomePage() {
             className="btn btn-outline-dark btn-lg"
             onClick={() => navigate('/products')}
           >
-            Xem tất cả sản phẩm
+            {t('xemTatCaSanPham')}
           </button>
         </div>
       </section>

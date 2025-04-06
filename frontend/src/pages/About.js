@@ -4,7 +4,10 @@ import { faShoppingCart, faQuestionCircle, faPhone } from '@fortawesome/free-sol
 import AOS from 'aos';
 import 'aos/dist/aos.css'; // Import AOS styles
 
+import { useLanguage } from "../context/LanguageContext";
+
 function About() {
+    const { t } = useLanguage();
     useEffect(() => {
         // Initialize AOS
         AOS.init({
@@ -49,10 +52,10 @@ function About() {
             <div className="container mt-5">
                 {/* Header Section */}
                 <div style={styles.headerSection}>
-                    <h1 style={styles.headerTitle}>Giới thiệu
+                    <h1 style={styles.headerTitle}>{t('gioiThieu')}
                         <div style={styles.headerUnderline}></div>
                     </h1>
-                    <p className="text-muted mt-3">Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn</p>
+                    <p className="text-muted mt-3">{t('chungToiLuon')}</p>
                 </div>
 
 
@@ -62,9 +65,7 @@ function About() {
                     data-aos="fade-up"
                 >
                     <p className="mb-0">
-                        <strong>[Tên cửa hàng]</strong> được thành lập với sứ mệnh mang đến cho khách hàng
-                        những sản phẩm công nghệ chất lượng cao, chính hãng với mức giá tốt nhất.
-                        Chúng tôi luôn cập nhật các xu hướng công nghệ mới nhất để đáp ứng nhu cầu của bạn.
+                        <strong>[{t('tenCuaHang')}]</strong> {t('_tenCuaHang')}
                     </p>
                 </div>
 
@@ -76,10 +77,10 @@ function About() {
                 >
                     <div className="flex-grow-1">
                         <p className="mb-0">
-                            Chúng tôi cung cấp đa dạng các sản phẩm:
-                            <br />Laptop, PC, Gaming Gear – Hiệu suất cao, phục vụ học tập, làm việc và giải trí.
-                            <br />Điện thoại, Tablet, Phụ kiện – Chính hãng, đa dạng mẫu mã.
-                            <br />Thiết bị thông minh – Loa Bluetooth, Smartwatch, Camera giám sát...
+                        {t('chungtoi')}
+                            <br />{t('sanPham1')}
+                            <br />{t('sanPham2')}
+                            <br />{t('sanPham3')}
                         </p>
                     </div>
                     <FontAwesomeIcon icon={faShoppingCart} className="ms-3 text-primary" size="3x" />
@@ -94,10 +95,10 @@ function About() {
                     <FontAwesomeIcon icon={faQuestionCircle} className="me-3 text-danger" size="3x" />
                     <div className="flex-grow-1">
                         <p className="mb-0">
-                            Sản phẩm chính hãng – Cam kết 100% sản phẩm có nguồn gốc rõ ràng.
-                            <br />Giá cả cạnh tranh – Mang lại mức giá hợp lý với nhiều ưu đãi hấp dẫn.
-                            <br />Bảo hành & Hỗ trợ tận tâm – Chính sách bảo hành minh bạch, hỗ trợ kỹ thuật 24/7.
-                            <br />Giao hàng nhanh chóng – Ship toàn quốc, nhận hàng nhanh chỉ trong 24-48h.
+                        {t('sanPhamChungToi')}
+                            <br />{t('chungToiLuonNoLuc')}
+                            <br />{t('tapTrungVao')}
+                            <br />{t('voiDichVu')}
                         </p>
                     </div>
                 </div>
@@ -110,10 +111,10 @@ function About() {
                 >
                     <div className="flex-grow-1">
                         <p className="mb-0">
-                            Sản phẩm chính hãng – Cam kết 100% sản phẩm có nguồn gốc rõ ràng.
-                            <br />Giá cả cạnh tranh – Mang lại mức giá hợp lý với nhiều ưu đãi hấp dẫn.
-                            <br />Bảo hành & Hỗ trợ tận tâm – Chính sách bảo hành minh bạch, hỗ trợ kỹ thuật 24/7.
-                            <br />Giao hàng nhanh chóng – Ship toàn quốc, nhận hàng nhanh chỉ trong 24-48h.
+                        {t('sanPhamChinhHang')}
+                            <br />{t('giaCanhTranh')}
+                            <br />{t('baoHanh')}
+                            <br />{t('giaoHangNhanhChong')}
                         </p>
                     </div>
                     <FontAwesomeIcon icon={faPhone} className="ms-3 text-success" size="3x" />

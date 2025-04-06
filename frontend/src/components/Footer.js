@@ -4,15 +4,18 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFacebook, faInstagram, faTwitter } from "@fortawesome/free-brands-svg-icons";
 import { faCcVisa, faCcPaypal, faCcApplePay, faGooglePay } from "@fortawesome/free-brands-svg-icons";
 
+import { useLanguage } from "../context/LanguageContext"; // Import useLanguage hook
+
 
 function Footer() {
+    const { t } = useLanguage(); // Sử dụng hook useLanguage
     return (
         <footer className="footer">
             <div className="container">
                 {/* Cột bên trái */}
                 <div className="footer-left">
-                    <h2>Web Bán Đồ Điện Tử</h2>
-                    <p>Cung cấp sản phẩm công nghệ chất lượng, chính hãng, giá tốt nhất thị trường.</p>
+                    <h2>{t('webBanDoDienTu')}</h2>
+                    <p>{t('cungCap')}</p>
                     <div className="social-icons">
                         <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">
                             <FontAwesomeIcon icon={faFacebook} />
@@ -28,48 +31,48 @@ function Footer() {
 
                 {/* Cột thông tin */}
                 <div className="footer-column">
-                    <h4>Company</h4>
+                    <h4>{t('congTy')}</h4>
                     <ul>
-                        <li><a href="#">About</a></li>
-                        <li><a href="#">Features</a></li>
-                        <li><a href="#">Works</a></li>
-                        <li><a href="#">Career</a></li>
+                        <li><a href="#">{t('gioiThieu')}</a></li>
+                        <li><a href="#">{t('dacTrung')}</a></li>
+                        <li><a href="#">{t('baiViet')}</a></li>
+                        <li><a href="#">{t('suNghiep')}</a></li>
                     </ul>
                 </div>
 
                 <div className="footer-column">
-                    <h4>Help</h4>
+                    <h4>{t('chinhSach')}</h4>
                     <ul>
-                        <li><a href="#">Customer Support</a></li>
-                        <li><a href="#">Delivery Details</a></li>
-                        <li><a href="#">Terms & Conditions</a></li>
-                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">{t('hoTroKhachHang')}</a></li>
+                        <li><a href="#">{t('chiTietGiaoHang')}</a></li>
+                        <li><a href="#">{t('dieuKhoanDieuKien')}</a></li>
+                        <li><a href="#">{t('chinhSachBM')}</a></li>
                     </ul>
                 </div>
 
                 <div className="footer-column">
-                    <h4>FAQ</h4>
+                    <h4>{t('cauHoi')}</h4>
                     <ul>
-                        <li><a href="#">Account</a></li>
-                        <li><a href="#">Manage Deliveries</a></li>
-                        <li><a href="#">Orders</a></li>
-                        <li><a href="#">Payments</a></li>
+                        <li><a href="#">{t('taiKhoan')}</a></li>
+                        <li><a href="#">{t('quanLyGiaoHang')}</a></li>
+                        <li><a href="#">{t('datHang')}</a></li>
+                        <li><a href="#">{t('thanhToan')}</a></li>
                     </ul>
                 </div>
 
                 <div className="footer-column">
-                    <h4>Resources</h4>
+                    <h4>{t('taiNguyen')}</h4>
                     <ul>
-                        <li><a href="#">Free eBooks</a></li>
-                        <li><a href="#">Development Tutorial</a></li>
-                        <li><a href="#">How to - Blog</a></li>
-                        <li><a href="#">Youtube Playlist</a></li>
+                        <li><a href="#">{t('sachDienTu')}</a></li>
+                        <li><a href="#">{t('huongDanPhatTrien')}</a></li>
+                        <li><a href="#">{t('cachThucHien')}</a></li>
+                        <li><a href="#">{t('Youtube')}</a></li>
                     </ul>
                 </div>
                 {/* Dòng bản quyền */}
                 <hr className="footer-divider" />
                 <div className="footer-bottom">
-                    <p>&copy; 2025 Web Bán Đồ Điện Tử. All Rights Reserved.</p>
+                    <p>&copy; {t('banQuyen')}</p>
                     <div className="payment-icons">
                         <FontAwesomeIcon icon={faCcVisa} size="2x" />
                         <FontAwesomeIcon icon={faCcPaypal} size="2x" />

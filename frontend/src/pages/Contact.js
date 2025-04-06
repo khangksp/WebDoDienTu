@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeadset, faEnvelope, faBuilding, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 
+import { useLanguage } from "../context/LanguageContext";
+
 
 function Contact() {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     name: '',
     content: '',
@@ -120,7 +123,7 @@ function Contact() {
       <div className="container mt-4">
         {/* Header Section */}
         <div style={styles.headerSection}>
-          <h1 style={styles.headerTitle}>Liên Hệ
+          <h1 style={styles.headerTitle}>{t('lienHe')}
             <div style={styles.headerUnderline}></div>
           </h1>
           <p className="text-muted mt-3">Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn</p>
@@ -214,15 +217,15 @@ function Contact() {
                     <p className="mb-0 mt-2">Nhấn để xem vị trí chi nhánh</p>
                 </div>
                 <div className="mt-3 w-100">
-                    <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d271985.66834347177!2d106.51781072812501!3d10.875364892728241!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3174d1be2495c19d%3A0xafd977d94466ffc2!2zxJDhuqFpIGjhu41jIELDrG5oIETGsMahbmc!5e1!3m2!1svi!2s!4v1743266034308!5m2!1svi!2s" 
-                    width="100%" 
-                    height="250" 
-                    style={{border: 0}} 
-                    allowFullScreen="" 
-                    loading="lazy" 
-                    referrerPolicy="no-referrer-when-downgrade"
-                    ></iframe>
+                <iframe 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d271985.66834347177!2d106.51781072812501!3d10.875364892728241!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3174d1be2495c19d%3A0xafd977d94466ffc2!2zxJDhuqFpIGjhu41jIELDrG5oIETGsMahbmc!5e0!3m2!1svi!2s!4v1743266034308!5m2!1svi!2s" 
+                  width="100%" 
+                  height="250" 
+                  style={{ border: 0 }} 
+                  allowFullScreen="" 
+                  loading="lazy" 
+                  referrerPolicy="no-referrer-when-downgrade"
+                  ></iframe>
                 </div>
                 </div>
             </div>
