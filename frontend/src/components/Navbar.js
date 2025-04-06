@@ -10,15 +10,20 @@ import {
   faMobileAlt, 
   faEnvelope, 
   faLock,
-  faClock
+  faClock,
+  faGlobe // Thêm icon globe
 } from "@fortawesome/free-solid-svg-icons";
 import { faFacebookF, faGoogle } from "@fortawesome/free-brands-svg-icons";
+import { useLanguage } from "../context/LanguageContext"; // Import useLanguage hook
+import LanguageSwitcher from "./LanguageSwitcher"; // Import LanguageSwitcher component
 
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Navbar.css";
 
 function Navbar() {
+  const { t } = useLanguage(); // Sử dụng hook useLanguage
+  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [isToggled, setIsToggled] = useState(false);
@@ -335,36 +340,38 @@ function Navbar() {
                 <span className="input-group-text">
                   <FontAwesomeIcon icon={faSearch} />
                 </span>
-                <input type="text" className="form-control" placeholder="Tìm kiếm sản phẩm ...." />
+                <input type="text" className="form-control" placeholder={t('timKiem')} />
               </div>
             </div>
 
             {/* Menu chính */}
             <div className="navbar-nav mx-auto position-relative">
               <Link className={`nav-link ${location.pathname === "/" ? "active" : ""}`} to="/">
-                Trang chủ
+                {t('trangChu')}
               </Link>
               <Link className={`nav-link ${location.pathname === "/about" ? "active" : ""}`} to="/about">
-                Giới thiệu
+                {t('gioiThieu')}
               </Link>
               <Link className={`nav-link ${location.pathname === "/products" ? "active" : ""}`} to="/products">
-                Sản phẩm
+                {t('sanPham')}
               </Link>
               <Link className={`nav-link ${location.pathname === "/contact" ? "active" : ""}`} to="/contact">
-                Liên hệ
+                {t('lienHe')}
               </Link>
               <div className="indicator" style={indicatorStyle}></div>
             </div>
 
-            {/* Icon User + Cart khi màn hình nhỏ */}
-            <div className="d-lg-none d-flex justify-content-end">
+            {/* Icon User + Cart + Language khi màn hình nhỏ */}
+            <div className="d-lg-none d-flex justify-content-end align-items-center">
+              <LanguageSwitcher /> {/* Thêm language switcher */}
+              
               <a className="nav-link me-3" href="#" onClick={handleAccountClick}>
                 <FontAwesomeIcon icon={faUser} className="nav-icon d-inline d-lg-none" />
-                <span className="d-none d-lg-inline ms-1">Tài khoản</span>
+                <span className="d-none d-lg-inline ms-1">{t('taiKhoan')}</span>
               </a>
               <Link className="nav-link" to="/cart">
                 <FontAwesomeIcon icon={faCartShopping} className="nav-icon d-inline d-lg-none" />
-                <span className="d-none d-lg-inline ms-1">Giỏ hàng</span>
+                <span className="d-none d-lg-inline ms-1">{t('gioHang')}</span>
               </Link>
             </div>
           </div>
@@ -375,17 +382,20 @@ function Navbar() {
               <span className="input-group-text">
                 <FontAwesomeIcon icon={faSearch} />
               </span>
-              <input type="text" className="form-control" placeholder="Tìm kiếm sản phẩm ...." />
+              <input type="text" className="form-control" placeholder={t('timKiem')} />
             </div>
 
+            {/* Thêm Language Switcher trước User và Cart */}
+            <LanguageSwitcher />
+
             <a className="nav-link ms-3 d-flex align-items-center" href="#" onClick={handleAccountClick}>
-              <FontAwesomeIcon icon={faUser} className="nav-icon me-3"/>
-              <span>Tài khoản</span>
+              <FontAwesomeIcon icon={faUser} className="nav-icon me-1"/>
+              <span>{t('taiKhoan')}</span>
             </a>
 
             <Link className="nav-link ms-3 d-flex align-items-center" to="/cart">
               <FontAwesomeIcon icon={faCartShopping} className="nav-icon me-1" />
-              <span>Giỏ hàng</span>
+              <span>{t('gioHang')}</span>
             </Link>
           </div>
         </div>
@@ -396,8 +406,8 @@ function Navbar() {
         <div className="login-modal-overlay">
           <div className="login-modal modal-animation" ref={modalRef}>
             <div className="login-modal-header">
-              <h4>Xin chào,</h4>
-              <p>Đăng nhập hoặc Tạo tài khoản</p>
+              <h4>{t('xinChao')}</h4>
+              <p>{t('dangNhapHoacTaoTaiKhoan')}</p>
               <button className="close-button" onClick={() => setShowLoginModal(false)}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
@@ -408,24 +418,24 @@ function Navbar() {
                   <FontAwesomeIcon icon={faMobileAlt} className="input-icon" />
                   <input 
                     type="text" 
-                    placeholder="Số điện thoại" 
+                    placeholder={t('soDienThoai')}
                     className="form-control" 
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-danger w-100">Tiếp Tục</button>
+                <button type="submit" className="btn btn-danger w-100">{t('tiepTuc')}</button>
               </form>
               <div className="text-center mt-3">
                 <a href="#" className="text-decoration-none" onClick={(e) => {
                   e.preventDefault();
                   openEmailLogin();
-                }}>Đăng nhập bằng email</a>
+                }}>{t('dangNhapBangEmail')}</a>
               </div>
               
               <div className="alternative-login mt-4">
-                <p className="text-center">Hoặc tiếp tục bằng</p>
+                <p className="text-center">{t('hoacTiepTucBang')}</p>
                 <div className="social-buttons d-flex justify-content-center">
                   <button className="btn btn-outline-secondary me-2 facebook-btn">
                     <FontAwesomeIcon icon={faFacebookF} />
@@ -436,8 +446,8 @@ function Navbar() {
                 </div>
               </div>
               <div className="terms mt-4 text-center small">
-                <p>Bằng việc tiếp tục, bạn đã đọc và đồng ý với <br />
-                <a href="#">điều khoản sử dụng</a> và <a href="#">Chính sách bảo mật thông tin cá nhân</a></p>
+                <p>{t('dieuKhoan')} <br />
+                <a href="#">{t('dieuKhoanSuDung')}</a> {t('va')} <a href="#">{t('chinhSachBaoMat')}</a></p>
               </div>
             </div>
           </div>
@@ -452,8 +462,8 @@ function Navbar() {
               <button className="back-button" onClick={goBackToPhoneLogin}>
                 <FontAwesomeIcon icon={faArrowLeft} />
               </button>
-              <h4>Nhập mật khẩu</h4>
-              <p>Vui lòng nhập mật khẩu cho số điện thoại {phoneNumber}</p>
+              <h4>{t('nhapMatKhau')}</h4>
+              <p>{t('vuiLongNhapMatKhau')} {phoneNumber}</p>
               <button className="close-button" onClick={() => setShowPasswordModal(false)}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
@@ -464,27 +474,27 @@ function Navbar() {
                   <FontAwesomeIcon icon={faLock} className="input-icon" />
                   <input 
                     type="password" 
-                    placeholder="Mật khẩu" 
+                    placeholder={t('matKhau')}
                     className="form-control" 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-danger w-100">Đăng Nhập</button>
+                <button type="submit" className="btn btn-danger w-100">{t('dangNhap')}</button>
               </form>
               <div className="text-center mt-3">
                 <a href="#" className="text-decoration-none" onClick={(e) => {
                   e.preventDefault();
                   openForgotPassword();
-                }}>Quên mật khẩu?</a>
+                }}>{t('quenMatKhau')}</a>
               </div>
               
               <div className="text-center mt-4">
                 <a href="#" className="text-decoration-none" onClick={(e) => {
                   e.preventDefault();
                   openSmsLogin();
-                }}>Đăng nhập bằng SMS</a>
+                }}>{t('dangNhapBangSMS')}</a>
               </div>
             </div>
           </div>
@@ -499,8 +509,8 @@ function Navbar() {
               <button className="back-button" onClick={goBackToPhoneLogin}>
                 <FontAwesomeIcon icon={faArrowLeft} />
               </button>
-              <h4>Đăng nhập bằng email</h4>
-              <p>Vui lòng nhập email và mật khẩu</p>
+              <h4>{t('dangNhapBangEmail')}</h4>
+              <p>{t('vuiLongNhapEmailVaMatKhau')}</p>
               <button className="close-button" onClick={() => setShowEmailLoginModal(false)}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
@@ -511,7 +521,7 @@ function Navbar() {
                   <FontAwesomeIcon icon={faEnvelope} className="input-icon" />
                   <input 
                     type="email" 
-                    placeholder="Email" 
+                    placeholder={t('email')}
                     className="form-control" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -522,24 +532,24 @@ function Navbar() {
                   <FontAwesomeIcon icon={faLock} className="input-icon" />
                   <input 
                     type="password" 
-                    placeholder="Mật khẩu" 
+                    placeholder={t('matKhau')}
                     className="form-control" 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-danger w-100">Đăng Nhập</button>
+                <button type="submit" className="btn btn-danger w-100">{t('dangNhap')}</button>
               </form>
               <div className="text-center mt-3">
                 <a href="#" className="text-decoration-none" onClick={(e) => {
                   e.preventDefault();
                   openForgotPassword();
-                }}>Quên mật khẩu?</a>
+                }}>{t('quenMatKhau')}</a>
               </div>
             
               <div className="alternative-login mt-4">
-                <p className="text-center">Hoặc tiếp tục bằng</p>
+                <p className="text-center">{t('hoacTiepTucBang')}</p>
                 <div className="social-buttons d-flex justify-content-center">
                   <button className="btn btn-outline-secondary me-2 facebook-btn">
                     <FontAwesomeIcon icon={faFacebookF} />
@@ -562,8 +572,8 @@ function Navbar() {
               <button className="back-button" onClick={goBackToPhoneLogin}>
                 <FontAwesomeIcon icon={faArrowLeft} />
               </button>
-              <h4>Quên mật khẩu?</h4>
-              <p>Vui lòng nhập thông tin tài khoản để lấy lại mật khẩu</p>
+              <h4>{t('quenMatKhau')}</h4>
+              <p>{t('vuiLongNhapThongTin')}</p>
               <button className="close-button" onClick={() => setShowForgotPasswordModal(false)}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
@@ -574,7 +584,7 @@ function Navbar() {
                   <FontAwesomeIcon icon={faMobileAlt} className="input-icon" />
                   <input 
                     type="text" 
-                    placeholder="Số điện thoại/ Email" 
+                    placeholder={t('soDienThoaiEmail')}
                     className="form-control" 
                     value={phoneNumber || email}
                     onChange={(e) => {
@@ -590,11 +600,11 @@ function Navbar() {
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-danger w-100">Lấy lại mật khẩu</button>
+                <button type="submit" className="btn btn-danger w-100">{t('layLaiMatKhau')}</button>
               </form>
               
               <div className="text-center mt-4">
-                <p>Đổi số điện thoại? <a href="#" className="text-decoration-none">Liên hệ Hotline 1900-6035</a></p>
+                <p>{t('doiSoDienThoai')} <a href="#" className="text-decoration-none">{t('lienHeHotline')}</a></p>
               </div>
             </div>
           </div>
@@ -612,8 +622,8 @@ function Navbar() {
               }}>
                 <FontAwesomeIcon icon={faArrowLeft} />
               </button>
-              <h4>Đăng nhập bằng SMS</h4>
-              <p>Vui lòng nhập số điện thoại để nhận mã xác minh</p>
+              <h4>{t('dangNhapBangSMS')}</h4>
+              <p>{t('vuiLongNhapSDTNhanMa')}</p>
               <button className="close-button" onClick={() => setShowSmsLoginModal(false)}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
@@ -624,14 +634,14 @@ function Navbar() {
                   <FontAwesomeIcon icon={faMobileAlt} className="input-icon" />
                   <input 
                     type="text" 
-                    placeholder="Số điện thoại" 
+                    placeholder={t('soDienThoai')}
                     className="form-control" 
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-danger w-100">Tiếp tục</button>
+                <button type="submit" className="btn btn-danger w-100">{t('tiepTuc')}</button>
               </form>
             </div>
           </div>
@@ -649,8 +659,8 @@ function Navbar() {
               }}>
                 <FontAwesomeIcon icon={faArrowLeft} />
               </button>
-              <h4>Nhập mã xác minh</h4>
-              <p>Số điện thoại {phoneNumber} đã có tài khoản. Vui lòng xác thực để đăng nhập</p>
+              <h4>{t('nhapMaXacMinh')}</h4>
+              <p>{t('soDienThoaiDaCoTaiKhoan')} {phoneNumber} {t('daCoTaiKhoan')}</p>
               <button className="close-button" onClick={() => setShowVerificationModal(false)}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
@@ -672,14 +682,14 @@ function Navbar() {
                     />
                   ))}
                 </div>
-                <button type="submit" className="btn btn-danger w-100 mt-3">Xác Minh</button>
+                <button type="submit" className="btn btn-danger w-100 mt-3">{t('xacMinh')}</button>
               </form>
               
               <div className="text-center mt-3 resend-code">
                 <div className="d-flex align-items-center justify-content-center">
                   <FontAwesomeIcon icon={faClock} className="me-2" />
                   {isCountingDown ? (
-                    <span>Gửi lại mã sau {countdown}s</span>
+                    <span>{t('guiLaiMaSau')} {countdown}s</span>
                   ) : (
                     <a
                       href="#"
@@ -689,11 +699,11 @@ function Navbar() {
                         handleResendCode();
                       }}
                     >
-                      Gửi lại mã
+                      {t('guiLaiMa')}
                     </a>
                   )}
                 </div>
-                <p className="mt-2 small">Mã xác minh có hiệu lực trong 15 phút</p>
+                <p className="mt-2 small">{t('maXacMinhHieuLuc')}</p>
               </div>
             </div>
           </div>
