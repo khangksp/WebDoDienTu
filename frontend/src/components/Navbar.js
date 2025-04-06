@@ -332,8 +332,9 @@ function Navbar() {
           </button>
 
           {/* Navbar items */}
+          {/* Navbar items */}
           <div className={`collapse navbar-collapse ${isToggled ? "show" : ""}`} id="navbarNav">
-            
+
             {/* Thanh tìm kiếm khi thu nhỏ màn hình */}
             <div className="d-lg-none mb-3">
               <div className="input-group">
@@ -362,17 +363,19 @@ function Navbar() {
             </div>
 
             {/* Icon User + Cart + Language khi màn hình nhỏ */}
-            <div className="d-lg-none d-flex justify-content-end align-items-center">
+            <div className="d-lg-none d-flex justify-content-between align-items-center">
               <LanguageSwitcher /> {/* Thêm language switcher */}
               
-              <a className="nav-link me-3" href="#" onClick={handleAccountClick}>
-                <FontAwesomeIcon icon={faUser} className="nav-icon d-inline d-lg-none" />
-                <span className="d-none d-lg-inline ms-1">{t('taiKhoan')}</span>
-              </a>
-              <Link className="nav-link" to="/cart">
-                <FontAwesomeIcon icon={faCartShopping} className="nav-icon d-inline d-lg-none" />
-                <span className="d-none d-lg-inline ms-1">{t('gioHang')}</span>
-              </Link>
+              <div className="d-flex">
+                <a className="nav-link me-3" href="#" onClick={handleAccountClick}>
+                  <FontAwesomeIcon icon={faUser} className="nav-icon d-inline d-lg-none" />
+                  <span className="d-none d-lg-inline ms-1">{t('taiKhoan')}</span>
+                </a>
+                <Link className="nav-link" to="/cart">
+                  <FontAwesomeIcon icon={faCartShopping} className="nav-icon d-inline d-lg-none" />
+                  <span className="d-none d-lg-inline ms-1">{t('gioHang')}</span>
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -385,7 +388,7 @@ function Navbar() {
               <input type="text" className="form-control" placeholder={t('timKiem')} />
             </div>
 
-            {/* Bao LanguageSwitcher và các nút khác trong một container cố định */}
+            {/* Navbar actions container cho desktop */}
             <div className="navbar-actions-container">
               <LanguageSwitcher />
 

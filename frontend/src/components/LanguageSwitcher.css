@@ -18,6 +18,8 @@
   cursor: pointer;
   transition: all 0.2s;
   min-width: 60px; /* Chiều rộng tối thiểu */
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .lang-btn:hover {
@@ -40,17 +42,73 @@
   font-size: 14px;
 }
 
+.lang-btn:active,
+.lang-btn:focus {
+  background-color: transparent !important;
+  color: #333 !important;
+  border-color: #e0e0e0 !important;
+  box-shadow: none !important;
+}
+
+/* Thay đổi hiệu ứng khi click */
+.lang-btn:active {
+  transform: scale(0.98);
+}
+
+
 /* Responsive styles */
 @media (max-width: 991.98px) {
-  .language-switcher {
-    margin-right: 8px;
+  /* Container cho các action trên mobile */
+  .d-lg-none.d-flex.justify-content-between {
+    padding: 10px 0;
+    border-top: 1px solid #eee;
+    margin-top: 10px;
   }
   
-  .lang-btn {
-    min-width: 50px;
+  /* Điều chỉnh nút language switcher trên mobile */
+  .d-lg-none .language-switcher .lang-btn {
+    border: 1px solid #e0e0e0;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
   }
   
-  .lang-container {
-    width: 20px;
+  /* Hiển thị nhãn đầy đủ trên mobile nếu muốn */
+  .d-lg-none .language-switcher .lang-text:before {
+    content: ""; /* Bạn có thể thêm text như "Ngôn ngữ: " ở đây */
+  }
+  
+  /* Giảm kích thước icon trên mobile */
+  .d-lg-none .language-switcher .lang-icon {
+    font-size: 12px;
+  }
+}
+
+/* Tùy chỉnh cách hiển thị toggler button */
+@media (max-width: 991.98px) {
+  /* Thêm margin để tạo khoảng cách */
+  .navbar-toggler {
+    margin-right: 10px;
+  }
+  
+  /* Đảm bảo nút toggler nằm gọn trong container */
+  .navbar > .container {
+    flex-wrap: nowrap;
+  }
+  
+  /* Đảm bảo logo không bị dịch chuyển khi toggler xuất hiện */
+  .navbar-brand {
+    flex: 0 0 auto;
+  }
+}
+
+/* Đảm bảo hiển thị đúng kích thước cho thanh tìm kiếm trên mobile */
+@media (max-width: 991.98px) {
+  .d-lg-none .input-group {
+    margin-bottom: 15px;
+  }
+  
+  .d-lg-none .form-control {
+    height: 40px;
   }
 }
