@@ -32,7 +32,7 @@ function HomePage() {
 
   // Fetch danh mục sản phẩm
   useEffect(() => {
-    axios.get("http://localhost:8002/api/products/categories/")
+    axios.get("http://localhost:8000/api/products/categories/")
       .then(response => {
         setCategories(response.data);
       })
@@ -44,7 +44,7 @@ function HomePage() {
   // Fetch sản phẩm
   useEffect(() => {
     setLoading(true);
-    axios.get("http://localhost:8002/api/products/products/")
+    axios.get("http://localhost:8000/api/products/products/")
       .then(response => {
         console.log("Dữ liệu API:", response.data);
         setProducts(response.data);

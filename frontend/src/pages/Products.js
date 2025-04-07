@@ -32,7 +32,7 @@ const Products = () => {
 
     // Fetch danh mục sản phẩm
     useEffect(() => {
-        axios.get(`${API_URL}:8002/api/products/categories/`)
+        axios.get(`${API_URL}:8000/api/products/categories/`)
             .then(response => {
                 setCategories(response.data);
             })
@@ -43,7 +43,7 @@ const Products = () => {
 
     // Fetch sản phẩm
     useEffect(() => {
-        let url = `${API_URL}:8002/api/products/products/`;
+        let url = `${API_URL}:8000/api/products/products/`;
         
         // Nếu có category được chọn, thêm filter
         if (selectedCategory) {
@@ -90,13 +90,23 @@ const Products = () => {
 
     return (
         <div className="container mt-4">
-            <h1 className="text-center mb-4" data-aos="fade-down">{t('dsSanPham')}</h1>
+            <h1 
+                className="text-center mb-4 mt-auto" 
+                style={{ 
+                    marginTop: '100px', 
+                    paddingTop: '75px', 
+                    fontWeight: '700',
+                    color: '#2c3e50',
+                }}
+            >
+                {t('dsSanPham')}
+            </h1>
             
             {/* Danh mục sản phẩm */}
             <div className="mb-4" data-aos="fade-up">
                 <div className="d-flex align-items-center mb-2">
                     <FontAwesomeIcon icon={faFilter} className="me-2" />
-                    <h5 className="mb-0">{t('dmSanPham')}</h5>
+                    <h1 className="mb-0">{t('dmSanPham')}</h1>
                 </div>
                 <div className="d-flex flex-wrap gap-2">
                     <button 

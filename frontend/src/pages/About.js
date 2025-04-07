@@ -26,7 +26,9 @@ function About() {
         headerSection: {
           position: 'relative',
           marginBottom: '60px',
-          textAlign: 'center'
+          textAlign: 'center',
+          paddingTop: '20px'
+
         },
         headerTitle: {
           fontWeight: '700',

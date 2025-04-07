@@ -31,36 +31,3 @@ code {
 ::-webkit-scrollbar-thumb:hover {
     background-color: #555;
 }
-
-
-button {
-  -webkit-tap-highlight-color: transparent;
-  outline: none !important;
-}
-
-button:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Loại bỏ hiệu ứng highlight trên các thiết bị di động khi tap */
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Khi sử dụng cùng Bootstrap, đây là một số override hữu ích */
-.btn:focus, 
-.btn:active,
-.btn:active:focus {
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-/* Đặc biệt cho Safari trên iOS */
-input[type="button"],
-input[type="submit"],
-input[type="reset"],
-input[type="file"]::-webkit-file-upload-button,
-button {
-  -webkit-appearance: none;
-}

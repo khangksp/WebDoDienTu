@@ -44,6 +44,7 @@ function Contact() {
     },
     headerSection: {
       position: 'relative',
+      paddingTop: '43px',
       marginBottom: '60px',
       textAlign: 'center'
     },
@@ -126,6 +127,7 @@ function Contact() {
           <h1 style={styles.headerTitle}>{t('lienHe')}
             <div style={styles.headerUnderline}></div>
           </h1>
+          
           <p className="text-muted mt-3">{t('langNgheHoTro')}</p>
         </div>
         
