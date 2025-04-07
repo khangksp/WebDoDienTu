@@ -139,3 +139,5 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Ensure media directories exist
 PRODUCT_IMAGES_DIR = os.path.join(MEDIA_ROOT, 'products')
 os.makedirs(PRODUCT_IMAGES_DIR, exist_ok=True)
+
+API_GATEWAY_URL = os.environ.get('API_GATEWAY_URL', 'http://localhost:8000')

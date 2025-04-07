@@ -42,11 +42,11 @@ function Detail() {
     const fetchProductData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:8002/api/products/products/${productId}/`);
+        const response = await axios.get(`http://localhost:8000/api/products/products/${productId}/`);
         setProduct(response.data);
         
         // Sau khi lấy sản phẩm, lấy danh sách sản phẩm khác để hiển thị trong phần liên quan
-        const allProductsResponse = await axios.get(`http://localhost:8002/api/products/products/`);
+        const allProductsResponse = await axios.get(`http://localhost:8000/api/products/products/`);
         
         // Lọc sản phẩm liên quan (cùng danh mục nhưng khác ID)
         const related = allProductsResponse.data.filter(p => 

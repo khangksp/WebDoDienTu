@@ -85,6 +85,7 @@ services:
       - DB_PORT=3306
       - SECRET_KEY=django-insecure-product-service-key
       - DEBUG=True
+      - API_GATEWAY_URL=http://localhost:8000
     networks:
       - microservice_network
     command: >

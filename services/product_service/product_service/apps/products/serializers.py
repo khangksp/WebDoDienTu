@@ -1,5 +1,9 @@
 from rest_framework import serializers
+from django.conf import settings
 from .models import Category, Product, HangSanXuat, ThongSo, KhuyenMai
+
+# Thêm cấu hình API Gateway URL (có thể đặt trong settings.py)
+API_GATEWAY_URL = getattr(settings, 'API_GATEWAY_URL', 'http://localhost:8000')
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -45,13 +49,13 @@ class ProductSerializer(serializers.ModelSerializer):
     
     def get_image_url(self, obj):
         """
-        Trả về URL đầy đủ của hình ảnh nếu có
+        Trả về URL đầy đủ của hình ảnh thông qua API Gateway
         """
         if obj.image:
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.image.url)
-            return obj.image.url
+            # Lấy tên file từ đường dẫn đầy đủ
+            image_filename = obj.image.name.split('/')[-1]
+            # Trả về URL thông qua API Gateway
+            return f"{API_GATEWAY_URL}/media/products/{image_filename}"
         return None
     
     def validate_image(self, value):
