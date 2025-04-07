@@ -29,7 +29,7 @@ services:
     container_name: api_gateway
     restart: always
     volumes:
-      - ./api_gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./api_gateway/nginx.conf:/etc/nginx/conf.d/default.conf
     ports:
       - "8000:8000"  # Main port that external clients will use
     depends_on:

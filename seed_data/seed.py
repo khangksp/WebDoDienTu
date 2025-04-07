@@ -7,17 +7,17 @@ from faker import Faker
 # Initialize Faker
 fake = Faker()
 
-# Service URLs
-AUTH_SERVICE_URL = os.environ.get('AUTH_SERVICE_URL', 'http://auth_service:8000')
-PRODUCT_SERVICE_URL = os.environ.get('PRODUCT_SERVICE_URL', 'http://product_service:8000')
-ORDER_SERVICE_URL = os.environ.get('ORDER_SERVICE_URL', 'http://order_service:8000')
+# Service URLs (gọi qua api_gateway)
+AUTH_SERVICE_URL = os.environ.get('AUTH_SERVICE_URL', 'http://api_gateway:8000/api/auth')
+PRODUCT_SERVICE_URL = os.environ.get('PRODUCT_SERVICE_URL', 'http://api_gateway:8000/api/products')
+ORDER_SERVICE_URL = os.environ.get('ORDER_SERVICE_URL', 'http://api_gateway:8000/api/orders')
 
 # Wait for services to be ready
 def wait_for_services():
     services = [
-        ('Auth Service', f"{AUTH_SERVICE_URL}/api/auth/users/"),
-        ('Product Service', f"{PRODUCT_SERVICE_URL}/api/products/"),
-        ('Order Service', f"{ORDER_SERVICE_URL}/api/orders/")
+        ('Auth Service', f"{AUTH_SERVICE_URL}/users/"),
+        ('Product Service', f"{PRODUCT_SERVICE_URL}/"),
+        ('Order Service', f"{ORDER_SERVICE_URL}/")
     ]
     
     for service_name, url in services:
@@ -25,20 +25,20 @@ def wait_for_services():
         retry_count = 0
         max_retries = 30
         
-        print(f"Waiting for {service_name} to be ready...")
+        print(f"Waiting for {service_name} to be ready at {url}...")
         
         while not ready and retry_count < max_retries:
             try:
-                response = requests.get(url)
-                if response.status_code in [200, 401, 403, 404]:
+                response = requests.get(url, timeout=5)
+                if response.status_code == 200:
                     ready = True
                     print(f"{service_name} is ready!")
                 else:
                     print(f"{service_name} returned status code {response.status_code}, retrying...")
                     retry_count += 1
                     time.sleep(1)
-            except requests.RequestException:
-                print(f"Cannot connect to {service_name}, retrying...")
+            except requests.RequestException as e:
+                print(f"Cannot connect to {service_name}: {str(e)}, retrying...")
                 retry_count += 1
                 time.sleep(1)
         
@@ -60,24 +60,25 @@ def create_users(count=5):
         }
         
         try:
-            response = requests.post(f"{AUTH_SERVICE_URL}/api/auth/users/", json=user_data)
+            response = requests.post(f"{AUTH_SERVICE_URL}/users/", json=user_data, timeout=5)
             if response.status_code == 201:
                 user = response.json()['user']
                 print(f"Created user: {user['email']}")
                 
                 # Login to get token
                 login_response = requests.post(
-                    f"{AUTH_SERVICE_URL}/api/auth/users/login/",
-                    json={'email': user_data['email'], 'password': user_data['password']}
+                    f"{AUTH_SERVICE_URL}/users/login/",
+                    json={'email': user_data['email'], 'password': user_data['password']},
+                    timeout=5
                 )
                 
                 if login_response.status_code == 200:
                     user['token'] = login_response.json()['token']
                     users.append(user)
                 else:
-                    print(f"Failed to login user {user['email']}: {login_response.text}")
+                    print(f"Failed to login user {user['email']}: {login_response.status_code} - {login_response.text}")
             else:
-                print(f"Failed to create user: {response.text}")
+                print(f"Failed to create user: {response.status_code} - {response.text}")
         except requests.RequestException as e:
             print(f"Error creating user: {str(e)}")
     
@@ -97,13 +98,13 @@ def create_categories():
     
     for category_data in categories:
         try:
-            response = requests.post(f"{PRODUCT_SERVICE_URL}/api/products/categories/", json=category_data)
+            response = requests.post(f"{PRODUCT_SERVICE_URL}/categories/", json=category_data, timeout=5)
             if response.status_code == 201:
                 category = response.json()
                 print(f"Created category: {category['name']}")
                 created_categories.append(category)
             else:
-                print(f"Failed to create category: {response.text}")
+                print(f"Failed to create category: {response.status_code} - {response.text}")
         except requests.RequestException as e:
             print(f"Error creating category: {str(e)}")
     
@@ -125,13 +126,13 @@ def create_products(categories, count_per_category=5):
             }
             
             try:
-                response = requests.post(f"{PRODUCT_SERVICE_URL}/api/products/", json=product_data)
+                response = requests.post(f"{PRODUCT_SERVICE_URL}/", json=product_data, timeout=5)
                 if response.status_code == 201:
                     product = response.json()
                     print(f"Created product: {product['name']}")
                     products.append(product)
                 else:
-                    print(f"Failed to create product: {response.text}")
+                    print(f"Failed to create product: {response.status_code} - {response.text}")
             except requests.RequestException as e:
                 print(f"Error creating product: {str(e)}")
     
@@ -159,9 +160,10 @@ def create_orders(users, products, count_per_user=2):
             
             try:
                 response = requests.post(
-                    f"{ORDER_SERVICE_URL}/api/orders/",
+                    f"{ORDER_SERVICE_URL}/",
                     json=order_data,
-                    headers={'Authorization': f"Bearer {user['token']}"}
+                    headers={'Authorization': f"Bearer {user['token']}"},
+                    timeout=5
                 )
                 
                 if response.status_code == 201:
@@ -174,15 +176,18 @@ def create_orders(users, products, count_per_user=2):
                         new_status = random.choice(status_options)
                         
                         status_response = requests.post(
-                            f"{ORDER_SERVICE_URL}/api/orders/{order['id']}/update_status/",
+                            f"{ORDER_SERVICE_URL}/{order['id']}/update_status/",
                             json={'status': new_status},
-                            headers={'Authorization': f"Bearer {user['token']}"}
+                            headers={'Authorization': f"Bearer {user['token']}"},
+                            timeout=5
                         )
                         
                         if status_response.status_code == 200:
                             print(f"Updated order #{order['id']} status to {new_status}")
+                        else:
+                            print(f"Failed to update order status: {status_response.status_code} - {status_response.text}")
                 else:
-                    print(f"Failed to create order: {response.text}")
+                    print(f"Failed to create order: {response.status_code} - {response.text}")
             except requests.RequestException as e:
                 print(f"Error creating order: {str(e)}")
 
@@ -195,14 +200,23 @@ def main():
     # Create users
     print("\n=== Creating Users ===")
     users = create_users(count=5)
+    if not users:
+        print("No users created. Exiting.")
+        exit(1)
     
     # Create categories
     print("\n=== Creating Categories ===")
     categories = create_categories()
+    if not categories:
+        print("No categories created. Exiting.")
+        exit(1)
     
     # Create products
     print("\n=== Creating Products ===")
     products = create_products(categories, count_per_category=5)
+    if not products:
+        print("No products created. Exiting.")
+        exit(1)
     
     # Create orders
     print("\n=== Creating Orders ===")

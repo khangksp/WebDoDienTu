@@ -1,329 +1,312 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { 
-  faCartShopping, 
-  faUser, 
-  faSearch, 
-  faTimes, 
-  faArrowLeft, 
-  faMobileAlt, 
-  faEnvelope, 
+import {
+  faCartShopping,
+  faUser,
+  faSearch,
+  faTimes,
+  faArrowLeft,
+  faMobileAlt,
+  faEnvelope,
   faLock,
   faClock,
-  faGlobe // Thêm icon globe
 } from "@fortawesome/free-solid-svg-icons";
 import { faFacebookF, faGoogle } from "@fortawesome/free-brands-svg-icons";
-import { useLanguage } from "../context/LanguageContext"; // Import useLanguage hook
-import LanguageSwitcher from "./LanguageSwitcher"; // Import LanguageSwitcher component
+import { useLanguage } from "../context/LanguageContext";
+import LanguageSwitcher from "./LanguageSwitcher";
+import axios from "axios";
 
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Navbar.css";
 
 function Navbar() {
-  const { t } = useLanguage(); // Sử dụng hook useLanguage
-  
+  const { t } = useLanguage();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [isToggled, setIsToggled] = useState(false);
   const [indicatorStyle, setIndicatorStyle] = useState({});
-  
+  const [errorMessage, setErrorMessage] = useState("");
+
   // Modal states
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showEmailLoginModal, setShowEmailLoginModal] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const [showSmsLoginModal, setShowSmsLoginModal] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
-  
+
   // Form data states
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [password, setPassword] = useState("");
-  const [email, setEmail] = useState("");
+  const [loginData, setLoginData] = useState({ username: "", password: "" });
+  const [registerData, setRegisterData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [verificationCode, setVerificationCode] = useState(["", "", "", "", "", ""]);
   const [countdown, setCountdown] = useState(30);
   const [isCountingDown, setIsCountingDown] = useState(false);
-  
-  // Refs for all modals
-  const modalRef = useRef(null);
-  const passwordModalRef = useRef(null);
-  const emailLoginModalRef = useRef(null);
-  const forgotPasswordModalRef = useRef(null);
-  const smsLoginModalRef = useRef(null);
-  const verificationModalRef = useRef(null);
-  
-  // Refs for verification inputs
+
+  // Refs
+  const modalRefs = {
+    login: useRef(null),
+    register: useRef(null),
+    forgotPassword: useRef(null),
+    smsLogin: useRef(null),
+    verification: useRef(null),
+  };
   const verificationInputRefs = useRef([]);
-  
+
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 992);
 
+  const API_BASE_URL = "http://localhost:8000/api";
+
+  // Check auth status
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/check-login/", { credentials: "include" })
-      .then((response) => response.json())
-      .then((data) => {
-        setIsAuthenticated(data.isAuthenticated);
-        if (data.isAuthenticated) {
-          setUsername(data.username);
-        }
-      })
-      .catch((error) => console.error("Lỗi API:", error));
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      axios
+        .get(`${API_BASE_URL}/auth/users/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((response) => {
+          setIsAuthenticated(true);
+          const userData = response.data;
+          const usernameField = userData.username || 
+            (Array.isArray(userData.users) && userData.users[0]) || 
+            "User";
+          setUsername(usernameField);
+        })
+        .catch((error) => {
+          console.error("Auth check failed:", error);
+          localStorage.clear();
+          setIsAuthenticated(false);
+          setUsername("");
+        });
+    }
   }, []);
 
-  // Effect for animating the indicator
+  // Navigation indicator
   useEffect(() => {
     const activeTab = document.querySelector(".nav-link.active");
     if (activeTab) {
       setIndicatorStyle({
-        left: `${activeTab.offsetLeft}px`,
-        width: `${activeTab.offsetWidth}px`,
+        left: activeTab.offsetLeft,
+        width: activeTab.offsetWidth,
       });
     }
   }, [location.pathname]);
 
-  // Handle resize to determine if it's mobile view
+  // Handle resize
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 992);
-      if (window.innerWidth >= 992) {
-        // Close mobile menu when resizing to desktop
-        setIsToggled(false);
-      }
+      if (window.innerWidth >= 992) setIsToggled(false);
     };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Close modal when clicking outside
+  // Close modal on outside click
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (showLoginModal && modalRef.current && !modalRef.current.contains(event.target)) {
-        setShowLoginModal(false);
-      }
-      if (showPasswordModal && passwordModalRef.current && !passwordModalRef.current.contains(event.target)) {
-        setShowPasswordModal(false);
-      }
-      if (showEmailLoginModal && emailLoginModalRef.current && !emailLoginModalRef.current.contains(event.target)) {
-        setShowEmailLoginModal(false);
-      }
-      if (showForgotPasswordModal && forgotPasswordModalRef.current && !forgotPasswordModalRef.current.contains(event.target)) {
-        setShowForgotPasswordModal(false);
-      }
-      if (showSmsLoginModal && smsLoginModalRef.current && !smsLoginModalRef.current.contains(event.target)) {
-        setShowSmsLoginModal(false);
-      }
-      if (showVerificationModal && verificationModalRef.current && !verificationModalRef.current.contains(event.target)) {
-        setShowVerificationModal(false);
-      }
+    const handleOutsideClick = (e) => {
+      Object.entries(modalRefs).forEach(([key, ref]) => {
+        const isOpen = {
+          login: showLoginModal,
+          register: showRegisterModal,
+          forgotPassword: showForgotPasswordModal,
+          smsLogin: showSmsLoginModal,
+          verification: showVerificationModal,
+        }[key];
+        if (isOpen && ref.current && !ref.current.contains(e.target)) {
+          resetModals();
+        }
+      });
     };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [showLoginModal, showRegisterModal, showForgotPasswordModal, showSmsLoginModal, showVerificationModal]);
 
-    if (showLoginModal || showPasswordModal || showEmailLoginModal || showForgotPasswordModal || showSmsLoginModal || showVerificationModal) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showLoginModal, showPasswordModal, showEmailLoginModal, showForgotPasswordModal, showSmsLoginModal, showVerificationModal]);
-
-  // Countdown timer for SMS verification
+  // Countdown timer
   useEffect(() => {
     let timer;
     if (isCountingDown && countdown > 0) {
-      timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
+      timer = setInterval(() => setCountdown((prev) => prev - 1), 1000);
     } else if (countdown === 0) {
       setIsCountingDown(false);
     }
-    return () => clearTimeout(timer);
-  }, [countdown, isCountingDown]);
+    return () => clearInterval(timer);
+  }, [isCountingDown, countdown]);
 
-  // Handle focus for verification inputs
-  const handleVerificationInputChange = (index, value) => {
+  // Form handlers
+  const handleInputChange = (type, field) => (e) => {
+    if (type === "login") {
+      setLoginData((prev) => ({ ...prev, [field]: e.target.value }));
+    } else {
+      setRegisterData((prev) => ({ ...prev, [field]: e.target.value }));
+    }
+  };
+
+  const handleVerificationChange = (index, value) => {
     if (value.length <= 1) {
       const newCode = [...verificationCode];
       newCode[index] = value;
       setVerificationCode(newCode);
-      
-      // Auto focus next input
-      if (value !== "" && index < 5) {
-        verificationInputRefs.current[index + 1].focus();
-      }
+      if (value && index < 5) verificationInputRefs.current[index + 1]?.focus();
     }
   };
 
-  // Handle backspace for verification inputs
   const handleVerificationKeyDown = (index, e) => {
-    if (e.key === "Backspace" && verificationCode[index] === "" && index > 0) {
-      verificationInputRefs.current[index - 1].focus();
+    if (e.key === "Backspace" && !verificationCode[index] && index > 0) {
+      verificationInputRefs.current[index - 1]?.focus();
     }
   };
 
-  // Reset all modals and form data
+  // Reset states
   const resetModals = () => {
     setShowLoginModal(false);
-    setShowPasswordModal(false);
-    setShowEmailLoginModal(false);
+    setShowRegisterModal(false);
     setShowForgotPasswordModal(false);
     setShowSmsLoginModal(false);
     setShowVerificationModal(false);
-    setPhoneNumber("");
-    setPassword("");
-    setEmail("");
+    setLoginData({ username: "", password: "" });
+    setRegisterData({ username: "", email: "", password: "", confirmPassword: "" });
     setVerificationCode(["", "", "", "", "", ""]);
     setCountdown(30);
     setIsCountingDown(false);
+    setErrorMessage("");
   };
 
-  // Handle account button click
+  // Auth handlers
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    if (!loginData.username || !loginData.password) {
+      setErrorMessage(t("vuiLongNhapDayDuThongTin"));
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${API_BASE_URL}/auth/login/`, loginData);
+      const token = response.data.access || response.data.token;
+      localStorage.setItem("access_token", token);
+      if (response.data.refresh) localStorage.setItem("refresh_token", response.data.refresh);
+      setIsAuthenticated(true);
+      setUsername(loginData.username);
+      resetModals();
+    } catch (error) {
+      setErrorMessage(
+        t("dangNhapThatBai") + ": " + 
+        (error.response?.data?.detail || t("loiKhongXacDinh"))
+      );
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    const { username, email, password, confirmPassword } = registerData;
+    if (!username || !email || !password || !confirmPassword) {
+      setErrorMessage(t("vuiLongNhapDayDuThongTin"));
+      return;
+    }
+    if (password !== confirmPassword) {
+      setErrorMessage(t("matKhauKhongKhop"));
+      return;
+    }
+
+    try {
+      await axios.post(`${API_BASE_URL}/auth/register/`, { username, email, password });
+      resetModals();
+      setShowLoginModal(true);
+      alert(t("dangKyThanhCong"));
+    } catch (error) {
+      const errorMsg = error.response?.data?.detail || 
+        Object.values(error.response?.data || {})[0] || 
+        t("loiKhongXacDinh");
+      setErrorMessage(t("dangKyThatBai") + ": " + errorMsg);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!registerData.email) {
+      setErrorMessage(t("vuiLongNhapEmail"));
+      return;
+    }
+
+    try {
+      await axios.post(`${API_BASE_URL}/auth/password-reset/`, { email: registerData.email });
+      resetModals();
+      alert(t("huongDanLayLaiMatKhau"));
+    } catch (error) {
+      setErrorMessage(
+        t("yeuCauLayLaiMatKhauThatBai") + ": " + 
+        (error.response?.data?.detail || t("loiKhongXacDinh"))
+      );
+    }
+  };
+
+  const handleSmsVerification = (e) => {
+    e.preventDefault();
+    if (!registerData.email) {
+      setErrorMessage(t("vuiLongNhapEmail"));
+      return;
+    }
+    setShowSmsLoginModal(false);
+    setShowVerificationModal(true);
+    setCountdown(30);
+    setIsCountingDown(true);
+  };
+
+  const handleVerificationSubmit = (e) => {
+    e.preventDefault();
+    const code = verificationCode.join("");
+    if (code.length !== 6) {
+      setErrorMessage(t("vuiLongNhapDayDuMaXacMinh"));
+      return;
+    }
+    resetModals();
+    alert(t("xacMinhThanhCong"));
+  };
+
+  // Navigation handlers
   const handleAccountClick = (e) => {
-    if (isMobile) {
+    e.preventDefault();
+    if (isMobile && !isAuthenticated) {
       navigate("/login");
     } else {
-      e.preventDefault();
       resetModals();
       setShowLoginModal(true);
     }
   };
 
-  // Handle continue button click in login modal
-  const handleContinueClick = (e) => {
-    e.preventDefault();
-    if (phoneNumber.trim()) {
-      setShowLoginModal(false);
-      setShowPasswordModal(true);
-    } else {
-      // Show validation error
-      alert("Vui lòng nhập số điện thoại");
-    }
+  const handleLogout = () => {
+    localStorage.clear();
+    setIsAuthenticated(false);
+    setUsername("");
+    resetModals();
   };
 
-  // Handle login
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (password.trim()) {
-      // Handle login logic here
-      console.log("Đăng nhập với:", phoneNumber, password);
-      resetModals();
-      // Reset inputs after login
-    } else {
-      // Show validation error
-      alert("Vui lòng nhập mật khẩu");
-    }
-  };
-
-  // Handle email login
-  const handleEmailLogin = (e) => {
-    e.preventDefault();
-    if (email.trim() && password.trim()) {
-      // Handle login logic here
-      console.log("Đăng nhập bằng email:", email, password);
-      resetModals();
-    } else {
-      // Show validation error
-      alert("Vui lòng nhập đầy đủ thông tin");
-    }
-  };
-
-  // Handle forgot password
-  const handleForgotPassword = (e) => {
-    e.preventDefault();
-    const contactInfo = phoneNumber.trim() || email.trim();
-    if (contactInfo) {
-      console.log("Lấy lại mật khẩu cho:", contactInfo);
-      // Normally would send a reset email/SMS here
-      resetModals();
-      alert("Hướng dẫn lấy lại mật khẩu đã được gửi!");
-    } else {
-      // Show validation error
-      alert("Vui lòng nhập số điện thoại hoặc email");
-    }
-  };
-
-  // Handle SMS verification
-  const handleSmsVerification = (e) => {
-    e.preventDefault();
-    if (phoneNumber.trim()) {
-      setShowSmsLoginModal(false);
-      setShowVerificationModal(true);
-      setCountdown(30);
-      setIsCountingDown(true);
-    } else {
-      // Show validation error
-      alert("Vui lòng nhập số điện thoại");
-    }
-  };
-
-  // Handle verification code submit
-  const handleVerificationSubmit = (e) => {
-    e.preventDefault();
-    const code = verificationCode.join("");
-    if (code.length === 6) {
-      console.log("Xác minh với mã:", code);
-      resetModals();
-      // Normally would verify the code here
-      alert("Xác minh thành công!");
-    } else {
-      // Show validation error
-      alert("Vui lòng nhập đầy đủ mã xác minh");
-    }
-  };
-
-  // Handle resend verification code
-  const handleResendCode = () => {
-    setCountdown(30);
-    setIsCountingDown(true);
-    setVerificationCode(["", "", "", "", "", ""]);
-    console.log("Gửi lại mã xác minh cho:", phoneNumber);
-  };
-
-  // Navigation between modals
-  const openEmailLogin = () => {
-    setShowLoginModal(false);
-    setShowEmailLoginModal(true);
-  };
-
-  const openForgotPassword = () => {
-    setShowPasswordModal(false);
-    setShowEmailLoginModal(false);
-    setShowForgotPasswordModal(true);
-  };
-
-  const openSmsLogin = () => {
-    setShowPasswordModal(false);
-    setShowSmsLoginModal(true);
-  };
-
-  const goBackToPhoneLogin = () => {
-    setShowEmailLoginModal(false);
-    setShowPasswordModal(false);
-    setShowForgotPasswordModal(false);
-    setShowSmsLoginModal(false);
-    setShowVerificationModal(false);
-    setShowLoginModal(true);
+  const modalNavigation = {
+    openRegister: () => { setShowLoginModal(false); setShowRegisterModal(true); },
+    openForgotPassword: () => { setShowLoginModal(false); setShowForgotPasswordModal(true); },
+    openSmsLogin: () => { setShowLoginModal(false); setShowSmsLoginModal(true); },
+    goBackToLogin: () => { resetModals(); setShowLoginModal(true); },
   };
 
   return (
     <>
       <nav className="navbar navbar-expand-lg navbar-light bg-white">
         <div className="container">
-          {/* Logo */}
           <Link className="navbar-brand" to="/">
             <img src="/assets/logoweb.png" alt="Logo" className="logo" />
           </Link>
 
-          {/* Toggler button */}
           <button
             className={`navbar-toggler ${isToggled ? "" : "collapsed"}`}
             type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarNav"
-            aria-controls="navbarNav"
-            aria-expanded={isToggled}
-            aria-label="Toggle navigation"
             onClick={() => setIsToggled(!isToggled)}
           >
             <span className="toggler-icon top-bar"></span>
@@ -331,238 +314,190 @@ function Navbar() {
             <span className="toggler-icon bottom-bar"></span>
           </button>
 
-          {/* Navbar items */}
-          {/* Navbar items */}
-          <div className={`collapse navbar-collapse ${isToggled ? "show" : ""}`} id="navbarNav">
-
-            {/* Thanh tìm kiếm khi thu nhỏ màn hình */}
+          <div className={`collapse navbar-collapse ${isToggled ? "show" : ""}`}>
             <div className="d-lg-none mb-3">
               <div className="input-group">
                 <span className="input-group-text">
                   <FontAwesomeIcon icon={faSearch} />
                 </span>
-                <input type="text" className="form-control" placeholder={t('timKiem')} />
+                <input type="text" className="form-control" placeholder={t("timKiem")} />
               </div>
             </div>
 
-            {/* Menu chính */}
             <div className="navbar-nav mx-auto position-relative">
-              <Link className={`nav-link ${location.pathname === "/" ? "active" : ""}`} to="/">
-                {t('trangChu')}
-              </Link>
-              <Link className={`nav-link ${location.pathname === "/about" ? "active" : ""}`} to="/about">
-                {t('gioiThieu')}
-              </Link>
-              <Link className={`nav-link ${location.pathname === "/products" ? "active" : ""}`} to="/products">
-                {t('sanPham')}
-              </Link>
-              <Link className={`nav-link ${location.pathname === "/contact" ? "active" : ""}`} to="/contact">
-                {t('lienHe')}
-              </Link>
+              {[
+                { path: "/", label: t("trangChu") },
+                { path: "/about", label: t("gioiThieu") },
+                { path: "/products", label: t("sanPham") },
+                { path: "/contact", label: t("lienHe") },
+              ].map((item) => (
+                <Link
+                  key={item.path}
+                  className={`nav-link ${location.pathname === item.path ? "active" : ""}`}
+                  to={item.path}
+                >
+                  {item.label}
+                </Link>
+              ))}
               <div className="indicator" style={indicatorStyle}></div>
             </div>
 
-            {/* Icon User + Cart + Language khi màn hình nhỏ */}
             <div className="d-lg-none d-flex justify-content-between align-items-center">
-              <LanguageSwitcher /> {/* Thêm language switcher */}
-              
+              <LanguageSwitcher />
               <div className="d-flex">
                 <a className="nav-link me-3" href="#" onClick={handleAccountClick}>
-                  <FontAwesomeIcon icon={faUser} className="nav-icon d-inline d-lg-none" />
-                  <span className="d-none d-lg-inline ms-1">{t('taiKhoan')}</span>
+                  <FontAwesomeIcon icon={faUser} />
+                  <span className="d-none d-lg-inline ms-1">
+                    {isAuthenticated ? username : t("taiKhoan")}
+                  </span>
                 </a>
                 <Link className="nav-link" to="/cart">
-                  <FontAwesomeIcon icon={faCartShopping} className="nav-icon d-inline d-lg-none" />
-                  <span className="d-none d-lg-inline ms-1">{t('gioHang')}</span>
+                  <FontAwesomeIcon icon={faCartShopping} />
+                  <span className="d-none d-lg-inline ms-1">{t("gioHang")}</span>
                 </Link>
               </div>
             </div>
           </div>
 
-          {/* Thanh tìm kiếm + Icons khi màn hình lớn */}
           <div className="d-none d-lg-flex align-items-center">
             <div className="input-group search-container">
               <span className="input-group-text">
                 <FontAwesomeIcon icon={faSearch} />
               </span>
-              <input type="text" className="form-control" placeholder={t('timKiem')} />
+              <input type="text" className="form-control" placeholder={t("timKiem")} />
             </div>
-
-            {/* Navbar actions container cho desktop */}
-            <div className="navbar-actions-container">
-              <LanguageSwitcher />
-
-              <a className="nav-link ms-3 d-flex align-items-center" href="#" onClick={handleAccountClick}>
-                <FontAwesomeIcon icon={faUser} className="nav-icon me-1"/>
-                <span>{t('taiKhoan')}</span>
-              </a>
-
-              <Link className="nav-link ms-3 d-flex align-items-center" to="/cart">
-                <FontAwesomeIcon icon={faCartShopping} className="nav-icon me-1" />
-                <span>{t('gioHang')}</span>
-              </Link>
-            </div>
+            <LanguageSwitcher />
+            <a className="nav-link ms-3" href="#" onClick={handleAccountClick}>
+              <FontAwesomeIcon icon={faUser} className="me-1" />
+              {isAuthenticated ? username : t("taiKhoan")}
+            </a>
+            <Link className="nav-link ms-3" to="/cart">
+              <FontAwesomeIcon icon={faCartShopping} className="me-1" />
+              {t("gioHang")}
+            </Link>
           </div>
         </div>
       </nav>
 
-      {/* Login Modal (Phone Number) */}
+      {/* Login Modal */}
       {showLoginModal && (
         <div className="login-modal-overlay">
-          <div className="login-modal modal-animation" ref={modalRef}>
+          <div className="login-modal modal-animation" ref={modalRefs.login}>
             <div className="login-modal-header">
-              <h4>{t('xinChao')}</h4>
-              <p>{t('dangNhapHoacTaoTaiKhoan')}</p>
-              <button className="close-button" onClick={() => setShowLoginModal(false)}>
+              <h4>{isAuthenticated ? `${t("xinChao")} ${username}` : t("dangNhap")}</h4>
+              <p>
+                {isAuthenticated
+                  ? t("quanLyTaiKhoan")
+                  : t("Vui lòng nhập thông tin đăng nhập")}
+              </p>
+              <button className="close-button" onClick={resetModals}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
             <div className="login-modal-body">
-              <form onSubmit={handleContinueClick}>
-                <div className="input-icon-wrapper">
-                  <FontAwesomeIcon icon={faMobileAlt} className="input-icon" />
-                  <input 
-                    type="text" 
-                    placeholder={t('soDienThoai')}
-                    className="form-control" 
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    required
-                  />
-                </div>
-                <button type="submit" className="btn btn-danger w-100">{t('tiepTuc')}</button>
-              </form>
-              <div className="text-center mt-3">
-                <a href="#" className="text-decoration-none" onClick={(e) => {
-                  e.preventDefault();
-                  openEmailLogin();
-                }}>{t('dangNhapBangEmail')}</a>
-              </div>
-              
-              <div className="alternative-login mt-4">
-                <p className="text-center">{t('hoacTiepTucBang')}</p>
-                <div className="social-buttons d-flex justify-content-center">
-                  <button className="btn btn-outline-secondary me-2 facebook-btn">
-                    <FontAwesomeIcon icon={faFacebookF} />
+              {isAuthenticated ? (
+                <button className="btn btn-danger w-100" onClick={handleLogout}>
+                  {t("dangXuat")}
+                </button>
+              ) : (
+                <form onSubmit={handleLogin}>
+                  <div className="input-icon-wrapper">
+                    <FontAwesomeIcon icon={faUser} className="input-icon" />
+                    <input
+                      type="text"
+                      placeholder={t("tên đăng nhập")}
+                      className="form-control"
+                      value={loginData.username}
+                      onChange={handleInputChange("login", "username")}
+                    />
+                  </div>
+                  <div className="input-icon-wrapper">
+                    <FontAwesomeIcon icon={faLock} className="input-icon" />
+                    <input
+                      type="password"
+                      placeholder={t("matKhau")}
+                      className="form-control"
+                      value={loginData.password}
+                      onChange={handleInputChange("login", "password")}
+                    />
+                  </div>
+                  {errorMessage && <p className="text-danger text-center">{errorMessage}</p>}
+                  <button type="submit" className="btn btn-danger w-100">
+                    {t("dangNhap")}
                   </button>
-                  <button className="btn btn-outline-secondary google-btn">
-                    <FontAwesomeIcon icon={faGoogle} />
-                  </button>
-                </div>
-              </div>
-              <div className="terms mt-4 text-center small">
-                <p>{t('dieuKhoan')} <br />
-                <a href="#">{t('dieuKhoanSuDung')}</a> {t('va')} <a href="#">{t('chinhSachBaoMat')}</a></p>
-              </div>
+                  <div className="text-center mt-3">
+                    <a href="#" onClick={(e) => { e.preventDefault(); modalNavigation.openForgotPassword(); }}>
+                      {t("quenMatKhau")}
+                    </a>
+                  </div>
+                  <div className="text-center mt-3">
+                    <a href="#" onClick={(e) => { e.preventDefault(); modalNavigation.openRegister(); }}>
+                      {t("dangKyTaiKhoan")}
+                    </a>
+                  </div>
+                  <div className="alternative-login mt-4">
+                    <p className="text-center">{t("hoacTiepTucBang")}</p>
+                    <div className="social-buttons d-flex justify-content-center">
+                      <button className="btn btn-outline-secondary me-2">
+                        <FontAwesomeIcon icon={faFacebookF} />
+                      </button>
+                      <button className="btn btn-outline-secondary">
+                        <FontAwesomeIcon icon={faGoogle} />
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Password Modal */}
-      {showPasswordModal && (
+      {/* Register Modal */}
+      {showRegisterModal && (
         <div className="login-modal-overlay">
-          <div className="login-modal modal-animation" ref={passwordModalRef}>
+          <div className="login-modal modal-animation" ref={modalRefs.register}>
             <div className="login-modal-header">
-              <button className="back-button" onClick={goBackToPhoneLogin}>
+              <button className="back-button" onClick={modalNavigation.goBackToLogin}>
                 <FontAwesomeIcon icon={faArrowLeft} />
               </button>
-              <h4>{t('nhapMatKhau')}</h4>
-              <p>{t('vuiLongNhapMatKhau')} {phoneNumber}</p>
-              <button className="close-button" onClick={() => setShowPasswordModal(false)}>
+              <h4>{t("dangKy")}</h4>
+              <p>{t("vuiLongNhapThongTinDangKy")}</p>
+              <button className="close-button" onClick={resetModals}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
             <div className="login-modal-body">
-              <form onSubmit={handleLogin}>
-                <div className="input-icon-wrapper">
-                  <FontAwesomeIcon icon={faLock} className="input-icon" />
-                  <input 
-                    type="password" 
-                    placeholder={t('matKhau')}
-                    className="form-control" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <button type="submit" className="btn btn-danger w-100">{t('dangNhap')}</button>
+              <form onSubmit={handleRegister}>
+                {[
+                  { icon: faUser, placeholder: t("tên đăng nhập"), field: "username" },
+                  { icon: faEnvelope, placeholder: t("email"), field: "email", type: "email" },
+                  { icon: faLock, placeholder: t("mật khẩu"), field: "password", type: "password" },
+                  { icon: faLock, placeholder: t("xác nhận mật khẩu"), field: "confirmPassword", type: "password" },
+                ].map((input) => (
+                  <div className="input-icon-wrapper" key={input.field}>
+                    <FontAwesomeIcon icon={input.icon} className="input-icon" />
+                    <input
+                      type={input.type || "text"}
+                      placeholder={input.placeholder}
+                      className="form-control"
+                      value={registerData[input.field]}
+                      onChange={handleInputChange("register", input.field)}
+                    />
+                  </div>
+                ))}
+                {errorMessage && <p className="text-danger text-center">{errorMessage}</p>}
+                <button type="submit" className="btn btn-danger w-100">
+                  {t("dangKy")}
+                </button>
               </form>
               <div className="text-center mt-3">
-                <a href="#" className="text-decoration-none" onClick={(e) => {
-                  e.preventDefault();
-                  openForgotPassword();
-                }}>{t('quenMatKhau')}</a>
-              </div>
-              
-              <div className="text-center mt-4">
-                <a href="#" className="text-decoration-none" onClick={(e) => {
-                  e.preventDefault();
-                  openSmsLogin();
-                }}>{t('dangNhapBangSMS')}</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Email Login Modal */}
-      {showEmailLoginModal && (
-        <div className="login-modal-overlay">
-          <div className="login-modal modal-animation" ref={emailLoginModalRef}>
-            <div className="login-modal-header">
-              <button className="back-button" onClick={goBackToPhoneLogin}>
-                <FontAwesomeIcon icon={faArrowLeft} />
-              </button>
-              <h4>{t('dangNhapBangEmail')}</h4>
-              <p>{t('vuiLongNhapEmailVaMatKhau')}</p>
-              <button className="close-button" onClick={() => setShowEmailLoginModal(false)}>
-                <FontAwesomeIcon icon={faTimes} />
-              </button>
-            </div>
-            <div className="login-modal-body">
-              <form onSubmit={handleEmailLogin}>
-                <div className="input-icon-wrapper">
-                  <FontAwesomeIcon icon={faEnvelope} className="input-icon" />
-                  <input 
-                    type="email" 
-                    placeholder={t('email')}
-                    className="form-control" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="input-icon-wrapper">
-                  <FontAwesomeIcon icon={faLock} className="input-icon" />
-                  <input 
-                    type="password" 
-                    placeholder={t('matKhau')}
-                    className="form-control" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <button type="submit" className="btn btn-danger w-100">{t('dangNhap')}</button>
-              </form>
-              <div className="text-center mt-3">
-                <a href="#" className="text-decoration-none" onClick={(e) => {
-                  e.preventDefault();
-                  openForgotPassword();
-                }}>{t('quenMatKhau')}</a>
-              </div>
-            
-              <div className="alternative-login mt-4">
-                <p className="text-center">{t('hoacTiepTucBang')}</p>
-                <div className="social-buttons d-flex justify-content-center">
-                  <button className="btn btn-outline-secondary me-2 facebook-btn">
-                    <FontAwesomeIcon icon={faFacebookF} />
-                  </button>
-                  <button className="btn btn-outline-secondary google-btn">
-                    <FontAwesomeIcon icon={faGoogle} />
-                  </button>
-                </div>
+                <p>
+                  {t("daCoTaiKhoan")}{" "}
+                  <a href="#" onClick={(e) => { e.preventDefault(); modalNavigation.goBackToLogin(); }}>
+                    {t("dangNhap")}
+                  </a>
+                </p>
               </div>
             </div>
           </div>
@@ -572,45 +507,34 @@ function Navbar() {
       {/* Forgot Password Modal */}
       {showForgotPasswordModal && (
         <div className="login-modal-overlay">
-          <div className="login-modal modal-animation" ref={forgotPasswordModalRef}>
+          <div className="login-modal modal-animation" ref={modalRefs.forgotPassword}>
             <div className="login-modal-header">
-              <button className="back-button" onClick={goBackToPhoneLogin}>
+              <button className="back-button" onClick={modalNavigation.goBackToLogin}>
                 <FontAwesomeIcon icon={faArrowLeft} />
               </button>
-              <h4>{t('quenMatKhau')}</h4>
-              <p>{t('vuiLongNhapThongTin')}</p>
-              <button className="close-button" onClick={() => setShowForgotPasswordModal(false)}>
+              <h4>{t("quenMatKhau")}</h4>
+              <p>{t("vuiLongNhapThongTin")}</p>
+              <button className="close-button" onClick={resetModals}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
             <div className="login-modal-body">
               <form onSubmit={handleForgotPassword}>
                 <div className="input-icon-wrapper">
-                  <FontAwesomeIcon icon={faMobileAlt} className="input-icon" />
-                  <input 
-                    type="text" 
-                    placeholder={t('soDienThoaiEmail')}
-                    className="form-control" 
-                    value={phoneNumber || email}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value.includes('@')) {
-                        setEmail(value);
-                        setPhoneNumber("");
-                      } else {
-                        setPhoneNumber(value);
-                        setEmail("");
-                      }
-                    }}
-                    required
+                  <FontAwesomeIcon icon={faEnvelope} className="input-icon" />
+                  <input
+                    type="email"
+                    placeholder={t("email")}
+                    className="form-control"
+                    value={registerData.email}
+                    onChange={handleInputChange("register", "email")}
                   />
                 </div>
-                <button type="submit" className="btn btn-danger w-100">{t('layLaiMatKhau')}</button>
+                {errorMessage && <p className="text-danger text-center">{errorMessage}</p>}
+                <button type="submit" className="btn btn-danger w-100">
+                  {t("layLaiMatKhau")}
+                </button>
               </form>
-              
-              <div className="text-center mt-4">
-                <p>{t('doiSoDienThoai')} <a href="#" className="text-decoration-none">{t('lienHeHotline')}</a></p>
-              </div>
             </div>
           </div>
         </div>
@@ -619,17 +543,14 @@ function Navbar() {
       {/* SMS Login Modal */}
       {showSmsLoginModal && (
         <div className="login-modal-overlay">
-          <div className="login-modal modal-animation" ref={smsLoginModalRef}>
+          <div className="login-modal modal-animation" ref={modalRefs.smsLogin}>
             <div className="login-modal-header">
-              <button className="back-button" onClick={() => {
-                setShowSmsLoginModal(false);
-                setShowPasswordModal(true);
-              }}>
+              <button className="back-button" onClick={modalNavigation.goBackToLogin}>
                 <FontAwesomeIcon icon={faArrowLeft} />
               </button>
-              <h4>{t('dangNhapBangSMS')}</h4>
-              <p>{t('vuiLongNhapSDTNhanMa')}</p>
-              <button className="close-button" onClick={() => setShowSmsLoginModal(false)}>
+              <h4>{t("dangNhapBangSMS")}</h4>
+              <p>{t("vuiLongNhapSDTNhanMa")}</p>
+              <button className="close-button" onClick={resetModals}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
@@ -637,79 +558,71 @@ function Navbar() {
               <form onSubmit={handleSmsVerification}>
                 <div className="input-icon-wrapper">
                   <FontAwesomeIcon icon={faMobileAlt} className="input-icon" />
-                  <input 
-                    type="text" 
-                    placeholder={t('soDienThoai')}
-                    className="form-control" 
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    required
+                  <input
+                    type="tel"
+                    placeholder={t("soDienThoai")}
+                    className="form-control"
+                    value={registerData.email}
+                    onChange={handleInputChange("register", "email")}
                   />
                 </div>
-                <button type="submit" className="btn btn-danger w-100">{t('tiepTuc')}</button>
+                {errorMessage && <p className="text-danger text-center">{errorMessage}</p>}
+                <button type="submit" className="btn btn-danger w-100">
+                  {t("tiepTuc")}
+                </button>
               </form>
             </div>
           </div>
         </div>
       )}
 
-      {/* Verification Code Modal */}
+      {/* Verification Modal */}
       {showVerificationModal && (
         <div className="login-modal-overlay">
-          <div className="login-modal modal-animation" ref={verificationModalRef}>
+          <div className="login-modal modal-animation" ref={modalRefs.verification}>
             <div className="login-modal-header">
-              <button className="back-button" onClick={() => {
-                setShowVerificationModal(false);
-                setShowSmsLoginModal(true);
-              }}>
+              <button className="back-button" onClick={() => { setShowVerificationModal(false); setShowSmsLoginModal(true); }}>
                 <FontAwesomeIcon icon={faArrowLeft} />
               </button>
-              <h4>{t('nhapMaXacMinh')}</h4>
-              <p>{t('soDienThoaiDaCoTaiKhoan')} {phoneNumber} {t('daCoTaiKhoan')}</p>
-              <button className="close-button" onClick={() => setShowVerificationModal(false)}>
+              <h4>{t("nhapMaXacMinh")}</h4>
+              <p>{t("soDienThoaiDaCoTaiKhoan")} {registerData.email}</p>
+              <button className="close-button" onClick={resetModals}>
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
             <div className="login-modal-body">
               <form onSubmit={handleVerificationSubmit}>
                 <div className="verification-code-container d-flex justify-content-between">
-                  {[0, 1, 2, 3, 4, 5].map((index) => (
+                  {verificationCode.map((digit, index) => (
                     <input
                       key={index}
                       type="text"
                       maxLength="1"
                       className="form-control verification-input"
-                      value={verificationCode[index]}
-                      onChange={(e) => handleVerificationInputChange(index, e.target.value)}
+                      value={digit}
+                      onChange={(e) => handleVerificationChange(index, e.target.value)}
                       onKeyDown={(e) => handleVerificationKeyDown(index, e)}
                       ref={(el) => (verificationInputRefs.current[index] = el)}
-                      required
                     />
                   ))}
                 </div>
-                <button type="submit" className="btn btn-danger w-100 mt-3">{t('xacMinh')}</button>
-              </form>
-              
-              <div className="text-center mt-3 resend-code">
-                <div className="d-flex align-items-center justify-content-center">
-                  <FontAwesomeIcon icon={faClock} className="me-2" />
-                  {isCountingDown ? (
-                    <span>{t('guiLaiMaSau')} {countdown}s</span>
-                  ) : (
-                    <a
-                      href="#"
-                      className="text-decoration-none"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleResendCode();
-                      }}
-                    >
-                      {t('guiLaiMa')}
-                    </a>
-                  )}
+                {errorMessage && <p className="text-danger text-center">{errorMessage}</p>}
+                <button type="submit" className="btn btn-danger w-100 mt-3">
+                  {t("xacMinh")}
+                </button>
+                <div className="text-center mt-3">
+                  <div className="d-flex justify-content-center align-items-center">
+                    <FontAwesomeIcon icon={faClock} className="me-2" />
+                    {isCountingDown ? (
+                      <span>{t("guiLaiMaSau")} {countdown}s</span>
+                    ) : (
+                      <a href="#" onClick={(e) => { e.preventDefault(); setCountdown(30); setIsCountingDown(true); }}>
+                        {t("guiLaiMa")}
+                      </a>
+                    )}
+                  </div>
                 </div>
-                <p className="mt-2 small">{t('maXacMinhHieuLuc')}</p>
-              </div>
+              </form>
             </div>
           </div>
         </div>
