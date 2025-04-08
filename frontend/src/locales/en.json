@@ -35,10 +35,15 @@
     "lienHeHotline": "Contact Hotline 1900-6035",
     
     "vuiLongNhapSDTNhanMa": "Please enter phone number to receive verification code",
+
+    "vuiLongNhapThongTinDangKy": "Please enter registration information",
+    "dangKyTaiKhoan": "Sign up for an account",
+
+    "dangKy": "Register",
     
     "nhapMaXacMinh": "Enter verification code",
     "soDienThoaiDaCoTaiKhoan": "Phone number",
-    "daCoTaiKhoan": "already has an account. Please verify to login",
+    "daCoTaiKhoan": "Already has an account. Please verify to login",
     "xacMinh": "Verify",
     "guiLaiMaSau": "Resend code after",
     "guiLaiMa": "Resend code",
@@ -117,6 +122,57 @@
     "hoTro247": "24/7 Support",
     "chungToiLuonSanSang": "We are always ready to support you anytime, anywhere.",
     "truSoChinh": "Head office",
-    "_truSoChinh": "123 ABC Street, XYZ District, HCMC"
+    "_truSoChinh": "123 ABC Street, XYZ District, HCMC",
+
+    "danhGia": "evaluate",
+    "gia": "Price:",
+    "moTaSanPham": "Product Description:",
+    "koCoMoTa": "There is no detailed description for this product.",
+    "soLuong": "Quantity:",
+    "con": "Still",
+    "sp": "product",
+    "danhGiaSanPham": "Product Reviews",
+    "sanPhamLienQuan": "Related Products",
+
+    "gioHangCuaBan": "Your cart",
+    "mauSac": "Color",
+    "kichThuoc": "Size:",
+    "tieuChuan": "Standard",
+    "thongTinDonHang": "Order information",
+    "tamTinh": "Provisional",
+    "phiVanChuyen": "Shipping fee:",
+    "mienPhi": "Free",
+    "tongTien": "Total amount:",
+    "cacDoiTacThanhToan": "Payment partners",
+    "apDung": "Apply",
+    "gioHangDangTrong": "Your cart is empty",
+    "hayThemSanPham": "Add products to cart to continue shopping",
+    "tiepTucMuaSam": "Continue shopping",
+    "chonPhuongThuc": "Select payment method",
+    "huy": "Cancel",
+    "xacNhanThanhToan": "Payment Confirmation",
+
+    "donHangCuaBan": "Your order",
+    "phuongThucThanhToan": "Payment method",
+    "quayLaiGioHang": "Back to cart",
+    "diaChiNhanHang": "Delivery address",
+    "thayDoi": "Change",
+    "macDinh": "Default",
+    "banChuaCoDiaChi": "You do not have a shipping address. Please add a new address.",
+    "themDiaChi": "Add address",
+    "thongTinVanChuyen": "Shipping Information",
+    "phuongThucVanChuyen": "Shipping Method: Standard Shipping",
+    "thoiGianVanChuyen": "Shipping time: 3-5 business days",
+    "tongCong": "Total",
+    "bangCach": "* By clicking 'Place Order' you agree to our Terms of Service and Privacy Policy",
+    "diaChiDaLuu": "Saved Address",
+    "chuaCoDiaChiDuocLuu": "No addresses saved yet",
+    "themDiaChiMoi": "Add new address",
+    "hoTenNguoiNhan": "Recipient's name",
+    "diaChiDayDu": "Full address",
+    "datLamDiaChiMacDinh": "Set as default address",
+    "luuDiaChi": "Save address"
+    
+
   }
   

@@ -11,7 +11,10 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import './style/detail.css';
 
+import { useLanguage } from "../context/LanguageContext";
+
 function Detail() {
+  const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
@@ -137,7 +140,7 @@ function Detail() {
     return (
       <div className="text-center p-5">
         <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Đang tải...</span>
+          <span className="visually-hidden">{t('dangTai')}</span>
         </div>
       </div>
     );
@@ -201,30 +204,30 @@ function Detail() {
               {/* Đánh giá sản phẩm */}
               <div className="product-rating mb-3">
                 {renderStars(mockRating.average)}
-                <span className="ms-2">({mockRating.counts.reduce((a, b) => a + b, 0)} đánh giá)</span>
+                <span className="ms-2">({mockRating.counts.reduce((a, b) => a + b, 0)} {t('danhGia')})</span>
               </div>
               
               {/* Price Section */}
               <div className="product-price mb-3">
-                <h5 className="mb-1 text-muted">Giá:</h5>
+                <h5 className="mb-1 text-muted">{t('gia')}</h5>
                 <h3 className="price">{Number(product.price).toLocaleString()} VNĐ</h3>
               </div>
               
               {/* Description - Fixed version */}
               <div className="product-description mb-3">
-                <h5 className="mb-1 text-muted">Mô tả sản phẩm:</h5>
+                <h5 className="mb-1 text-muted">{t('moTaSanPham')}</h5>
                 {product.description ? (
                   <div className="description-content">
                     {product.description}
                   </div>
                 ) : (
-                  <p className="text-muted">Không có mô tả chi tiết cho sản phẩm này.</p>
+                  <p className="text-muted">{t('koCoMoTa')}</p>
                 )}
               </div>
               
               {/* Quantity Selection */}
               <div className="quantity-selection mb-4">
-                <h5 className="mb-2">Số lượng:</h5>
+                <h5 className="mb-2">{t('soLuong')}</h5>
                 <div className="quantity-controls d-flex align-items-center">
                   <button 
                     className="btn btn-outline-secondary quantity-btn"
@@ -242,7 +245,7 @@ function Detail() {
                     <FontAwesomeIcon icon={faPlus} />
                   </button>
                 </div>
-                <p className="mt-2 text-muted">Còn {product.stock} sản phẩm</p>
+                <p className="mt-2 text-muted">{t('con')} {product.stock} {t('sp')}</p>
               </div>
               
               {/* Add to Cart Button */}
@@ -264,7 +267,7 @@ function Detail() {
         <div className="row mt-5">
           <div className="col-12">
             <div className="ratings-section p-4 border rounded">
-              <h3 className="mb-4">Đánh giá sản phẩm</h3>
+              <h3 className="mb-4">{t('danhGiaSanPham')}</h3>
               
               <div className="row">
                 {/* Overall Rating */}
@@ -274,7 +277,7 @@ function Detail() {
                       <span className="rating-number">{mockRating.average}</span>
                       <FontAwesomeIcon icon={fasStar} className="rating-star" />
                     </div>
-                    <p className="mt-2">{mockRating.counts.reduce((a, b) => a + b, 0)} đánh giá</p>
+                    <p className="mt-2">{mockRating.counts.reduce((a, b) => a + b, 0)} {t('danhGia')}</p>
                   </div>
                 </div>
                 
@@ -309,7 +312,7 @@ function Detail() {
         {/* Related Products Section */}
         {relatedProducts.length > 0 && (
           <div className="related-products mt-5">
-            <h3 className="mb-4">Sản phẩm liên quan</h3>
+            <h3 className="mb-4">{t('sanPhamLienQuan')}</h3>
             <div className="row">
               {relatedProducts.map((relatedProduct) => (
                 <div key={relatedProduct.id} className="col-md-3 mb-4">

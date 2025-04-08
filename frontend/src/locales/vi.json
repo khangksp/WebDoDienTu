@@ -38,11 +38,16 @@
     
     "nhapMaXacMinh": "Nhập mã xác minh",
     "soDienThoaiDaCoTaiKhoan": "Số điện thoại",
-    "daCoTaiKhoan": "đã có tài khoản. Vui lòng xác thực để đăng nhập",
+    "daCoTaiKhoan": "Đã có tài khoản. Vui lòng xác thực để đăng nhập",
     "xacMinh": "Xác Minh",
     "guiLaiMaSau": "Gửi lại mã sau",
     "guiLaiMa": "Gửi lại mã",
     "maXacMinhHieuLuc": "Mã xác minh có hiệu lực trong 15 phút",
+
+    "vuiLongNhapThongTinDangKy": "Vui lòng nhập thông tin đăng ký",
+    "dangKyTaiKhoan": "Đăng ký tài khoản",
+
+    "dangKy": "Đăng ký",
 
     "webBanDoDienTu": "Web bán đồ điện tử",
     "cungCap": "Cung cấp sản phẩm công nghệ chất lượng, chính hãng, giá tốt nhất thị trường.",
@@ -69,7 +74,7 @@
 
     "cauHoi": "Câu hỏi thường gặp",
     "quanLyGiaoHang": "Quản lý giao hàng",
-    "dotHang": "Đặt hàng",
+    "datHang": "Đặt hàng",
     "thanhToan": "Thanh toán",
 
     "taiNguyen": "Tài nguyên",
@@ -117,9 +122,56 @@
     "hoTro247": "Hỗ trợ 24/7",
     "chungToiLuonSanSang": "Chúng tôi luôn sẵn sàng hỗ trợ bạn mọi lúc mọi nơi.",
     "truSoChinh": "Trụ sở chính",
-    "_truSoChinh": "123 Đường ABC, Quận XYZ, TP HCM"
+    "_truSoChinh": "123 Đường ABC, Quận XYZ, TP HCM",
 
-    
-    
+    "danhGia": "đánh giá",
+    "gia": "Giá:",
+    "moTaSanPham": "Mô tả sản phẩm:",
+    "koCoMoTa": "Không có mô tả chi tiết cho sản phẩm này.",
+    "soLuong": "Số lượng:",
+    "con": "Còn",
+    "sp": "sản phẩm",
+    "danhGiaSanPham": "Đánh giá sản phẩm",
+    "sanPhamLienQuan": "Sản phẩm liên quan",
+
+    "gioHangCuaBan": "Giỏ hàng của bạn",
+    "mauSac": "Màu sắc",
+    "kichThuoc": "Kích thước",
+    "tieuChuan": "Tiêu chuẩn",
+    "thongTinDonHang": "Thông tin đơn hàng",
+    "tamTinh": "Tạm tính",
+    "phiVanChuyen": "Phí vận chuyển:",
+    "mienPhi": "Miễn phí",
+    "tongTien": "Tổng tiền:",
+    "cacDoiTacThanhToan": "Các đối tác thanh toán",
+    "apDung": "Áp dụng",
+    "gioHangDangTrong": "Giỏ hàng của bạn đang trống",
+    "hayThemSanPham": "Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm",
+    "tiepTucMuaSam": "Tiếp tục mua sắm",
+    "chonPhuongThuc": "Chọn phương thức thanh toán",
+    "huy": "Hủy",
+    "xacNhanThanhToan": "Xác nhận thanh toán",
+
+    "donHangCuaBan": "Đon hàng của bạn",
+    "phuongThucThanhToan": "Phương thức thanh toán",
+    "quayLaiGioHang": "Quay lại giỏ hàng",
+    "diaChiNhanHang": "Địa chỉ nhận hàng",
+    "thayDoi": "Thay đổi",
+    "macDinh": "Mặc định",
+    "banChuaCoDiaChi": "Bạn chưa có địa chỉ nhận hàng. Vui lòng thêm địa chỉ mới.",
+    "themDiaChi": "Thêm địa chỉ",
+    "thongTinVanChuyen": "Thông tin vận chuyển",
+    "phuongThucVanChuyen": "Phương thức vận chuyển: Giao hàng tiêu chuẩn",
+    "thoiGianVanChuyen": "Thời gian vận chuyển: 3-5 ngày làm việc",
+    "tongCong": "Tổng cộng",
+    "bangCach": "* Bằng cách nhấn 'Đặt hàng', bạn đồng ý với Điều khoản dịch vụ và Chính sách bảo mật của chúng tôi",
+    "diaChiDaLuu": "Địa chỉ đã lưu",
+    "chuaCoDiaChiDuocLuu": "Chưa có địa chỉ nào được lưu",
+    "themDiaChiMoi": "Thêm địa chỉ mới",
+    "hoTenNguoiNhan": "Họ tên người nhận",
+    "diaChiDayDu": "Địa chỉ đầy đủ",
+    "datLamDiaChiMacDinh": "Đặt làm địa chỉ mặc định",
+    "luuDiaChi": "Lưu địa chỉ"
+
   }
   

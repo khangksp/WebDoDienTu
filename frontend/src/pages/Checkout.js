@@ -15,7 +15,11 @@ import {
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './style/checkout.css';
 
+import { useLanguage } from "../context/LanguageContext";
+
 function Checkout() {
+  const { t } = useLanguage();
+  
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -170,9 +174,9 @@ function Checkout() {
               }}
             >
               <FontAwesomeIcon icon={faArrowLeft} /> 
-              <span>Quay lại giỏ hàng</span>
+              <span>{t('quayLaiGioHang')}</span>
             </button>
-            <h2 className="checkout-title mt-3">Thanh toán</h2>
+            <h2 className="checkout-title mt-3">{t('thanhToan')}</h2>
           </div>
 
           <div className="col-lg-8">
@@ -180,12 +184,12 @@ function Checkout() {
             <div className="checkout-card mb-4">
               <div className="checkout-card-header">
                 <FontAwesomeIcon icon={faMapMarkerAlt} className="header-icon" />
-                <h5>Địa chỉ nhận hàng</h5>
+                <h5>{t('diaChiNhanHang')}</h5>
                 <button 
                   className="btn btn-sm btn-outline-primary ms-auto"
                   onClick={() => setShowAddressModal(true)}
                 >
-                  <FontAwesomeIcon icon={faEdit} className="me-1" /> Thay đổi
+                  <FontAwesomeIcon icon={faEdit} className="me-1" /> {t('thayDoi')}
                 </button>
               </div>
               
@@ -197,7 +201,7 @@ function Checkout() {
                       <span className="text-divider">|</span>
                       <span>{selectedAddress.phone}</span>
                       {selectedAddress.isDefault && (
-                        <span className="default-badge ms-2">Mặc định</span>
+                        <span className="default-badge ms-2">{t('macDinh')}</span>
                       )}
                     </div>
                     <div className="address-text mt-2">
@@ -206,12 +210,12 @@ function Checkout() {
                   </div>
                 ) : (
                   <div className="no-address">
-                    <p>Bạn chưa có địa chỉ nhận hàng. Vui lòng thêm địa chỉ mới.</p>
+                    <p>{t('banChuaCoDiaChi')}</p>
                     <button 
                       className="btn btn-primary"
                       onClick={() => setShowAddressModal(true)}
                     >
-                      Thêm địa chỉ
+                      {t('themDiaChi')}
                     </button>
                   </div>
                 )}
@@ -222,7 +226,7 @@ function Checkout() {
             <div className="checkout-card mb-4">
               <div className="checkout-card-header">
                 <FontAwesomeIcon icon={getPaymentMethodName(paymentMethod).icon} className="header-icon" />
-                <h5>Phương thức thanh toán</h5>
+                <h5>{t('phuongThucThanhToan')}</h5>
               </div>
               
               <div className="checkout-card-body">
@@ -246,7 +250,7 @@ function Checkout() {
             <div className="checkout-card mb-4">
               <div className="checkout-card-header">
                 <FontAwesomeIcon icon={faShoppingBag} className="header-icon" />
-                <h5>Đơn hàng của bạn ({cartItems.length} sản phẩm)</h5>
+                <h5>{t('donHangCuaBan')} ({cartItems.length} {t('sp')})</h5>
               </div>
               
               <div className="checkout-card-body p-0">
@@ -260,13 +264,13 @@ function Checkout() {
                       <div className="col-md-6">
                         <h6 className="item-name">{item.name}</h6>
                         <div className="item-details">
-                          <span className="text-muted">Màu: 
+                          <span className="text-muted">{t('mauSac')} 
                             <span 
                               className="color-dot ms-1" 
                               style={{backgroundColor: item.selectedColor}}
                             ></span>
                           </span>
-                          <span className="text-muted ms-3">Kích thước: {item.size || 'Tiêu chuẩn'}</span>
+                          <span className="text-muted ms-3">{t('kichThuoc')} {item.size || 'Tiêu chuẩn'}</span>
                         </div>
                       </div>
                       
@@ -287,14 +291,14 @@ function Checkout() {
             <div className="checkout-card mb-4">
               <div className="checkout-card-header">
                 <FontAwesomeIcon icon={faTruck} className="header-icon" />
-                <h5>Thông tin vận chuyển</h5>
+                <h5>{t('thongTinVanChuyen')}</h5>
               </div>
               
               <div className="checkout-card-body">
                 <div className="shipping-info">
-                  <p className="mb-1">Phương thức vận chuyển: Giao hàng tiêu chuẩn</p>
-                  <p className="mb-1">Thời gian giao hàng dự kiến: 3-5 ngày làm việc</p>
-                  <p className="mb-0">Phí vận chuyển: {shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee)}</p>
+                  <p className="mb-1">{t('phuongThucVanChuyen')}</p>
+                  <p className="mb-1">{t('thoiGianVanChuyen')}</p>
+                  <p className="mb-0">{t('phiVanChuyen')} {shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee)}</p>
                 </div>
               </div>
             </div>
@@ -304,24 +308,24 @@ function Checkout() {
             {/* Order Summary Card */}
             <div className="checkout-card summary-card">
               <div className="checkout-card-header">
-                <h5>Tổng cộng</h5>
+                <h5>{t('tongCong')}</h5>
               </div>
               
               <div className="checkout-card-body">
                 <div className="summary-item d-flex justify-content-between">
-                  <span>Tạm tính</span>
+                  <span>{t('tamTinh')}</span>
                   <span>{formatPrice(totalPrice)}</span>
                 </div>
                 
                 <div className="summary-item d-flex justify-content-between">
-                  <span>Phí vận chuyển</span>
+                  <span>{t('phiVanChuyen')}</span>
                   <span>{shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee)}</span>
                 </div>
                 
                 <hr />
                 
                 <div className="summary-total d-flex justify-content-between">
-                  <span className="fw-bold">Tổng tiền</span>
+                  <span className="fw-bold">{t('tongTien')}</span>
                   <span className="fw-bold text-danger">{formatPrice(grandTotal)}</span>
                 </div>
                 
@@ -329,11 +333,11 @@ function Checkout() {
                   className="btn btn-primary btn-place-order w-100 mt-4"
                   onClick={placeOrder}
                 >
-                  Đặt hàng
+                  {t('datHang')}
                 </button>
                 
                 <div className="order-note mt-3">
-                  <p className="mb-0 text-muted small">* Bằng cách nhấn "Đặt hàng", bạn đồng ý với Điều khoản dịch vụ và Chính sách bảo mật của chúng tôi</p>
+                  <p className="mb-0 text-muted small">{t('bangCach')}</p>
                 </div>
               </div>
             </div>
@@ -347,7 +351,7 @@ function Checkout() {
           <div className="modal-wrapper">
             <div className="address-modal">
               <div className="modal-header">
-                <h5>Địa chỉ nhận hàng</h5>
+                <h5>{t('diaChiNhanHang')}</h5>
                 <button 
                   className="btn-close"
                   onClick={() => setShowAddressModal(false)}
@@ -357,7 +361,7 @@ function Checkout() {
               
               <div className="modal-body">
                 <div className="address-list">
-                  <h6 className="mb-3">Địa chỉ đã lưu</h6>
+                  <h6 className="mb-3">{t('diaChiDaLuu')}</h6>
                   
                   {addresses.length > 0 ? (
                     addresses.map(address => (
@@ -371,7 +375,7 @@ function Checkout() {
                           <span className="text-divider">|</span>
                           <span>{address.phone}</span>
                           {address.isDefault && (
-                            <span className="default-badge ms-2">Mặc định</span>
+                            <span className="default-badge ms-2">{t('macDinh')}</span>
                           )}
                         </div>
                         <div className="address-text mt-2">
@@ -380,18 +384,18 @@ function Checkout() {
                       </div>
                     ))
                   ) : (
-                    <p>Chưa có địa chỉ nào được lưu</p>
+                    <p>{t('chuaCoDiaChiDuocLuu')}</p>
                   )}
                 </div>
                 
                 <hr />
                 
                 <div className="new-address-form">
-                  <h6 className="mb-3">Thêm địa chỉ mới</h6>
+                  <h6 className="mb-3">{t('themDiaChiMoi')}</h6>
                   
                   <form onSubmit={addNewAddress}>
                     <div className="mb-3">
-                      <label htmlFor="recipient" className="form-label">Họ tên người nhận</label>
+                      <label htmlFor="recipient" className="form-label">{t('hoTenNguoiNhan')}</label>
                       <input 
                         type="text" 
                         className="form-control" 
@@ -404,7 +408,7 @@ function Checkout() {
                     </div>
                     
                     <div className="mb-3">
-                      <label htmlFor="phone" className="form-label">Số điện thoại</label>
+                      <label htmlFor="phone" className="form-label">{t('soDienThoai')}</label>
                       <input 
                         type="tel" 
                         className="form-control" 
@@ -417,7 +421,7 @@ function Checkout() {
                     </div>
                     
                     <div className="mb-3">
-                      <label htmlFor="address" className="form-label">Địa chỉ đầy đủ</label>
+                      <label htmlFor="address" className="form-label">{t('diaChiDayDu')}</label>
                       <textarea 
                         className="form-control" 
                         id="address" 
@@ -438,7 +442,7 @@ function Checkout() {
                         checked={newAddress.isDefault}
                         onChange={handleAddressChange}
                       />
-                      <label className="form-check-label" htmlFor="isDefault">Đặt làm địa chỉ mặc định</label>
+                      <label className="form-check-label" htmlFor="isDefault">{t('datLamDiaChiMacDinh')}</label>
                     </div>
                     
                     <div className="modal-footer justify-content-between">
@@ -447,13 +451,13 @@ function Checkout() {
                         className="btn btn-outline-secondary"
                         onClick={() => setShowAddressModal(false)}
                       >
-                        Hủy
+                        {t('huy')}
                       </button>
                       <button 
                         type="submit" 
                         className="btn btn-primary"
                       >
-                        Lưu địa chỉ
+                        {t('luuDiaChi')}
                       </button>
                     </div>
                   </form>

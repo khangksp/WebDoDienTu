@@ -19,7 +19,10 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'aos/dist/aos.css';
 import "./style/style.css";
 
+import { useLanguage } from "../context/LanguageContext";
+
 function Cart() {
+  const { t } = useLanguage();
   const navigate = useNavigate(); // Add navigate hook for routing
 
   // Initialize AOS animation library
@@ -148,7 +151,7 @@ function Cart() {
   return (
     <div className="container my-5" data-aos="fade-up">
       <style>{modalAnimation}</style>
-      <h2 className="mb-4">Giỏ hàng của bạn</h2>
+      <h2 className="mb-4">{t('gioHangCuaBan')})</h2>
       
       {cartItems.length > 0 ? (
         <div className="row">
@@ -170,10 +173,10 @@ function Cart() {
                       
                       <div className="col-md-5">
                         <h5 className="product-title">{item.name}</h5>
-                        <p className="text-muted small mb-2">Giá: {formatPrice(item.price)}</p>
+                        <p className="text-muted small mb-2">{t('gia')}) {formatPrice(item.price)}</p>
                         
                         <div className="d-flex mt-2">
-                          <span className="me-2">Màu sắc:</span>
+                          <span className="me-2">{t('mauSac')})</span>
                           {item.colors.map(color => (
                             <div
                               key={color}
@@ -193,8 +196,8 @@ function Cart() {
                         </div>
                         
                         <div className="mt-2">
-                          <span className="me-2">Kích thước:</span>
-                          <span className="badge bg-light text-dark">Tiêu chuẩn</span>
+                          <span className="me-2">{t('kichThuoc')})</span>
+                          <span className="badge bg-light text-dark">{t('tieuChuan')})</span>
                         </div>
                       </div>
                       
@@ -244,20 +247,20 @@ function Cart() {
           <div className="col-lg-4">
             <div className="card shadow-sm">
               <div className="card-header bg-white">
-                <h5 className="mb-0">Thông tin đơn hàng</h5>
+                <h5 className="mb-0">{t('thongTinDonHang')})</h5>
               </div>
               <div className="card-body">
                 <div className="d-flex justify-content-between mb-2">
-                  <span>Tạm tính ({cartItems.length} sản phẩm):</span>
+                  <span>{t('tamTinh')} ({cartItems.length} {t('sp')}):</span>
                   <strong>{formatPrice(totalPrice)}</strong>
                 </div>
                 <div className="d-flex justify-content-between mb-2">
-                  <span>Phí vận chuyển:</span>
-                  <strong>Miễn phí</strong>
+                  <span>{t('phiVanChuyen')}</span>
+                  <strong>{t('mienPhi')}</strong>
                 </div>
                 <hr />
                 <div className="d-flex justify-content-between mb-3">
-                  <span>Tổng tiền:</span>
+                  <span>{t('tongTien')}</span>
                   <strong className="text-danger">{formatPrice(totalPrice)}</strong>
                 </div>
                 
@@ -269,7 +272,7 @@ function Cart() {
                 </button>
                 
                 <div className="payment-methods mt-3">
-                  <p className="small mb-2">Các đối tác thanh toán</p>
+                  <p className="small mb-2">{t('cacDoiTacThanhToan')}</p>
                   <div className="d-flex flex-wrap">
                     <FontAwesomeIcon icon={faCcVisa} className="payment-icon me-2 mb-2" style={{width: '40px'}} size="2x" />
                     <FontAwesomeIcon icon={faCcPaypal} className="payment-icon me-2 mb-2" style={{width: '40px'}} size="2x" />
@@ -284,7 +287,7 @@ function Cart() {
               <div className="card-body">
                 <div className="input-group">
                   <input type="text" className="form-control" placeholder="Mã giảm giá" />
-                  <button className="btn btn-outline-secondary">Áp dụng</button>
+                  <button className="btn btn-outline-secondary">{t('apDung')}</button>
                 </div>
               </div>
             </div>
@@ -293,13 +296,13 @@ function Cart() {
       ) : (
         <div className="text-center py-5">
           <FontAwesomeIcon icon={faShoppingCart} size="4x" className="text-muted mb-3" />
-          <h4>Giỏ hàng của bạn đang trống</h4>
-          <p>Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</p>
+          <h4>{t('gioHangDangTrong')}</h4>
+          <p>{t('hayThemSanPham')}</p>
           <button 
             className="btn btn-primary"
             onClick={() => navigate('/')} // Navigate to homepage
           >
-            Tiếp tục mua sắm
+            {t('tiepTucMuaSam')}
           </button>
         </div>
       )}
@@ -332,7 +335,7 @@ function Cart() {
                  border: '1px solid #e9ecef'
                }}>
             <div className="modal-header d-flex justify-content-between align-items-center p-4 border-bottom" style={{ backgroundColor: '#f8f9fa', borderRadius: '12px 12px 0 0' }}>
-              <h5 className="modal-title fw-bold" style={{ color: '#0d6efd' }}>Chọn phương thức thanh toán</h5>
+              <h5 className="modal-title fw-bold" style={{ color: '#0d6efd' }}>{t('chonPhuongThuc')}</h5>
               <button 
                 onClick={() => setShowModal(false)} 
                 className="btn-close"
@@ -387,14 +390,14 @@ function Cart() {
                 className="btn btn-outline-secondary" 
                 onClick={() => setShowModal(false)}
               >
-                Hủy
+                {t('huy')}
               </button>
               <button 
                 className="btn btn-primary" 
                 onClick={completePayment}
                 disabled={!selectedPayment}
               >
-                Xác nhận thanh toán
+                {t('xacNhanThanhToan')}
               </button>
             </div>
           </div>
