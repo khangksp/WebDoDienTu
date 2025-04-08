@@ -23,7 +23,7 @@ import Nhanvien from './pages/nhanvien';
 // Component Layout để kiểm soát việc render Navbar và Footer
 const Layout = ({ children }) => {
   const location = useLocation();
-  const hideNavbarAndFooterPaths = ['/admin']; // Các đường dẫn không muốn hiển thị Navbar và Footer
+  const hideNavbarAndFooterPaths = ['/admin','/nhanvien']; // Các đường dẫn không muốn hiển thị Navbar và Footer
 
   return (
     <>
