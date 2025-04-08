@@ -1,3 +1,7 @@
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import "./App.css";
+
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { LanguageProvider } from './context/LanguageContext';
 import Navbar from "./components/Navbar";
@@ -15,7 +19,6 @@ import About from "./pages/About";
 import Admin from './pages/admin';
 import Nhanvien from './pages/nhanvien';
 
-import "bootstrap/dist/css/bootstrap.min.css";
 
 // Component Layout để kiểm soát việc render Navbar và Footer
 const Layout = ({ children }) => {

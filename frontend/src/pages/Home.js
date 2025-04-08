@@ -228,12 +228,12 @@ function HomePage() {
         )}
         
         <div className="text-center mt-4">
-          <button 
-            className="btn btn-outline-dark btn-lg"
-            onClick={() => navigate('/products')}
-          >
-            {t('xemTatCaSanPham')}
-          </button>
+        <button 
+          className="btn btn-outline-secondary btn-lg"
+          onClick={() => navigate('/products')}
+        >
+          {t('xemTatCaSanPham')}
+        </button>
         </div>
       </section>
     </div>

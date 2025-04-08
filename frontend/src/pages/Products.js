@@ -281,66 +281,28 @@ const Products = () => {
 // Thêm CSS cho các hiệu ứng và bố cục
 const styles = `
 <style>
-    .product-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    
-    .product-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    }
-    
-    .product-image-container {
-        height: 200px;
-        overflow: hidden;
-    }
-    
-    .product-image {
-        height: 100%;
-        width: 100%;
-        object-fit: cover;
-        transition: transform 0.5s ease;
-    }
-    
-    .product-card:hover .product-image {
-        transform: scale(1.05);
-    }
-    
-    .product-title {
-        font-weight: 600;
-        height: auto;
-        overflow: hidden;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-    }
-    
-    .product-description {
-        height: 48px;
-        overflow: hidden;
-        color: #6c757d;
-    }
-    
-    .product-details {
-        font-size: 0.9rem;
-        color: #495057;
-    }
-    
     .btn {
-        transition: all 0.3s ease;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        color: #fff;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        width: auto; /* This replaces width: 100% */
     }
-    
-    .btn-secondary {
-        background-color: #757575;
-        border-color: #757575;
-    }
-    
-    .btn-secondary:hover {
-        background-color:rgb(98, 98, 98);
-        border-color: rgb(98, 98, 98);
-    }
+
+  .btn-outline-secondary {
+    background-color: #e0e0e0; /* Light light gray */
+    color: #6c757d;
+    border: 1px solid #d0d0d0;
+  }
+
+  .btn-outline-secondary:hover {
+    background-color: #d0d0d0;
+    color: #6c757d;
+  }    
 </style>
 `;
 

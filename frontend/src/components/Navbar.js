@@ -21,6 +21,34 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Navbar.css";
 
+const NavbarStyles = `
+<style>
+  .btn {
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: auto;
+  }
+
+  .btn-outline-secondary {
+    background-color: #e0e0e0; /* Light light gray */
+    color: #6c757d;
+    border: 1px solid #d0d0d0;
+  }
+
+  .btn-outline-secondary:hover {
+    background-color: #d0d0d0;
+    color: #6c757d;
+  }  
+</style>
+`;
+
+
 function Navbar() {
   const { t } = useLanguage();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -336,6 +364,7 @@ function Navbar() {
 
   return (
     <>
+      <div dangerouslySetInnerHTML={{ __html: NavbarStyles }} />
       <nav className="navbar navbar-expand-lg navbar-light bg-white">
         <div className="container">
           <Link className="navbar-brand" to="/">
