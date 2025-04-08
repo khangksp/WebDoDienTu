@@ -7,23 +7,21 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: microservices
       MYSQL_USER: user
       MYSQL_PASSWORD: password
     ports:
-    - "3306:3306"
+      - "3306:3306"
     volumes:
-    - mysql_data:/var/lib/mysql
-    - ./mysql-init:/docker-entrypoint-initdb.d
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
     networks:
-    - microservice_network
+      - microservice_network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 30s
-      
   api_gateway:
     build: ./api_gateway
     container_name: api_gateway

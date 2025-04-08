@@ -12,6 +12,9 @@ import Checkout from "./pages/Checkout";
 import PokemonAPI from "./pages/Pokemon";
 import Login from "./pages/Login";
 import About from "./pages/About";
+import Admin from './pages/admin';
+import Nhanvien from './pages/nhanvien';
+
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function App() {
@@ -29,6 +32,8 @@ function App() {
           <Route path="/pokemon" element={<PokemonAPI/>}/>
           <Route path="/login" element={<Login />}/>
           <Route path="/about" element={<About />} />
+          <Route path="/admin" element={<Admin />} />
+        <Route path="/nhanvien" element={<Nhanvien />} />
         </Routes>
         <Footer />
       </BrowserRouter>

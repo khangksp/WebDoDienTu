@@ -7,10 +7,9 @@ import AOS from 'aos';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'aos/dist/aos.css';
-
+import { API_BASE_URL } from "../config";
 import { useLanguage } from "../context/LanguageContext";
 
-import { API_URL } from "./config";
 const Products = () => {
     const { t } = useLanguage();
 
@@ -32,7 +31,7 @@ const Products = () => {
 
     // Fetch danh mục sản phẩm
     useEffect(() => {
-        axios.get(`${API_URL}:8000/api/products/categories/`)
+        axios.get(`${API_BASE_URL}/products/categories/`)
             .then(response => {
                 setCategories(response.data);
             })
@@ -43,7 +42,7 @@ const Products = () => {
 
     // Fetch sản phẩm
     useEffect(() => {
-        let url = `${API_URL}:8000/api/products/products/`;
+        let url = `${API_BASE_URL}/products/products/`;
         
         // Nếu có category được chọn, thêm filter
         if (selectedCategory) {
