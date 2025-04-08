@@ -1,0 +1,272 @@
+/* Reset cơ bản */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Arial', sans-serif;
+  }
+  
+  /* Layout chính */
+  .staff-dashboard {
+    display: flex;
+    height: 100vh;
+    background-color: #f4f7fa;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    width: 250px;
+    background-color: #fff;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .sidebar-header {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .sidebar-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2d3748;
+  }
+  
+  .sidebar-nav {
+    margin-top: 20px;
+  }
+  
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .sidebar-item:hover {
+    background-color: #f1f5f9;
+  }
+  
+  .sidebar-item.active {
+    background-color: #e5e7eb;
+  }
+  
+  .sidebar-icon {
+    margin-right: 15px;
+    color: #6b7280;
+  }
+  
+  .sidebar-item span {
+    font-size: 16px;
+    color: #4b5563;
+    font-weight: 500;
+  }
+  
+  .sidebar-subitem {
+    padding-left: 20px;
+  }
+  
+  .sidebar-subitem .sidebar-item {
+    padding: 10px 20px;
+  }
+  
+  .sidebar-subitem .sidebar-item span {
+    font-size: 14px;
+  }
+  
+  .sidebar-divider {
+    border-top: 1px solid #e5e7eb;
+    margin: 20px 0;
+  }
+  
+  /* Content */
+  .content {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+  }
+  
+  .content h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 30px;
+  }
+  
+  /* Form Card */
+  .form-card {
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    max-width: 500px; /* Giới hạn cho các form khác */
+  }
+  
+  /* Form Card cho Thêm Sản Phẩm */
+  .form-card-product {
+    max-width: none; /* Bỏ giới hạn max-width để trải rộng */
+    width: 100%; /* Đảm bảo form chiếm toàn bộ chiều rộng */
+  }
+  
+  .form-card h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .form-icon {
+    margin-right: 10px;
+    color: #6b7280;
+  }
+  
+  /* Form Columns */
+  .form-columns {
+    display: flex;
+    gap: 40px; /* Tăng khoảng cách giữa 2 cột */
+    width: 100%; /* Đảm bảo form-columns chiếm toàn bộ chiều rộng */
+  }
+  
+  .form-column {
+    flex: 1; /* Mỗi cột chiếm đều không gian */
+    min-width: 300px; /* Đảm bảo cột không bị co lại quá hẹp */
+  }
+  
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4b5563;
+    margin-bottom: 8px;
+  }
+  
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #1f2937;
+    background-color: #f8fafc;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .form-group textarea {
+    height: 80px;
+    resize: none;
+  }
+  
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  .form-group input::placeholder,
+  .form-group textarea::placeholder,
+  .form-group select::placeholder {
+    color: #9ca3af;
+  }
+  
+  /* Button */
+  .btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .btn-category {
+    background-color: #3b82f6;
+  }
+  
+  .btn-category:hover {
+    background-color: #2563eb;
+  }
+  
+  .btn-hangSanXuat {
+    background-color: #8b5cf6;
+  }
+  
+  .btn-hangSanXuat:hover {
+    background-color: #7c3aed;
+  }
+  
+  .btn-thongSo {
+    background-color: #ec4899;
+  }
+  
+  .btn-thongSo:hover {
+    background-color: #db2777;
+  }
+  
+  .btn-product {
+    background-color: #10b981;
+  }
+  
+  .btn-product:hover {
+    background-color: #059669;
+  }
+  
+  /* Alert */
+  .alert {
+    margin-top: 30px;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    width: 100%; /* Đảm bảo thông báo trải rộng */
+  }
+  
+  .alert-error {
+    background-color: #fee2e2;
+    color: #dc2626;
+  }
+  
+  .alert-success {
+    background-color: #d1fae5;
+    color: #047857;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .staff-dashboard {
+      flex-direction: column;
+    }
+  
+    .sidebar {
+      width: 100%;
+      box-shadow: none;
+    }
+  
+    .content {
+      padding: 20px;
+    }
+  
+    .form-columns {
+      flex-direction: column;
+      gap: 0;
+    }
+  
+    .form-column {
+      min-width: 100%; /* Trên màn hình nhỏ, cột chiếm toàn bộ chiều rộng */
+    }
+  }
