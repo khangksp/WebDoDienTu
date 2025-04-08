@@ -296,6 +296,17 @@ function Navbar() {
     goBackToLogin: () => { resetModals(); setShowLoginModal(true); },
   };
 
+
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchTerm)}`);
+      setSearchTerm("");
+    }
+  };
+
   return (
     <>
       <nav className="navbar navbar-expand-lg navbar-light bg-white">
@@ -315,14 +326,20 @@ function Navbar() {
           </button>
 
           <div className={`collapse navbar-collapse ${isToggled ? "show" : ""}`}>
-            <div className="d-lg-none mb-3">
-              <div className="input-group">
-                <span className="input-group-text">
-                  <FontAwesomeIcon icon={faSearch} />
-                </span>
-                <input type="text" className="form-control" placeholder={t("timKiem")} />
-              </div>
+          <form onSubmit={handleSearch} className="d-lg-none mb-3">
+            <div className="input-group">
+              <span className="input-group-text">
+                <FontAwesomeIcon icon={faSearch} />
+              </span>
+              <input 
+                type="text" 
+                className="form-control" 
+                placeholder={t("timKiem")} 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
+          </form>
 
             <div className="navbar-nav mx-auto position-relative">
               {[
@@ -360,12 +377,22 @@ function Navbar() {
           </div>
 
           <div className="d-none d-lg-flex align-items-center">
-            <div className="input-group search-container">
-              <span className="input-group-text">
-                <FontAwesomeIcon icon={faSearch} />
-              </span>
-              <input type="text" className="form-control" placeholder={t("timKiem")} />
-            </div>
+            <form onSubmit={handleSearch} className="d-none d-lg-flex align-items-center">
+              <div className="input-group search-container">
+                <span className="input-group-text">
+                  <FontAwesomeIcon icon={faSearch} />
+                </span>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  placeholder={t("timKiem")} 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </form>
+
+
             <LanguageSwitcher />
             <a className="nav-link ms-3" href="#" onClick={handleAccountClick}>
               <FontAwesomeIcon icon={faUser} className="me-1" />

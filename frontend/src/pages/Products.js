@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShoppingCart, faInfoCircle, faFilter } from '@fortawesome/free-solid-svg-icons';
+import { faShoppingCart, faInfoCircle, faFilter, faSearch } from '@fortawesome/free-solid-svg-icons';
 import AOS from 'aos';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
@@ -13,13 +13,15 @@ import { useLanguage } from "../context/LanguageContext";
 import { API_URL } from "./config";
 const Products = () => {
     const { t } = useLanguage();
-
     const navigate = useNavigate();
+    const location = useLocation();
+    
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
     
     // Khởi tạo hiệu ứng AOS
     useEffect(() => {
@@ -29,6 +31,27 @@ const Products = () => {
             once: true,
         });
     }, []);
+
+    // Lấy tham số từ URL
+    useEffect(() => {
+        const queryParams = new URLSearchParams(location.search);
+        
+        // Lấy category từ URL nếu có
+        const category = queryParams.get('category');
+        if (category) {
+            setSelectedCategory(parseInt(category));
+        } else {
+            setSelectedCategory(null); // Reset nếu không có category
+        }
+        
+        // Lấy search term từ URL nếu có
+        const search = queryParams.get('search');
+        if (search) {
+            setSearchTerm(search);
+        } else {
+            setSearchTerm(""); // Reset nếu không có tìm kiếm
+        }
+    }, [location.search]);
 
     // Fetch danh mục sản phẩm
     useEffect(() => {
@@ -45,28 +68,48 @@ const Products = () => {
     useEffect(() => {
         let url = `${API_URL}:8000/api/products/products/`;
         
+        const params = new URLSearchParams();
+        
         // Nếu có category được chọn, thêm filter
         if (selectedCategory) {
-            url += `?category=${selectedCategory}`;
+        params.append('category', selectedCategory);
+        }
+        
+        // Nếu có từ khóa tìm kiếm, thêm filter
+        if (searchTerm) {
+        params.append('search', searchTerm);
+        }
+        
+        // Nếu có tham số, thêm vào URL
+        if (params.toString()) {
+        url += `?${params.toString()}`;
         }
         
         setLoading(true);
         axios.get(url)
-            .then(response => {
-                console.log("Dữ liệu API:", response.data);
-                setProducts(response.data);
-                setLoading(false);
-            })
-            .catch(error => {
-                console.error("Lỗi khi gọi API:", error);
-                setError("Không thể tải dữ liệu sản phẩm");
-                setLoading(false);
-            });
-    }, [selectedCategory]);
+        .then(response => {
+            console.log("Dữ liệu API:", response.data);
+            setProducts(response.data);
+            setLoading(false);
+        })
+        .catch(error => {
+            console.error("Lỗi khi gọi API:", error);
+            setError("Không thể tải dữ liệu sản phẩm");
+            setLoading(false);
+        });
+    }, [selectedCategory, searchTerm]); // Chạy lại khi selectedCategory hoặc searchTerm thay đổi
 
     // Xử lý khi chọn danh mục
     const handleCategoryClick = (categoryId) => {
         setSelectedCategory(categoryId === selectedCategory ? null : categoryId);
+        // Cập nhật URL khi chọn danh mục
+        const params = new URLSearchParams(location.search);
+        if (categoryId === selectedCategory) {
+            params.delete('category');
+        } else {
+            params.set('category', categoryId);
+        }
+        navigate(`/products?${params.toString()}`);
     };
 
     // Xử lý khi click vào sản phẩm
@@ -102,6 +145,25 @@ const Products = () => {
                 {t('dsSanPham')}
             </h1>
             
+            {/* Hiển thị từ khóa tìm kiếm nếu có */}
+            {searchTerm && (
+                <div className="alert alert-secondary mb-4">
+                    <FontAwesomeIcon icon={faSearch} className="me-2" />
+                    {t('Kết quả tìm kiếm')}: "{searchTerm}" - {products.length} {t('Kết quả')}
+                    <button 
+                        className="btn btn-sm btn-outline-secondary ms-3"
+                        onClick={() => {
+                            setSearchTerm("");
+                            const params = new URLSearchParams(location.search);
+                            params.delete('search');
+                            navigate(`/products?${params.toString()}`);
+                        }}
+                        >
+                        {t('Xóa tim kiếm')}
+                    </button>
+                </div>
+            )}
+            
             {/* Danh mục sản phẩm */}
             <div className="mb-4" data-aos="fade-up">
                 <div className="d-flex align-items-center mb-2">
@@ -111,7 +173,12 @@ const Products = () => {
                 <div className="d-flex flex-wrap gap-2">
                     <button 
                         className={`btn ${selectedCategory === null ? 'btn-secondary' : 'btn-outline-secondary'}`}
-                        onClick={() => setSelectedCategory(null)}
+                        onClick={() => {
+                            setSelectedCategory(null);
+                            const params = new URLSearchParams(location.search);
+                            params.delete('category');
+                            navigate(`/products?${params.toString()}`);
+                        }}
                     >
                         {t('tatCa')}
                     </button>
@@ -137,7 +204,12 @@ const Products = () => {
             ) : error ? (
                 <div className="alert alert-danger">{error}</div>
             ) : products.length === 0 ? (
-                <div className="alert alert-info">{t('koCoSanPham')}</div>
+                <div className="alert alert-info">
+                    {searchTerm 
+                        ? t('khongTimThayKetQua').replace('{searchTerm}', searchTerm) 
+                        : t('koCoSanPham')
+                    }
+                </div>
             ) : (
                 <div className="row">
                     {products.map((product, index) => (
@@ -153,13 +225,22 @@ const Products = () => {
                                             src={product.image_url} 
                                             className="card-img-top product-image" 
                                             alt={product.name}
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = '/assets/placeholder.png'; // Ảnh dự phòng
+                                            }}
                                         />
                                     </div>
                                 )}
                                 <div className="card-body d-flex flex-column">
                                     <h5 className="card-title product-title">{product.name}</h5>
                                     <div className="product-description mb-2">
-                                        <p className="card-text">{product.description.substring(0, 60)}...</p>
+                                        <p className="card-text">
+                                            {product.description 
+                                                ? (product.description.substring(0, 60) + "...") 
+                                                : t('khongCoMoTa')
+                                            }
+                                        </p>
                                     </div>
                                     <div className="product-details">
                                         <p className="card-text mb-1">
