@@ -16,7 +16,7 @@ import { faFacebookF, faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { useLanguage } from "../context/LanguageContext";
 import LanguageSwitcher from "./LanguageSwitcher";
 import axios from "axios";
-
+import { API_BASE_URL } from "../config";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Navbar.css";
@@ -25,6 +25,7 @@ function Navbar() {
   const { t } = useLanguage();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
+  const [vaitro, setVaitro] = useState("khach"); // Thêm state cho vai trò
   const [isToggled, setIsToggled] = useState(false);
   const [indicatorStyle, setIndicatorStyle] = useState({});
   const [errorMessage, setErrorMessage] = useState("");
@@ -43,6 +44,7 @@ function Navbar() {
     email: "",
     password: "",
     confirmPassword: "",
+    vaitro: "khach", // Thêm vaitro mặc định là "khach"
   });
   const [verificationCode, setVerificationCode] = useState(["", "", "", "", "", ""]);
   const [countdown, setCountdown] = useState(30);
@@ -62,8 +64,6 @@ function Navbar() {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 992);
 
-  const API_BASE_URL = "http://localhost:8000/api";
-
   // Check auth status
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -79,12 +79,14 @@ function Navbar() {
             (Array.isArray(userData.users) && userData.users[0]) || 
             "User";
           setUsername(usernameField);
+          setVaitro(userData.vaitro || "khach"); // Lấy vai trò từ API nếu có
         })
         .catch((error) => {
           console.error("Auth check failed:", error);
           localStorage.clear();
           setIsAuthenticated(false);
           setUsername("");
+          setVaitro("khach");
         });
     }
   }, []);
@@ -173,7 +175,7 @@ function Navbar() {
     setShowSmsLoginModal(false);
     setShowVerificationModal(false);
     setLoginData({ username: "", password: "" });
-    setRegisterData({ username: "", email: "", password: "", confirmPassword: "" });
+    setRegisterData({ username: "", email: "", password: "", confirmPassword: "", vaitro: "khach" });
     setVerificationCode(["", "", "", "", "", ""]);
     setCountdown(30);
     setIsCountingDown(false);
@@ -187,15 +189,33 @@ function Navbar() {
       setErrorMessage(t("vuiLongNhapDayDuThongTin"));
       return;
     }
-
+  
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/login/`, loginData);
+      console.log("Login response:", response.data); // Kiểm tra response
+  
       const token = response.data.access || response.data.token;
+      const vaitro = (response.data.vaitro || "khach").toLowerCase().trim(); // Chuẩn hóa vai trò
+      console.log("Vai tro:", vaitro); // Kiểm tra vai trò
+  
       localStorage.setItem("access_token", token);
       if (response.data.refresh) localStorage.setItem("refresh_token", response.data.refresh);
       setIsAuthenticated(true);
       setUsername(loginData.username);
+      setVaitro(vaitro);
+  
+      // Điều hướng dựa trên vai trò
       resetModals();
+      if (vaitro === "admin") {
+        console.log("Navigating to /admin");
+        navigate("/admin");
+      } else if (vaitro === "nhanvien") {
+        console.log("Navigating to /nhanvien");
+        navigate("/nhanvien");
+      } else {
+        console.log("Navigating to /");
+        navigate("/");
+      }
     } catch (error) {
       setErrorMessage(
         t("dangNhapThatBai") + ": " + 
@@ -203,10 +223,9 @@ function Navbar() {
       );
     }
   };
-
   const handleRegister = async (e) => {
     e.preventDefault();
-    const { username, email, password, confirmPassword } = registerData;
+    const { username, email, password, confirmPassword, vaitro } = registerData;
     if (!username || !email || !password || !confirmPassword) {
       setErrorMessage(t("vuiLongNhapDayDuThongTin"));
       return;
@@ -217,7 +236,13 @@ function Navbar() {
     }
 
     try {
-      await axios.post(`${API_BASE_URL}/auth/register/`, { username, email, password });
+      // Gửi request đăng ký với trường vaitro
+      await axios.post(`${API_BASE_URL}/auth/register/`, { 
+        username, 
+        email, 
+        password, 
+        vaitro: "khach" // Gửi vaitro mặc định là "khach"
+      });
       resetModals();
       setShowLoginModal(true);
       alert(t("dangKyThanhCong"));
@@ -286,7 +311,9 @@ function Navbar() {
     localStorage.clear();
     setIsAuthenticated(false);
     setUsername("");
+    setVaitro("khach"); // Reset vai trò về mặc định
     resetModals();
+    navigate("/"); // Quay về trang chủ sau khi đăng xuất
   };
 
   const modalNavigation = {
