@@ -1,123 +1,211 @@
-import React, { useState } from 'react';
-import { 
-  Users, 
-  ShoppingCart, 
-  Package, 
-  BarChart3, 
-  Settings, 
-  LogOut 
-} from 'lucide-react';
-
+import React, { useState, useEffect } from 'react';
+import { BarChart3, LogOut } from 'lucide-react';
+import axios from 'axios';
+import './style/dashboard.css'; // File CSS mới
+import { API_BASE_URL } from '../config';
 const AdminDashboard = () => {
-  const [activeSection, setActiveSection] = useState('dashboard');
+  const [totalUsers, setTotalUsers] = useState(0);
 
-  const renderContent = () => {
-    switch(activeSection) {
-      case 'users':
-        return <UsersManagement />;
-      case 'products':
-        return <ProductManagement />;
-      case 'orders':
-        return <OrderManagement />;
-      case 'analytics':
-        return <Analytics />;
-      default:
-        return <Dashboard />;
-    }
-  };
+  // Lấy số lượng tài khoản khi component được mount
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/auth/users/`)
+        if (response.data.status === 'ok') {
+          setTotalUsers(response.data.users.length);
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+    fetchUsers();
+  }, []);
 
-  const SidebarItem = ({ icon: Icon, label, section }) => (
-    <div 
-      className={`flex items-center p-3 cursor-pointer hover:bg-gray-100 ${activeSection === section ? 'bg-gray-200' : ''}`}
-      onClick={() => setActiveSection(section)}
-    >
-      <Icon className="mr-3" />
+  const SidebarItem = ({ icon: Icon, label, onClick }) => (
+    <div className="sidebar-item" onClick={onClick}>
+      <Icon className="sidebar-icon" />
       <span>{label}</span>
     </div>
   );
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="admin-dashboard">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r shadow-md">
-        <div className="p-5 border-b text-center">
-          <h2 className="text-xl font-bold">Admin Dashboard</h2>
+      <div className="sidebar">
+        <div className="sidebar-header">
+          <h2>Admin Dashboard</h2>
         </div>
-        <nav className="mt-5">
-          <SidebarItem icon={BarChart3} label="Dashboard" section="dashboard" />
-          <SidebarItem icon={Users} label="Quản Lý Người Dùng" section="users" />
-          <SidebarItem icon={Package} label="Quản Lý Sản Phẩm" section="products" />
-          <SidebarItem icon={ShoppingCart} label="Quản Lý Đơn Hàng" section="orders" />
-          <SidebarItem icon={BarChart3} label="Phân Tích" section="analytics" />
-          <div className="border-t mt-5">
-            <SidebarItem icon={Settings} label="Cài Đặt" section="settings" />
-            <div 
-              className="flex items-center p-3 text-red-600 cursor-pointer hover:bg-red-50"
-              onClick={() => {
-                localStorage.clear();
-                window.location.href = '/login';
-              }}
-            >
-              <LogOut className="mr-3" />
-              <span>Đăng Xuất</span>
-            </div>
-          </div>
+        <nav className="sidebar-nav">
+          <SidebarItem icon={BarChart3} label="Tổng Quan" onClick={() => {}} />
+          <div className="sidebar-divider"></div>
+          <SidebarItem 
+            icon={LogOut} 
+            label="Đăng Xuất" 
+            onClick={() => {
+              localStorage.clear();
+              window.location.href = '/';
+            }} 
+          />
         </nav>
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 p-10 overflow-y-auto">
-        {renderContent()}
+      <div className="content">
+        <Dashboard totalUsers={totalUsers} />
       </div>
     </div>
   );
 };
 
-const Dashboard = () => (
-  <div>
-    <h1 className="text-3xl font-bold mb-6">Tổng Quan</h1>
-    <div className="grid grid-cols-4 gap-5">
-      <StatCard title="Tổng Người Dùng" value="1,234" />
-      <StatCard title="Tổng Sản Phẩm" value="456" />
-      <StatCard title="Đơn Hàng Mới" value="78" />
-      <StatCard title="Doanh Thu" value="$12,345" />
+const Dashboard = ({ totalUsers }) => {
+  const [khachData, setKhachData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    vaitro: 'khach',
+  });
+
+  const [nhanvienData, setNhanvienData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    vaitro: 'nhanvien',
+  });
+
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const handleInputChange = (type, field) => (e) => {
+    if (type === 'khach') {
+      setKhachData((prev) => ({ ...prev, [field]: e.target.value }));
+    } else {
+      setNhanvienData((prev) => ({ ...prev, [field]: e.target.value }));
+    }
+  };
+
+  const handleRegister = async (type, e) => {
+    e.preventDefault();
+    const data = type === 'khach' ? khachData : nhanvienData;
+
+    if (!data.username || !data.email || !data.password) {
+      setErrorMessage('Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${API_BASE_URL}/auth/register/`,data)
+      setSuccessMessage(`Tạo tài khoản ${type} thành công!`);
+      setErrorMessage('');
+      if (type === 'khach') {
+        setKhachData({ username: '', email: '', password: '', vaitro: 'khach' });
+      } else {
+        setNhanvienData({ username: '', email: '', password: '', vaitro: 'nhanvien' });
+      }
+    } catch (error) {
+      setErrorMessage(
+        'Tạo tài khoản thất bại: ' + 
+        (error.response?.data?.detail || 'Lỗi không xác định')
+      );
+      setSuccessMessage('');
+    }
+  };
+
+  return (
+    <div className="dashboard">
+      <h1>Tổng Quan</h1>
+
+      {/* Tổng Người Dùng */}
+      <div className="stat-card">
+        <h3>Tổng Người Dùng</h3>
+        <p>{totalUsers}</p>
+      </div>
+
+      {/* Form Tạo Tài Khoản */}
+      <div className="form-container">
+        {/* Form Tạo Tài Khoản Khách */}
+        <div className="form-card">
+          <h2>Tạo Tài Khoản Khách</h2>
+          <form onSubmit={(e) => handleRegister('khach', e)}>
+            <div className="form-group">
+              <label>Tên đăng nhập</label>
+              <input
+                type="text"
+                value={khachData.username}
+                onChange={handleInputChange('khach', 'username')}
+                placeholder="Nhập tên đăng nhập"
+              />
+            </div>
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                value={khachData.email}
+                onChange={handleInputChange('khach', 'email')}
+                placeholder="Nhập email"
+              />
+            </div>
+            <div className="form-group">
+              <label>Mật khẩu</label>
+              <input
+                type="password"
+                value={khachData.password}
+                onChange={handleInputChange('khach', 'password')}
+                placeholder="Nhập mật khẩu"
+              />
+            </div>
+            <button type="submit" className="btn btn-khach">Tạo Tài Khoản Khách</button>
+          </form>
+        </div>
+
+        {/* Form Tạo Tài Khoản Nhân Viên */}
+        <div className="form-card">
+          <h2>Tạo Tài Khoản Nhân Viên</h2>
+          <form onSubmit={(e) => handleRegister('nhanvien', e)}>
+            <div className="form-group">
+              <label>Tên đăng nhập</label>
+              <input
+                type="text"
+                value={nhanvienData.username}
+                onChange={handleInputChange('nhanvien', 'username')}
+                placeholder="Nhập tên đăng nhập"
+              />
+            </div>
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                value={nhanvienData.email}
+                onChange={handleInputChange('nhanvien', 'email')}
+                placeholder="Nhập email"
+              />
+            </div>
+            <div className="form-group">
+              <label>Mật khẩu</label>
+              <input
+                type="password"
+                value={nhanvienData.password}
+                onChange={handleInputChange('nhanvien', 'password')}
+                placeholder="Nhập mật khẩu"
+              />
+            </div>
+            <button type="submit" className="btn btn-nhanvien">Tạo Tài Khoản Nhân Viên</button>
+          </form>
+        </div>
+      </div>
+
+      {/* Thông báo */}
+      {errorMessage && (
+        <div className="alert alert-error">
+          {errorMessage}
+        </div>
+      )}
+      {successMessage && (
+        <div className="alert alert-success">
+          {successMessage}
+        </div>
+      )}
     </div>
-  </div>
-);
-
-const StatCard = ({ title, value }) => (
-  <div className="bg-white p-5 rounded-lg shadow-md">
-    <h3 className="text-gray-500 mb-2">{title}</h3>
-    <p className="text-2xl font-bold">{value}</p>
-  </div>
-);
-
-const UsersManagement = () => (
-  <div>
-    <h1 className="text-3xl font-bold mb-6">Quản Lý Người Dùng</h1>
-    {/* Thêm bảng và chức năng quản lý người dùng */}
-  </div>
-);
-
-const ProductManagement = () => (
-  <div>
-    <h1 className="text-3xl font-bold mb-6">Quản Lý Sản Phẩm</h1>
-    {/* Thêm bảng và chức năng quản lý sản phẩm */}
-  </div>
-);
-
-const OrderManagement = () => (
-  <div>
-    <h1 className="text-3xl font-bold mb-6">Quản Lý Đơn Hàng</h1>
-    {/* Thêm bảng và chức năng quản lý đơn hàng */}
-  </div>
-);
-
-const Analytics = () => (
-  <div>
-    <h1 className="text-3xl font-bold mb-6">Phân Tích</h1>
-    {/* Thêm biểu đồ và báo cáo */}
-  </div>
-);
+  );
+};
 
 export default AdminDashboard;
