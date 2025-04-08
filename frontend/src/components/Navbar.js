@@ -333,7 +333,7 @@ function Navbar() {
               ].map((item) => (
                 <Link
                   key={item.path}
-                  className={`nav-link ${location.pathname === item.path ? "active" : ""}`}
+                  className={`nav-link nav2 ${location.pathname === item.path ? "active" : ""}`}
                   to={item.path}
                 >
                   {item.label}

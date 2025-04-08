@@ -40,6 +40,43 @@ body {
   padding-top: 90px;
 }
 
+
+/* Carousel/Slider Improvements */
+.carousel-inner {
+  height: 600px; /* Set a fixed height for the carousel */
+}
+
+.carousel-item {
+  height: 100%; /* Make all items take full height of the carousel */
+}
+
+.carousel-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* This ensures images cover the area without distortion */
+  object-position: center; /* Centers the image */
+}
+
+/* Optional: Add a subtle transition effect for smoother slider experience */
+.carousel-item {
+  transition: transform 0.6s ease-in-out;
+}
+
+
+/* Make carousel controls more visible */
+.carousel-control-prev, .carousel-control-next {
+  margin-top: 70px;
+  width: 50px;
+}
+
+.carousel-control-prev-icon, .carousel-control-next-icon {
+  border-radius: 50%;
+  padding: 10px;
+}
+
+
+
+
 /* Section Titles */
 .section-title {
   margin: 30px 0 20px;

@@ -14,22 +14,30 @@
   height: auto;
 }
 
+/* Cải tiến CSS cho thanh indicator */
+
 /* Tabs */
 .navbar-nav {
   display: flex;
   gap: 20px;
   position: relative;
+  margin-bottom: 10px; /* Thêm margin để có không gian cho indicator */
 }
 
 .nav-link {
   font-size: 16px;
   color: black;
-  font-weight: 500;
+  font-weight: 400;
+  margin-top: 10px;
   position: relative;
   text-decoration: none;
-  padding: 5px 0;
+  padding: 10px;  /* Tăng padding để khoảng cách đẹp hơn */
   transition: color 0.3s ease-in-out;
+  min-width: 80px;   /* Đảm bảo chiều rộng tối thiểu */
+  text-align: center; /* Căn giữa text */
+  display: block;     /* Đảm bảo hiển thị block */
 }
+
 
 .nav-link.active {
   color: #007bff;
@@ -38,11 +46,40 @@
 /* Thanh gạch dưới có animation */
 .indicator {
   position: absolute;
-  bottom: -5px;
+  bottom: -7px;
   height: 4px;
   background-color: #000000;
   transition: all 0.3s ease-in-out;
   border-radius: 4px;
+  /* Tránh trường hợp indicator bị lệch do tính toán chưa kịp */
+  display: block;
+  pointer-events: none; /* Đảm bảo không can thiệp vào hover/click */
+}
+
+
+
+/* Đảm bảo hiệu ứng indicator vẫn hoạt động tốt trên mobile */
+@media (max-width: 991.98px) {
+  .navbar-nav {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .nav-link {
+    width: 100%;
+    text-align: center;
+    min-width: 100px;
+  }
+  
+  .indicator {
+    bottom: auto;
+    height: 100%;
+    width: 4px !important;
+    left: 0 !important;
+    top: 0;
+    opacity: 0.2;
+  }
 }
 
 /* Navbar Toggler */
