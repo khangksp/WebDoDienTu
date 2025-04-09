@@ -4,6 +4,8 @@ import "./App.css";
 
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { LanguageProvider } from './context/LanguageContext';
+import { CartProvider } from './context/CartContext';
+
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
@@ -18,6 +20,8 @@ import Login from "./pages/Login";
 import About from "./pages/About";
 import Admin from './pages/admin';
 import Nhanvien from './pages/nhanvien';
+
+
 
 
 // Component Layout để kiểm soát việc render Navbar và Footer
@@ -38,21 +42,23 @@ function App() {
   return (
     <LanguageProvider>
       <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/detail" element={<Detail />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/pokemon" element={<PokemonAPI />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/nhanvien" element={<Nhanvien />} />
-          </Routes>
-        </Layout>
+        <CartProvider>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/detail" element={<Detail />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/pokemon" element={<PokemonAPI />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/nhanvien" element={<Nhanvien />} />
+            </Routes>
+          </Layout>
+        </CartProvider>
       </BrowserRouter>
     </LanguageProvider>
   );

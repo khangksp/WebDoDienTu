@@ -12,9 +12,16 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import './style/detail.css';
 
 import { useLanguage } from "../context/LanguageContext";
+import { useCart } from "../context/CartContext";
+
 
 function Detail() {
   const { t } = useLanguage();
+
+  // Xử lý khi thêm vào giỏ hàng
+  const { addToCart } = useCart();
+
+
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
@@ -33,6 +40,33 @@ function Detail() {
   const [randomProducts, setRandomProducts] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const productsPerSlide = 4;
+  
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+    
+    try {
+      // Chuẩn bị dữ liệu sản phẩm
+      const productData = {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image_url: product.image_url,
+        quantity: quantity,
+        category: product.category_name,
+        selectedColor: 'default', // Nếu có thể chọn màu
+        size: 'Standard' // Nếu có thể chọn kích thước
+      };
+      
+      // Gọi hàm addToCart từ context
+      await addToCart(productData, quantity);
+      
+      alert('Đã thêm sản phẩm vào giỏ hàng!');
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      alert('Có lỗi xảy ra khi thêm vào giỏ hàng.');
+    }
+  };
 
   // Fetch product data based on ID
   useEffect(() => {
@@ -78,20 +112,6 @@ function Detail() {
     fetchProductData();
   }, [productId, productsPerSlide]);
 
-  // Xử lý khi thêm vào giỏ hàng
-  const addToCart = () => {
-    if (!product) return;
-    
-    // Đây là nơi bạn sẽ kết nối với API giỏ hàng
-    console.log('Thêm vào giỏ hàng:', {
-      productId: product.id,
-      quantity,
-      name: product.name,
-      price: product.price
-    });
-    
-    alert('Đã thêm sản phẩm vào giỏ hàng!');
-  };
 
   // Xử lý khi chọn sản phẩm liên quan
   const handleRelatedProductClick = (relatedProductId) => {
@@ -250,14 +270,14 @@ function Detail() {
               
               {/* Add to Cart Button */}
               <div className="add-to-cart-section">
-                <button 
-                  className="btn-add-to-cart" 
-                  onClick={addToCart}
-                  disabled={product.stock <= 0}
-                >
-                  <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
-                  {product.stock > 0 ? 'Thêm vào giỏ hàng' : 'Hết hàng'}
-                </button>
+              <button 
+                className="btn-add-to-cart" 
+                onClick={handleAddToCart}
+                disabled={product.stock <= 0}
+              >
+                <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
+                {product.stock > 0 ? 'Thêm vào giỏ hàng' : 'Hết hàng'}
+              </button>
               </div>
             </div>
           </div>

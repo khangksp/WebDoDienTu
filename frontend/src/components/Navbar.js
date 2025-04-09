@@ -21,6 +21,9 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Navbar.css";
 
+import { useCart } from "../context/CartContext";
+
+
 const NavbarStyles = `
 <style>
   .btn {
@@ -50,7 +53,12 @@ const NavbarStyles = `
 
 
 function Navbar() {
-  const { t } = useLanguage();
+  const { t } = useLanguage(); // Import ngôn ngữ từ LanguageContext
+  const { cart } = useCart(); // Import giỏ hàng từ CartContext
+  const { refreshCart } = useCart() // Import hàm refreshCart từ CartContext
+
+  
+
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [vaitro, setVaitro] = useState("khach"); // Thêm state cho vai trò
@@ -64,6 +72,10 @@ function Navbar() {
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const [showSmsLoginModal, setShowSmsLoginModal] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
+
+
+  const cartItemsCount = cart?.items?.length || 0; // Số lượng sản phẩm trong giỏ hàng
+
 
   // Form data states
   const [loginData, setLoginData] = useState({ username: "", password: "" });
@@ -220,28 +232,25 @@ function Navbar() {
   
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/login/`, loginData);
-      console.log("Login response:", response.data); // Kiểm tra response
-  
+      
       const token = response.data.access || response.data.token;
-      const vaitro = (response.data.vaitro || "khach").toLowerCase().trim(); // Chuẩn hóa vai trò
-      console.log("Vai tro:", vaitro); // Kiểm tra vai trò
-  
+      const vaitro = (response.data.vaitro || "khach").toLowerCase().trim();
+      
       localStorage.setItem("access_token", token);
       if (response.data.refresh) localStorage.setItem("refresh_token", response.data.refresh);
       setIsAuthenticated(true);
       setUsername(loginData.username);
       setVaitro(vaitro);
-  
-      // Điều hướng dựa trên vai trò
+      
+      // Cập nhật giỏ hàng sau khi đăng nhập
+      await refreshCart();
+      
       resetModals();
       if (vaitro === "admin") {
-        console.log("Navigating to /admin");
         navigate("/admin");
       } else if (vaitro === "nhanvien") {
-        console.log("Navigating to /nhanvien");
         navigate("/nhanvien");
       } else {
-        console.log("Navigating to /");
         navigate("/");
       }
     } catch (error) {
@@ -251,6 +260,7 @@ function Navbar() {
       );
     }
   };
+  
   const handleRegister = async (e) => {
     e.preventDefault();
     const { username, email, password, confirmPassword, vaitro } = registerData;
@@ -339,9 +349,13 @@ function Navbar() {
     localStorage.clear();
     setIsAuthenticated(false);
     setUsername("");
-    setVaitro("khach"); // Reset vai trò về mặc định
+    setVaitro("khach");
+    
+    // Xóa giỏ hàng sau khi đăng xuất
+    refreshCart(); // Sẽ reset giỏ hàng do không có token
+    
     resetModals();
-    navigate("/"); // Quay về trang chủ sau khi đăng xuất
+    navigate("/");
   };
 
   const modalNavigation = {
@@ -424,9 +438,12 @@ function Navbar() {
                     {isAuthenticated ? username : t("taiKhoan")}
                   </span>
                 </a>
-                <Link className="nav-link" to="/cart">
-                  <FontAwesomeIcon icon={faCartShopping} />
-                  <span className="d-none d-lg-inline ms-1">{t("gioHang")}</span>
+                <Link className="nav-link ms-3" to="/cart">
+                  <FontAwesomeIcon icon={faCartShopping} className="me-1" />
+                  {t("gioHang")}
+                  {cartItemsCount > 0 && (
+                    <span className="badge bg-danger rounded-pill ms-1">{cartItemsCount}</span>
+                  )}
                 </Link>
               </div>
             </div>
