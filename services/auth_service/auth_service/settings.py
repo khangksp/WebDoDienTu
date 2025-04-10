@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -10,8 +11,10 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-auth-service-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'api_gateway', 'auth_service'] # Trong môi trường phát triển, cho phép tất cả host
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'api_gateway', 'auth_service']
+
 AUTH_USER_MODEL = 'accounts.User'
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -22,9 +25,10 @@ INSTALLED_APPS = [
     'corsheaders',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',  # Thêm để hỗ trợ JWT
     'accounts',
 ]
-#them token
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -35,6 +39,24 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# Cấu hình REST Framework và JWT
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+# Cấu hình thời gian sống của token
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}
 
 ROOT_URLCONF = 'auth_service.urls'
 
@@ -67,7 +89,9 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT', '3306'),
     }
 }
+
 CORS_ALLOW_ALL_ORIGINS = True
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
