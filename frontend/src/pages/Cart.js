@@ -77,9 +77,14 @@ function Cart() {
       // Navigate to checkout page with cart items and payment method
       navigate('/checkout', {
         state: {
-          cartItems: cart.items,
-          paymentMethod: selectedPayment,
-          totalAmount: cart.total
+          cartItems: cart.items.map(item => ({
+            id: item.product_id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image_url: item.image_url // Đảm bảo truyền đúng thuộc tính này
+          })),
+          paymentMethod: selectedPayment
         }
       });
       
@@ -131,7 +136,7 @@ function Cart() {
                     <div className="row align-items-center">
                       <div className="col-auto">
                         <div className="form-check">
-                          <input className="form-check-input" type="checkbox" checked={true} onChange={() => {}} />
+                          <input className="form-check-input bg-danger border-0" type="checkbox" checked={true} onChange={() => {}} />
                         </div>
                       </div>
                       
@@ -233,10 +238,10 @@ function Cart() {
                 </div>
                 
                 <button 
-                  className="btn btn-primary w-100 py-2 mb-3"
+                  className="btn btn-danger w-100 py-2 mb-3"
                   onClick={() => setShowModal(true)}
                 >
-                  Thanh toán <FontAwesomeIcon icon={faCheckCircle} className="ms-2" />
+                  Thanh toán <FontAwesomeIcon icon={faCheckCircle} className="ms-2 " />
                 </button>
                 
                 <div className="payment-methods mt-3">
@@ -303,7 +308,7 @@ function Cart() {
                  border: '1px solid #e9ecef'
                }}>
             <div className="modal-header d-flex justify-content-between align-items-center p-4 border-bottom" style={{ backgroundColor: '#f8f9fa', borderRadius: '12px 12px 0 0' }}>
-              <h5 className="modal-title fw-bold" style={{ color: '#0d6efd' }}>{t('chonPhuongThuc')}</h5>
+              <h5 className="modal-title fw-bold" style={{ color: '#6c757d' }}>{t('chonPhuongThuc')}</h5>
               <button 
                 onClick={() => setShowModal(false)} 
                 className="btn-close"
@@ -318,26 +323,27 @@ function Cart() {
                 {paymentMethods.map(method => (
                   <div 
                     key={method.id}
-                    className={`payment-option p-3 mb-3 rounded ${selectedPayment === method.id ? 'border border-primary' : 'border'}`}
+                    className={`payment-option p-3 mb-3 rounded ${selectedPayment === method.id ? 'border' : 'border'}`}
                     style={{
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
-                      backgroundColor: selectedPayment === method.id ? '#f0f7ff' : 'white'
+                      backgroundColor: selectedPayment === method.id ? '#dee1e3' : 'white',
+                      borderColor: selectedPayment === method.id ? '#ff424e' : '', // Add this line to change the border color
                     }}
                     onClick={() => handlePaymentSelection(method.id)}
                   >
                     <div className="d-flex align-items-center">
                       <div className="me-3 payment-icon-container rounded-circle p-2" 
                            style={{
-                             backgroundColor: selectedPayment === method.id ? '#0d6efd' : '#f8f9fa', 
-                             color: selectedPayment === method.id ? 'white' : '#0d6efd', 
+                             backgroundColor: selectedPayment === method.id ? '#f8f8ff' : '#f8f9fa', 
+                             color: selectedPayment === method.id ? 'white' : '#f8f8ff', 
                              width: '50px', 
                              height: '50px',
                              display: 'flex',
                              justifyContent: 'center',
                              alignItems: 'center'
                            }}>
-                        <FontAwesomeIcon icon={method.icon} size="lg" />
+                        <FontAwesomeIcon icon={method.icon} size="lg" className="text-danger"/>
                       </div>
                       <div>
                         <h6 className="mb-1">{method.name}</h6>
@@ -345,7 +351,7 @@ function Cart() {
                       </div>
                       {selectedPayment === method.id && (
                         <div className="ms-auto">
-                          <FontAwesomeIcon icon={faCheckCircle} className="text-primary" />
+                          <FontAwesomeIcon icon={faCheckCircle} className="text-danger" />
                         </div>
                       )}
                     </div>
@@ -361,7 +367,7 @@ function Cart() {
                 {t('huy')}
               </button>
               <button 
-                className="btn btn-primary" 
+                className="btn btn-danger " 
                 onClick={completePayment}
                 disabled={!selectedPayment}
               >
