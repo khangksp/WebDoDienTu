@@ -13,7 +13,7 @@ import {
   faTimes
 } from '@fortawesome/free-solid-svg-icons';
 import { faCcVisa, faCcPaypal, faCcApplePay, faGooglePay } from "@fortawesome/free-brands-svg-icons";
-import { useCart } from "../context/CartContext";
+
 import AOS from 'aos';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'aos/dist/aos.css';
@@ -23,8 +23,7 @@ import { useLanguage } from "../context/LanguageContext";
 
 function Cart() {
   const { t } = useLanguage();
-  const navigate = useNavigate();
-  const { cart, loading, updateQuantity, removeFromCart } = useCart();
+  const navigate = useNavigate(); // Add navigate hook for routing
 
   // Initialize AOS animation library
   useEffect(() => {
@@ -33,6 +32,40 @@ function Cart() {
       once: true,
     });
   }, []);
+
+  // State for cart items
+  const [cartItems, setCartItems] = useState([
+    {
+      id: 1,
+      name: 'Croma Bluetooth Wireless Over Ear Headphones With Mic Playback',
+      price: 100000,
+      quantity: 1,
+      image: '/assets/headphone.png',
+      colors: ['gray', 'white', 'lightblue'],
+      selectedColor: 'gray',
+      size: 'Standard'
+    },
+    {
+      id: 2,
+      name: 'Loa Bluetooth Marshall Emberton',
+      price: 2500000,
+      quantity: 1,
+      image: '/assets/loa.jpg',
+      colors: ['gray', 'white', 'lightblue'],
+      selectedColor: 'lightblue',
+      size: 'Standard'
+    },
+    {
+      id: 3,
+      name: 'Thiết bị điện máy gia dụng Máy sấy tóc LG',
+      price: 700000,
+      quantity: 1,
+      image: '/assets/taycam.jpg',
+      colors: ['gray', 'white', 'lightblue'],
+      selectedColor: 'lightblue',
+      size: 'Standard'
+    }
+  ]);
 
   // State for modal
   const [showModal, setShowModal] = useState(false);
@@ -47,23 +80,33 @@ function Cart() {
   ];
 
   // Function to update quantity
-  const handleUpdateQuantity = async (id, increment) => {
-    const item = cart.items.find(item => item.product_id === id);
-    if (item) {
-      const newQuantity = increment ? item.quantity + 1 : Math.max(1, item.quantity - 1);
-      await updateQuantity(id, newQuantity);
-    }
+  const updateQuantity = (id, increment) => {
+    setCartItems(
+      cartItems.map(item => {
+        if (item.id === id) {
+          const newQuantity = increment ? item.quantity + 1 : Math.max(1, item.quantity - 1);
+          return { ...item, quantity: newQuantity };
+        }
+        return item;
+      })
+    );
   };
 
   // Function to remove item from cart
-  const handleRemoveItem = async (id) => {
-    await removeFromCart(id);
+  const removeItem = (id) => {
+    setCartItems(cartItems.filter(item => item.id !== id));
   };
 
-  // Update selected color (if your cart items have color options)
+  // Function to update selected color
   const updateColor = (id, color) => {
-    // Implement this with your cart context if needed
-    console.log("Updating color", id, color);
+    setCartItems(
+      cartItems.map(item => {
+        if (item.id === id) {
+          return { ...item, selectedColor: color };
+        }
+        return item;
+      })
+    );
   };
 
   // Handle payment selection
@@ -71,15 +114,24 @@ function Cart() {
     setSelectedPayment(paymentId);
   };
 
-  // Complete payment - Navigate to checkout
+  // Complete payment - UPDATED to navigate to checkout
   const completePayment = () => {
     if (selectedPayment) {
       // Navigate to checkout page with cart items and payment method
       navigate('/checkout', {
         state: {
-          cartItems: cart.items,
-          paymentMethod: selectedPayment,
-          totalAmount: cart.total
+<<<<<<< HEAD
+          cartItems: cart.items.map(item => ({
+            id: item.product_id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image_url: item.image_url // Đảm bảo truyền đúng thuộc tính này
+          })),
+=======
+          cartItems,
+>>>>>>> parent of 25b04d5 (Merge branch 'main' of https://github.com/khangksp/WebDoDienTu)
+          paymentMethod: selectedPayment
         }
       });
       
@@ -89,6 +141,9 @@ function Cart() {
       alert('Vui lòng chọn phương thức thanh toán');
     }
   };
+
+  // Calculate total price
+  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   // Format price to VND
   const formatPrice = (price) => {
@@ -103,68 +158,56 @@ function Cart() {
     }
   `;
 
-  if (loading) {
-    return (
-      <div className="text-center p-5">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">{t('dangTai')}</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container my-5" data-aos="fade-up">
       <style>{modalAnimation}</style>
-      <h2 className="mb-4"
-        style={{ 
-          paddingTop: '55px',
-        }}>{t('gioHangCuaBan')}</h2>
+      <h2 className="mb-4">{t('gioHangCuaBan')})</h2>
       
-      {cart.items && cart.items.length > 0 ? (
+      {cartItems.length > 0 ? (
         <div className="row">
           <div className="col-lg-8">
             <div className="card shadow-sm mb-4">
               <div className="card-body">
-                {cart.items.map(item => (
-                  <div key={item.product_id} className="cart-item mb-4 pb-4 border-bottom" data-aos="fade-up">
+                {cartItems.map(item => (
+                  <div key={item.id} className="cart-item mb-4 pb-4 border-bottom" data-aos="fade-up">
                     <div className="row align-items-center">
                       <div className="col-auto">
                         <div className="form-check">
-                          <input className="form-check-input" type="checkbox" checked={true} onChange={() => {}} />
+                          <input className="form-check-input bg-danger border-0" type="checkbox" checked={true} onChange={() => {}} />
                         </div>
                       </div>
                       
                       <div className="col-md-2">
-                        <img src={item.image_url} alt={item.name} className="img-fluid" />
+                        <img src={item.image} alt={item.name} className="img-fluid" />
                       </div>
                       
                       <div className="col-md-5">
                         <h5 className="product-title">{item.name}</h5>
-                        <p className="text-muted small mb-2">{t('gia')}: {formatPrice(item.price)}</p>
+                        <p className="text-muted small mb-2">{t('gia')}) {formatPrice(item.price)}</p>
                         
-                        {/* Hiển thị màu sắc nếu có */}
-                        {item.selected_color && item.selected_color !== 'default' && (
-                          <div className="d-flex mt-2">
-                            <span className="me-2">{t('mauSac')}:</span>
+                        <div className="d-flex mt-2">
+                          <span className="me-2">{t('mauSac')})</span>
+                          {item.colors.map(color => (
                             <div
-                              className="color-option selected"
+                              key={color}
+                              className={`color-option ${item.selectedColor === color ? 'selected' : ''}`}
                               style={{
-                                backgroundColor: item.selected_color,
+                                backgroundColor: color,
                                 width: '24px',
                                 height: '24px',
                                 borderRadius: '4px',
                                 margin: '0 4px',
                                 cursor: 'pointer',
-                                border: '2px solid #000'
+                                border: item.selectedColor === color ? '2px solid #000' : '1px solid #ddd'
                               }}
+                              onClick={() => updateColor(item.id, color)}
                             ></div>
-                          </div>
-                        )}
+                          ))}
+                        </div>
                         
                         <div className="mt-2">
-                          <span className="me-2">{t('kichThuoc')}:</span>
-                          <span className="badge bg-light text-dark">{item.size || t('tieuChuan')}</span>
+                          <span className="me-2">{t('kichThuoc')})</span>
+                          <span className="badge bg-light text-dark">{t('tieuChuan')})</span>
                         </div>
                       </div>
                       
@@ -173,8 +216,7 @@ function Cart() {
                           <div className="quantity-controls d-flex align-items-center">
                             <button 
                               className="btn btn-sm btn-outline-secondary" 
-                              onClick={() => handleUpdateQuantity(item.product_id, false)}
-                              disabled={item.quantity <= 1}
+                              onClick={() => updateQuantity(item.id, false)}
                             >
                               <FontAwesomeIcon icon={faMinus} />
                             </button>
@@ -187,7 +229,7 @@ function Cart() {
                             />
                             <button 
                               className="btn btn-sm btn-outline-secondary" 
-                              onClick={() => handleUpdateQuantity(item.product_id, true)}
+                              onClick={() => updateQuantity(item.id, true)}
                             >
                               <FontAwesomeIcon icon={faPlus} />
                             </button>
@@ -195,7 +237,7 @@ function Cart() {
                           
                           <button 
                             className="btn btn-sm text-danger ms-3" 
-                            onClick={() => handleRemoveItem(item.product_id)}
+                            onClick={() => removeItem(item.id)}
                           >
                             <FontAwesomeIcon icon={faTrash} />
                           </button>
@@ -215,12 +257,12 @@ function Cart() {
           <div className="col-lg-4">
             <div className="card shadow-sm">
               <div className="card-header bg-white">
-                <h5 className="mb-0">{t('thongTinDonHang')}</h5>
+                <h5 className="mb-0">{t('thongTinDonHang')})</h5>
               </div>
               <div className="card-body">
                 <div className="d-flex justify-content-between mb-2">
-                  <span>{t('tamTinh')} ({cart.items.length} {t('sp')}):</span>
-                  <strong>{formatPrice(cart.total)}</strong>
+                  <span>{t('tamTinh')} ({cartItems.length} {t('sp')}):</span>
+                  <strong>{formatPrice(totalPrice)}</strong>
                 </div>
                 <div className="d-flex justify-content-between mb-2">
                   <span>{t('phiVanChuyen')}</span>
@@ -229,14 +271,14 @@ function Cart() {
                 <hr />
                 <div className="d-flex justify-content-between mb-3">
                   <span>{t('tongTien')}</span>
-                  <strong className="text-danger">{formatPrice(cart.total)}</strong>
+                  <strong className="text-danger">{formatPrice(totalPrice)}</strong>
                 </div>
                 
                 <button 
-                  className="btn btn-primary w-100 py-2 mb-3"
+                  className="btn btn-danger w-100 py-2 mb-3"
                   onClick={() => setShowModal(true)}
                 >
-                  Thanh toán <FontAwesomeIcon icon={faCheckCircle} className="ms-2" />
+                  Thanh toán <FontAwesomeIcon icon={faCheckCircle} className="ms-2 " />
                 </button>
                 
                 <div className="payment-methods mt-3">
@@ -268,7 +310,7 @@ function Cart() {
           <p>{t('hayThemSanPham')}</p>
           <button 
             className="btn btn-primary"
-            onClick={() => navigate('/products')} 
+            onClick={() => navigate('/')} // Navigate to homepage
           >
             {t('tiepTucMuaSam')}
           </button>
@@ -303,7 +345,7 @@ function Cart() {
                  border: '1px solid #e9ecef'
                }}>
             <div className="modal-header d-flex justify-content-between align-items-center p-4 border-bottom" style={{ backgroundColor: '#f8f9fa', borderRadius: '12px 12px 0 0' }}>
-              <h5 className="modal-title fw-bold" style={{ color: '#0d6efd' }}>{t('chonPhuongThuc')}</h5>
+              <h5 className="modal-title fw-bold" style={{ color: '#6c757d' }}>{t('chonPhuongThuc')}</h5>
               <button 
                 onClick={() => setShowModal(false)} 
                 className="btn-close"
@@ -318,26 +360,27 @@ function Cart() {
                 {paymentMethods.map(method => (
                   <div 
                     key={method.id}
-                    className={`payment-option p-3 mb-3 rounded ${selectedPayment === method.id ? 'border border-primary' : 'border'}`}
+                    className={`payment-option p-3 mb-3 rounded ${selectedPayment === method.id ? 'border' : 'border'}`}
                     style={{
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
-                      backgroundColor: selectedPayment === method.id ? '#f0f7ff' : 'white'
+                      backgroundColor: selectedPayment === method.id ? '#dee1e3' : 'white',
+                      borderColor: selectedPayment === method.id ? '#ff424e' : '', // Add this line to change the border color
                     }}
                     onClick={() => handlePaymentSelection(method.id)}
                   >
                     <div className="d-flex align-items-center">
                       <div className="me-3 payment-icon-container rounded-circle p-2" 
                            style={{
-                             backgroundColor: selectedPayment === method.id ? '#0d6efd' : '#f8f9fa', 
-                             color: selectedPayment === method.id ? 'white' : '#0d6efd', 
+                             backgroundColor: selectedPayment === method.id ? '#f8f8ff' : '#f8f9fa', 
+                             color: selectedPayment === method.id ? 'white' : '#f8f8ff', 
                              width: '50px', 
                              height: '50px',
                              display: 'flex',
                              justifyContent: 'center',
                              alignItems: 'center'
                            }}>
-                        <FontAwesomeIcon icon={method.icon} size="lg" />
+                        <FontAwesomeIcon icon={method.icon} size="lg" className="text-danger"/>
                       </div>
                       <div>
                         <h6 className="mb-1">{method.name}</h6>
@@ -345,7 +388,7 @@ function Cart() {
                       </div>
                       {selectedPayment === method.id && (
                         <div className="ms-auto">
-                          <FontAwesomeIcon icon={faCheckCircle} className="text-primary" />
+                          <FontAwesomeIcon icon={faCheckCircle} className="text-danger" />
                         </div>
                       )}
                     </div>
@@ -361,7 +404,7 @@ function Cart() {
                 {t('huy')}
               </button>
               <button 
-                className="btn btn-primary" 
+                className="btn btn-danger " 
                 onClick={completePayment}
                 disabled={!selectedPayment}
               >

@@ -23,17 +23,10 @@ function Checkout() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Get cart items and payment method from state, or use defaults if not available
   // BACKEND INTEGRATION: Replace this with data fetched from your API/localStorage
   const [cartItems, setCartItems] = useState(location.state?.cartItems || [
     {
-      id: 1,
-      name: 'Croma Bluetooth Wireless Over Ear Headphones With Mic Playback',
-      price: 100000,
-      quantity: 3,
-      image: '/assets/headphone.png',
-      selectedColor: 'gray',
-      size: 'Standard'
+
     }
   ]);
   
@@ -170,13 +163,18 @@ function Checkout() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                fontWeight: '500'
+                fontWeight: '500',
+                marginTop: '40px'
               }}
             >
               <FontAwesomeIcon icon={faArrowLeft} /> 
               <span>{t('quayLaiGioHang')}</span>
             </button>
-            <h2 className="checkout-title mt-3">{t('thanhToan')}</h2>
+            <h2 className="checkout-title mt-3" style={
+              { 
+                margin: '0',
+                padding: '0' 
+              }}>{t('thanhToan')}</h2>
           </div>
 
           <div className="col-lg-8">
@@ -186,7 +184,7 @@ function Checkout() {
                 <FontAwesomeIcon icon={faMapMarkerAlt} className="header-icon" />
                 <h5>{t('diaChiNhanHang')}</h5>
                 <button 
-                  className="btn btn-sm btn-outline-primary ms-auto"
+                  className="btn btn-sm ms-auto custom-hover"
                   onClick={() => setShowAddressModal(true)}
                 >
                   <FontAwesomeIcon icon={faEdit} className="me-1" /> {t('thayDoi')}
@@ -257,21 +255,20 @@ function Checkout() {
                 {cartItems.map((item, index) => (
                   <div key={item.id} className={`order-item p-3 ${index < cartItems.length - 1 ? 'border-bottom' : ''}`}>
                     <div className="row align-items-center">
-                      <div className="col-md-2">
-                        <img src={item.image} alt={item.name} className="img-fluid order-item-image" />
-                      </div>
+                    <div className="col-md-2">
+                      <img 
+                        src={item.image_url} // Sử dụng thuộc tính image_url theo API của bạn
+                        alt={item.name} 
+                        className="img-fluid order-item-image" 
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/assets/placeholder.png'; // Fallback nếu hình ảnh lỗi
+                        }}
+                      />
+                    </div>
                       
                       <div className="col-md-6">
                         <h6 className="item-name">{item.name}</h6>
-                        <div className="item-details">
-                          <span className="text-muted">{t('mauSac')} 
-                            <span 
-                              className="color-dot ms-1" 
-                              style={{backgroundColor: item.selectedColor}}
-                            ></span>
-                          </span>
-                          <span className="text-muted ms-3">{t('kichThuoc')} {item.size || 'Tiêu chuẩn'}</span>
-                        </div>
                       </div>
                       
                       <div className="col-md-2 text-center">
@@ -330,7 +327,7 @@ function Checkout() {
                 </div>
                 
                 <button 
-                  className="btn btn-primary btn-place-order w-100 mt-4"
+                  className="btn btn-danger btn-place-order w-100 mt-4"
                   onClick={placeOrder}
                 >
                   {t('datHang')}
