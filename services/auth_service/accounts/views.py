@@ -6,13 +6,25 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
-from django.contrib.auth.hashers import make_password
+
 class UserListView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        if request.user.vaitro != 'admin':
+            return Response(
+                {"status": "error", "message": "Chỉ admin mới được xem danh sách người dùng"},
+                status=status.HTTP_403_FORBIDDEN
+            )
         users = User.objects.all()
-        return Response({"status": "ok", "users": [user.username for user in users]})
+        user_data = [{
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "vaitro": user.vaitro,
+            "created_at": user.created_at
+        } for user in users]
+        return Response({"status": "ok", "users": user_data})
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -24,19 +36,25 @@ class LoginView(APIView):
         if user is not None:
             refresh = RefreshToken.for_user(user)
             return Response({
-                "status": "ok",
-                "message": "Login successful",
-                "refresh": str(refresh),
+                "id": user.id,
                 "access": str(refresh.access_token),
                 "vaitro": user.vaitro
             }, status=status.HTTP_200_OK)
-        return Response({"status": "error", "message": "Invalid credentials"}, 
-                       status=status.HTTP_401_UNAUTHORIZED)
+        return Response(
+            {"status": "error", "message": "Thông tin đăng nhập không hợp lệ"},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
 
 class RegisterView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        if request.user.vaitro != 'admin':
+            return Response(
+                {"status": "error", "message": "Chỉ admin mới được tạo người dùng"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         username = request.data.get('username')
         email = request.data.get('email')
         password = request.data.get('password')
@@ -51,19 +69,19 @@ class RegisterView(APIView):
 
         if not username or not email or not password:
             return Response(
-                {"status": "error", "message": "Username, email, and password are required"},
+                {"status": "error", "message": "Username, email, và password là bắt buộc"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         if User.objects.filter(username=username).exists():
             return Response(
-                {"status": "error", "message": "Username already exists"},
+                {"status": "error", "message": "Username đã tồn tại"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         if User.objects.filter(email=email).exists():
             return Response(
-                {"status": "error", "message": "Email already exists"},
+                {"status": "error", "message": "Email đã tồn tại"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -73,12 +91,12 @@ class RegisterView(APIView):
             user.is_active = True
             user.save()
             return Response(
-                {"status": "ok", "message": "User created successfully", "vaitro": user.vaitro},
+                {"status": "ok", "message": "Tạo người dùng thành công", "vaitro": user.vaitro},
                 status=status.HTTP_201_CREATED
             )
         except Exception as e:
             return Response(
-                {"status": "error", "message": f"Error creating user: {str(e)}"},
+                {"status": "error", "message": f"Lỗi khi tạo người dùng: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -86,25 +104,18 @@ class UserUpdateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, user_id):
-        """
-        Update user details
-        Chỉ cho phép người dùng cập nhật thông tin của chính mình hoặc admin cập nhật
-        """
         user_to_update = get_object_or_404(User, id=user_id)
         
-        # Kiểm tra quyền
-        if request.user.vaitro != 'admin' and request.user.id != user_to_update.id:
+        if request.user.vaitro != 'admin':
             return Response(
-                {"status": "error", "message": "Bạn không có quyền sửa thông tin người dùng này"},
+                {"status": "error", "message": "Chỉ admin mới được sửa thông tin người dùng"},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Lấy dữ liệu
         email = request.data.get('email')
         vaitro = request.data.get('vaitro')
         password = request.data.get('matkhau')
 
-        # Cập nhật email
         if email:
             if User.objects.exclude(id=user_id).filter(email=email).exists():
                 return Response(
@@ -113,14 +124,8 @@ class UserUpdateView(APIView):
                 )
             user_to_update.email = email
 
-        # Cập nhật vai trò
         if vaitro:
             VALID_ROLES = ['admin', 'khach', 'nhanvien']
-            if request.user.vaitro != 'admin':
-                return Response(
-                    {"status": "error", "message": "Chỉ admin mới được thay đổi vai trò"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
             if vaitro not in VALID_ROLES:
                 return Response(
                     {"status": "error", "message": f"Vai trò '{vaitro}' không hợp lệ. Chỉ chấp nhận: {', '.join(VALID_ROLES)}"},
@@ -128,7 +133,6 @@ class UserUpdateView(APIView):
                 )
             user_to_update.vaitro = vaitro
 
-        # Cập nhật mật khẩu
         if password:
             if len(password) < 6:
                 return Response(
@@ -137,7 +141,6 @@ class UserUpdateView(APIView):
                 )
             user_to_update.set_password(password)
 
-        # Lưu thay đổi
         user_to_update.save()
 
         return Response({
@@ -146,41 +149,31 @@ class UserUpdateView(APIView):
             "user": {
                 "id": user_to_update.id,
                 "username": user_to_update.username,
-                "matkhau":user_to_update.password,
                 "email": user_to_update.email,
                 "vaitro": user_to_update.vaitro
             }
         }, status=status.HTTP_200_OK)
+
 class UserDeleteView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, user_id):
-        """
-        Xóa người dùng
-        Chỉ admin mới được xóa người dùng
-        """
-        # Kiểm tra quyền: chỉ admin mới được xóa
         if request.user.vaitro != 'admin':
             return Response(
-                {"status": "error", "message": "Bạn không có quyền xóa người dùng"},
+                {"status": "error", "message": "Chỉ admin mới được xóa người dùng"},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Lấy user cần xóa
         user_to_delete = get_object_or_404(User, id=user_id)
-
-        # Không cho phép xóa tài khoản admin
-        if user_to_delete.vaitro == 'admin':
+        if user_to_delete.vaitro == 'admin' and User.objects.filter(vaitro='admin').count() <= 1:
             return Response(
-                {"status": "error", "message": "Không thể xóa tài khoản admin"},
+                {"status": "error", "message": "Không thể xóa admin cuối cùng"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Thực hiện xóa
         user_to_delete.delete()
-
         return Response({
-            "status": "ok", 
+            "status": "ok",
             "message": f"Đã xóa người dùng {user_to_delete.username} thành công"
         }, status=status.HTTP_200_OK)
 
@@ -188,14 +181,8 @@ class UserDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, user_id):
-        """
-        Lấy thông tin chi tiết người dùng
-        Chỉ admin hoặc chính user mới được xem
-        """
-        # Lấy user cần xem
         user_to_view = get_object_or_404(User, id=user_id)
         
-        # Kiểm tra quyền: chỉ admin hoặc chính user mới được xem
         if request.user.vaitro != 'admin' and request.user.id != user_to_view.id:
             return Response(
                 {"status": "error", "message": "Bạn không có quyền xem thông tin người dùng này"},

@@ -16,6 +16,6 @@ urlpatterns = [
     
     # New endpoints for user management
     path('users/<int:user_id>/', UserDetailView.as_view(), name='user-detail'),
-    path('users/<int:user_id>/update/', UserUpdateView.as_view(), name='user-update'),
-    path('users/<int:user_id>/delete/', UserDeleteView.as_view(), name='user-delete'),
+    path('users/update/<int:user_id>/', UserUpdateView.as_view(), name='user-update'),
+    path('users/delete/<int:user_id>/', UserDeleteView.as_view(), name='user-delete'),
 ]

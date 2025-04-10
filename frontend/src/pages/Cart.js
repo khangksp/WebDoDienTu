@@ -120,18 +120,7 @@ function Cart() {
       // Navigate to checkout page with cart items and payment method
       navigate('/checkout', {
         state: {
-<<<<<<< HEAD
-          cartItems: cart.items.map(item => ({
-            id: item.product_id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            image_url: item.image_url // Đảm bảo truyền đúng thuộc tính này
-          })),
-=======
-          cartItems,
->>>>>>> parent of 25b04d5 (Merge branch 'main' of https://github.com/khangksp/WebDoDienTu)
-          paymentMethod: selectedPayment
+
         }
       });
       

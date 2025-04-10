@@ -227,4 +227,141 @@
     .form-container {
       grid-template-columns: 1fr;
     }
+    .admin-dashboard {
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    .sidebar {
+      width: 250px;
+      background-color: #2c3e50;
+      color: white;
+      padding: 20px;
+    }
+    
+    .sidebar-header h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+    
+    .sidebar-nav {
+      margin-top: 20px;
+    }
+    
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      cursor: pointer;
+    }
+    
+    .sidebar-item:hover {
+      background-color: #34495e;
+    }
+    
+    .sidebar-item select {
+      background-color: #34495e;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 5px;
+    }
+    
+    .sidebar-icon {
+      margin-right: 10px;
+    }
+    
+    .content {
+      flex-grow: 1;
+      padding: 20px;
+    }
+    
+    .stat-card {
+      background-color: #f1f1f1;
+      padding: 20px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    
+    .add-user-form, .user-management {
+      margin-top: 20px;
+    }
+    
+    .user-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .user-table th, .user-table td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    
+    .user-table th {
+      background-color: #f1f1f1;
+    }
+    
+    .add-user-form, .edit-form {
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    
+    .form-group input, .form-group select {
+      width: 100%;
+      max-width: 300px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    button {
+      padding: 8px 15px;
+      margin-right: 10px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background-color: #2980b9;
+    }
+    
+    .alert-error {
+      padding: 10px;
+      background-color: #e74c3c;
+      color: white;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    
+    .alert-success {
+      padding: 10px;
+      background-color: #2ecc71;
+      color: white;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    .sidebar-item.active {
+      background-color: #34495e;
+      color: white;
+    }
+    
+    .sidebar-item.active .sidebar-icon,
+    .sidebar-item.active span {
+      color: white;
+    }
   }
