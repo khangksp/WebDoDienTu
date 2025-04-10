@@ -19,13 +19,196 @@ import axios from "axios";
 import { API_BASE_URL } from "../config";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "./Navbar.css";
 
 import { useCart } from "../context/CartContext";
+import "./Navbar.css";
 
 
 const NavbarStyles = `
 <style>
+  /* Navbar */
+  .navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 10px 0;
+  }
+
+  .logo {
+    width: 100px;
+    height: auto;
+  }
+
+  /* Container adjustments */
+  .navbar > .container {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 0 15px;
+    position: relative;
+  }
+
+  /* Navbar brand */
+  .navbar-brand {
+    margin-right: 20px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Improved navbar toggler positioning */
+  .navbar-toggler {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    width: 30px;
+    height: 25px;
+    transition: .5s ease-in-out;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    z-index: 100;
+  }
+
+  .toggler-icon {
+    display: block;
+    position: absolute;
+    height: 3px;
+    width: 100%;
+    background: #040404;
+    border-radius: 2px;
+    opacity: 1;
+    left: 0;
+    transition: .25s ease-in-out;
+  }
+
+  .navbar-toggler .top-bar {
+    top: 0;
+    transform: rotate(0deg);
+  }
+
+  .navbar-toggler .middle-bar {
+    top: 10px;
+    opacity: 1;
+  }
+
+  .navbar-toggler .bottom-bar {
+    top: 20px;
+    transform: rotate(0deg);
+  }
+
+  .navbar-toggler:not(.collapsed) .top-bar {
+    transform: rotate(135deg);
+    top: 10px;
+  }
+
+  .navbar-toggler:not(.collapsed) .middle-bar {
+    opacity: 0;
+  }
+
+  .navbar-toggler:not(.collapsed) .bottom-bar {
+    transform: rotate(-135deg);
+    top: 10px;
+  }
+
+  /* Improved collapse handling */
+  .navbar-collapse {
+    flex-basis: 100%;
+    transition: all 0.3s ease;
+    max-height: 0;
+    overflow: hidden;
+  }
+
+  .navbar-collapse.show {
+    max-height: 500px; /* Adjust this value based on your content height */
+    overflow-y: auto;
+  }
+
+  /* Navigation tabs */
+  .navbar-nav {
+    display: flex;
+    gap: 20px;
+    position: relative;
+    margin-bottom: 0;
+    padding-top: 10px;
+  }
+
+  .nav-link {
+    font-size: 16px;
+    color: black;
+    font-weight: 400;
+    position: relative;
+    text-decoration: none;
+    padding: 10px 15px;
+    transition: color 0.3s ease-in-out;
+    min-width: 80px;
+    text-align: center;
+    display: block;
+  }
+
+  .nav-link.active {
+    color: #007bff;
+  }
+
+  /* Indicator for active tab */
+  .indicator {
+    position: absolute;
+    bottom: -2px;
+    height: 3px;
+    background-color: #000000;
+    transition: all 0.3s ease-in-out;
+    border-radius: 4px;
+    display: block;
+    pointer-events: none;
+  }
+
+  /* Search container */
+  .search-container {
+    width: 100%;
+    margin: 10px 0;
+  }
+
+  .input-group {
+    display: flex;
+    width: 100%;
+  }
+
+  .input-group-text {
+    background: white;
+    border-right: none;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+  }
+
+  .form-control {
+    border-left: none;
+    box-shadow: none;
+    height: 40px;
+    flex: 1;
+  }
+
+  .form-control:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: #ddd !important; 
+  }
+
+  /* Action buttons container */
+  .navbar-actions-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  /* Button styles from NavbarStyles */
   .btn {
     padding: 12px;
     border: none;
@@ -39,7 +222,7 @@ const NavbarStyles = `
   }
 
   .btn-outline-secondary {
-    background-color: #e0e0e0; /* Light light gray */
+    background-color: #e0e0e0;
     color: #6c757d;
     border: 1px solid #d0d0d0;
   }
@@ -47,7 +230,229 @@ const NavbarStyles = `
   .btn-outline-secondary:hover {
     background-color: #d0d0d0;
     color: #6c757d;
-  }  
+  }
+
+  /* Danger button style for login/register */
+  .btn-danger {
+    background-color: #ff424e;
+    border-color: #ff424e;
+    border-radius: 8px;
+    padding: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+    color: white;
+  }
+
+  .btn-danger:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+  }
+
+  /* Responsive adjustments */
+  @media (min-width: 992px) {
+    .navbar > .container {
+      flex-wrap: nowrap;
+    }
+    
+    .navbar-collapse {
+      display: flex !important;
+      max-height: none;
+      flex-basis: auto;
+      overflow: visible;
+    }
+    
+    .navbar-nav {
+      flex-direction: row;
+      padding-top: 0;
+    }
+    
+    .search-container {
+      width: 300px;
+      margin: 0 20px;
+    }
+    
+    .navbar-actions-container {
+      width: auto;
+      margin-top: 0;
+      gap: 15px;
+    }
+    
+    .navbar-toggler {
+      display: none;
+    }
+  }
+
+  @media (max-width: 991.98px) {
+    .navbar-nav {
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    
+    .nav-link {
+      width: 100%;
+      text-align: center;
+    }
+    
+    .indicator {
+      bottom: auto;
+      height: 100%;
+      width: 4px !important;
+      left: 0 !important;
+      top: 0;
+      opacity: 0.2;
+    }
+    
+    /* Make the collapsible content full width */
+    .navbar-collapse {
+      width: 100%;
+      padding-top: 20px;
+    }
+    
+    /* Ensure proper spacing for the logo */
+    .navbar-brand {
+      margin-right: 0;
+      padding: 5px 0;
+    }
+    
+    /* Full width search in mobile */
+    .search-container {
+      width: 100%;
+    }
+  }
+
+  /* Fix collapse transition */
+  .collapse:not(.show) {
+    display: none;
+  }
+
+  .collapse.show {
+    display: block;
+  }
+
+  button:focus, button:active {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Language switcher */
+  .language-switcher {
+    padding: 5px 10px;
+    border-radius: 4px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Fix mobile language switcher */
+  @media (max-width: 991.98px) {
+    .d-lg-none .language-switcher {
+      margin-right: 0;
+    }
+  }
+
+  /* Login Modal Styles */
+  .login-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050;
+  }
+
+  .login-modal {
+    background: white;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e9ecef;
+    position: relative;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* Modal Animation */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .modal-animation {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .login-modal-header {
+    padding: 20px 60px;
+    border-bottom: 1px solid #e9ecef;
+    position: relative;
+    background-color: #f8f9fa;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .login-modal-header h4 {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 5px;
+  }
+
+  .login-modal-header p {
+    margin-bottom: 0;
+    color: #6c757d;
+  }
+
+  .close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #6c757d;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .close-button:hover {
+    transform: rotate(90deg);
+    color: #343a40;
+  }
+
+  .back-button {
+    position: absolute;
+    top: 19px;
+    left: 15px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .back-button:hover {
+    color: #343a40;
+    transform: translateX(-3px);
+  }
+
+  .login-modal-body {
+    padding: 24px;
+  }
 </style>
 `;
 

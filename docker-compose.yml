@@ -118,8 +118,8 @@ services:
       redis:
         condition: service_healthy
     environment:
-      - SECRET_KEY=django-insecure-cart-service-key
-      - JWT_SECRET_KEY=django-insecure-auth-service-key
+      - SECRET_KEY=django-insecure-cart-service-key # Use a different secret key for cart_service IMPORTANT
+      - JWT_SECRET_KEY=django-insecure-auth-service-key # Use the same secret key as auth_service for JWT IMPORTANT
       - DEBUG=True
       - REDIS_HOST=redis
       - REDIS_PORT=6379

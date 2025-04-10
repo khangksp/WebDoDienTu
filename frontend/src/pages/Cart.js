@@ -116,7 +116,10 @@ function Cart() {
   return (
     <div className="container my-5" data-aos="fade-up">
       <style>{modalAnimation}</style>
-      <h2 className="mb-4">{t('gioHangCuaBan')}</h2>
+      <h2 className="mb-4"
+        style={{ 
+          paddingTop: '55px',
+        }}>{t('gioHangCuaBan')}</h2>
       
       {cart.items && cart.items.length > 0 ? (
         <div className="row">
