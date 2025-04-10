@@ -152,8 +152,8 @@ function HomePage() {
       </section>
       
       {/* New Products Section */}
-      <section className="new-products-section">
-        <div className="section-title">
+      <section className="new-products-section ">
+        <div className="section-title ">
           <h2>{t('sanPhamMoi')}</h2>
         </div>
         
