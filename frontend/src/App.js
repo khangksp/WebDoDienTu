@@ -22,8 +22,6 @@ import Admin from './pages/admin';
 import Nhanvien from './pages/nhanvien';
 
 
-
-
 // Component Layout để kiểm soát việc render Navbar và Footer
 const Layout = ({ children }) => {
   const location = useLocation();
