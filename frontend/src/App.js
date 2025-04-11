@@ -3,11 +3,15 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "./App.css";
 
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+
 import { LanguageProvider } from './context/LanguageContext';
 import { CartProvider } from './context/CartContext';
+import OrderConfirmation from './context/OrderConfirmation';
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+
+
 
 import Home from "./pages/Home";
 import Products from "./pages/Products";
@@ -56,6 +60,7 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/nhanvien" element={<Nhanvien />} />
+              <Route path="/order-confirmation" element={<OrderConfirmation />} />
             </Routes>
           </Layout>
         </CartProvider>

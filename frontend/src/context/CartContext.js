@@ -1,6 +1,6 @@
 // src/context/CartContext.jsx
 
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8000'; // Update with your API Gateway URL
@@ -12,20 +12,10 @@ export const useCart = () => useContext(CartContext);
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState({ items: [], total: 0 });
   const [loading, setLoading] = useState(true);
-
-  // Lấy giỏ hàng khi user đăng nhập
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      fetchCart();
-    } else {
-      setCart({ items: [], total: 0 });
-      setLoading(false);
-    }
-  }, []);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Lấy giỏ hàng từ server
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('access_token');
@@ -35,6 +25,7 @@ export const CartProvider = ({ children }) => {
         return;
       }
 
+      console.log('Fetching cart data at:', new Date().toISOString());
       const response = await axios.get(`${API_BASE_URL}/api/cart/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -44,7 +35,23 @@ export const CartProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Cập nhật giỏ hàng khi refreshTrigger thay đổi
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      fetchCart();
+    } else {
+      setCart({ items: [], total: 0 });
+      setLoading(false);
+    }
+  }, [refreshTrigger, fetchCart]);
+
+  // Refresh cart function that triggers a refresh
+  const refreshCart = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
 
   // Thêm sản phẩm vào giỏ hàng
   const addToCart = async (product, quantity = 1) => {
@@ -150,7 +157,7 @@ export const CartProvider = ({ children }) => {
         updateQuantity,
         removeFromCart,
         clearCart,
-        refreshCart: fetchCart
+        refreshCart
       }}
     >
       {children}

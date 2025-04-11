@@ -23,7 +23,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'order_service.apps.orders',
+    'orders',
 ]
 
 MIDDLEWARE = [
@@ -35,7 +35,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'order_service.apps.orders.middleware.AuthMiddleware',
+    'orders.middleware.AuthMiddleware',
 ]
 
 ROOT_URLCONF = 'order_service.urls'
@@ -118,10 +118,41 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 
 # REST Framework Settings
+# JWT Authentication
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [],
-    'DEFAULT_PERMISSION_CLASSES': [],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'orders.middleware.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }
+
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # Service URLs
 AUTH_SERVICE_URL = os.environ.get('AUTH_SERVICE_URL', 'http://auth_service:8000')
@@ -132,3 +163,5 @@ RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'rabbitmq')
 RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', 5672)
 RABBITMQ_USER = os.environ.get('RABBITMQ_USER', 'guest')
 RABBITMQ_PASS = os.environ.get('RABBITMQ_PASS', 'guest')
+
+

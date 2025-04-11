@@ -461,8 +461,8 @@ function Navbar() {
   const { t } = useLanguage(); // Import ngôn ngữ từ LanguageContext
   const { cart } = useCart(); // Import giỏ hàng từ CartContext
   const { refreshCart } = useCart() // Import hàm refreshCart từ CartContext
+  const [needCartRefresh, setNeedCartRefresh] = useState(false);
 
-  
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
@@ -524,17 +524,46 @@ function Navbar() {
             (Array.isArray(userData.users) && userData.users[0]) || 
             "User";
           setUsername(usernameField);
-          setVaitro(userData.vaitro || "khach"); // Lấy vai trò từ API nếu có
+          setVaitro(userData.vaitro || "khach");
+          setNeedCartRefresh(true);
+          
+          // Lưu thông tin người dùng vào localStorage để các service khác sử dụng
+          localStorage.setItem("user_id", userData.id || userData.user_id);
+          
+          // Lưu toàn bộ thông tin người dùng để dễ truy cập
+          localStorage.setItem("user_data", JSON.stringify(userData));
+          
+          // Cập nhật giỏ hàng sau khi xác thực thành công
+          refreshCart();
+          
+          // Chuyển hướng sau khi đăng nhập nếu có
+          const redirectPath = localStorage.getItem("redirect_after_login");
+          if (redirectPath) {
+            localStorage.removeItem("redirect_after_login");
+            navigate(redirectPath);
+          }
         })
         .catch((error) => {
           console.error("Auth check failed:", error);
-          localStorage.clear();
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+          localStorage.removeItem("user_id");
+          localStorage.removeItem("user_data");
           setIsAuthenticated(false);
           setUsername("");
           setVaitro("khach");
         });
     }
-  }, []);
+  }, [navigate]);
+
+
+  useEffect(() => {
+    if (needCartRefresh) {
+      refreshCart();
+      setNeedCartRefresh(false);
+    }
+  }, [needCartRefresh, refreshCart]);
+
 
   // Navigation indicator
   useEffect(() => {
@@ -639,24 +668,57 @@ function Navbar() {
       const response = await axios.post(`${API_BASE_URL}/auth/login/`, loginData);
       
       const token = response.data.access || response.data.token;
+      const refreshToken = response.data.refresh || null;
       const vaitro = (response.data.vaitro || "khach").toLowerCase().trim();
       
+      // Lưu token vào localStorage
       localStorage.setItem("access_token", token);
-      if (response.data.refresh) localStorage.setItem("refresh_token", response.data.refresh);
+      if (refreshToken) localStorage.setItem("refresh_token", refreshToken);
+      
+      // Lưu thông tin cơ bản về người dùng
+      if (response.data.user_id) {
+        localStorage.setItem("user_id", response.data.user_id);
+      }
+      
+      // Cập nhật state
       setIsAuthenticated(true);
       setUsername(loginData.username);
       setVaitro(vaitro);
+      
+      // Lấy thông tin chi tiết về người dùng
+      try {
+        const userResponse = await axios.get(`${API_BASE_URL}/auth/users/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        // Lưu toàn bộ thông tin người dùng vào localStorage
+        localStorage.setItem("user_data", JSON.stringify(userResponse.data));
+        if (userResponse.data.id) {
+          localStorage.setItem("user_id", userResponse.data.id);
+        }
+      } catch (userError) {
+        console.error("Không thể lấy thông tin người dùng:", userError);
+      }
       
       // Cập nhật giỏ hàng sau khi đăng nhập
       await refreshCart();
       
       resetModals();
+      
+      // Chuyển hướng dựa trên vai trò
       if (vaitro === "admin") {
         navigate("/admin");
       } else if (vaitro === "nhanvien") {
         navigate("/nhanvien");
       } else {
-        navigate("/");
+        // Kiểm tra nếu có redirect_path được lưu
+        const redirectPath = localStorage.getItem("redirect_after_login");
+        if (redirectPath) {
+          localStorage.removeItem("redirect_after_login");
+          navigate(redirectPath);
+        } else {
+          navigate("/");
+        }
       }
     } catch (error) {
       setErrorMessage(

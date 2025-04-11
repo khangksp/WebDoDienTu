@@ -16,19 +16,51 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './style/checkout.css';
 
 import { useLanguage } from "../context/LanguageContext";
+import { useCart } from "../context/CartContext";
+
+// Hàm giải mã JWT
+function parseJwt(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    console.error("Lỗi khi parse JWT:", e);
+    return {};
+  }
+}
 
 function Checkout() {
   const { t } = useLanguage();
+  const { cart, clearCart } = useCart();
   
   const location = useLocation();
   const navigate = useNavigate();
   
-  // BACKEND INTEGRATION: Replace this with data fetched from your API/localStorage
-  const [cartItems, setCartItems] = useState(location.state?.cartItems || [
-    {
-
+  // Kiểm tra xác thực khi vào trang
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      localStorage.setItem("redirect_after_login", window.location.pathname);
+      alert('Vui lòng đăng nhập để tiếp tục thanh toán');
+      navigate('/login');
     }
-  ]);
+  }, [navigate]);
+  
+  // Sử dụng sản phẩm từ giỏ hàng hoặc từ location state
+  const [cartItems, setCartItems] = useState([]);
+  
+  // Cập nhật cartItems khi cart thay đổi
+  useEffect(() => {
+    if (cart && cart.items && cart.items.length > 0) {
+      setCartItems(cart.items);
+    } else if (location.state?.cartItems) {
+      setCartItems(location.state.cartItems);
+    }
+  }, [cart, location.state]);
   
   const [paymentMethod, setPaymentMethod] = useState(location.state?.paymentMethod || 'cash');
   const [showAddressModal, setShowAddressModal] = useState(false);
@@ -128,19 +160,143 @@ function Checkout() {
     setShowAddressModal(false);
   };
 
-  // Handle order placement
-  const placeOrder = () => {
-    // BACKEND INTEGRATION: Send order to backend
-    console.log('Placing order with:', {
-      items: cartItems,
-      address: selectedAddress,
-      paymentMethod,
-      totalAmount: grandTotal
-    });
-    
-    alert('Đặt hàng thành công! Cảm ơn bạn đã mua sắm.');
-    // Navigate to confirmation or home page
-    // navigate('/confirmation', { state: { orderData: { /* order details */ } } });
+  // Hàm xử lý việc đặt hàng
+  const placeOrder = async () => {
+    if (!selectedAddress) {
+      alert('Vui lòng chọn địa chỉ nhận hàng');
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      alert('Giỏ hàng trống, không thể đặt hàng');
+      return;
+    }
+  
+    try {
+      // Lấy token xác thực từ localStorage
+      const token = localStorage.getItem("access_token");
+      
+      if (!token) {
+        alert('Vui lòng đăng nhập để đặt hàng');
+        localStorage.setItem("redirect_after_login", window.location.pathname);
+        navigate('/login');
+        return;
+      }
+      
+      // Lấy user_id từ nhiều nguồn khác nhau
+      // 1. Từ localStorage
+      const userData = JSON.parse(localStorage.getItem("user_data") || "{}");
+      let userId = userData.id || localStorage.getItem("user_id");
+      
+      // 2. Từ JWT token nếu không tìm thấy trong localStorage
+      if (!userId) {
+        const tokenPayload = parseJwt(token);
+        userId = tokenPayload.user_id || tokenPayload.id || tokenPayload.sub;
+        console.log("Lấy user_id từ JWT token:", userId);
+      }
+      
+      // 3. Thử gọi API để lấy thông tin user nếu vẫn không có
+      if (!userId) {
+        try {
+          const userResponse = await fetch('http://localhost:8000/api/auth/users/', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            console.log("Thông tin người dùng từ API:", userData);
+            userId = userData.id || userData.user_id;
+            localStorage.setItem("user_id", userId);
+            localStorage.setItem("user_data", JSON.stringify(userData));
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy thông tin người dùng:", error);
+        }
+      }
+      
+      // 4. Nếu vẫn không có, đặt giá trị mặc định (có thể không hoạt động với backend)
+      if (!userId) {
+        userId = 1; // Giá trị mặc định - lưu ý điều này có thể không hoạt động với API của bạn
+        console.warn("Không tìm thấy user_id, sử dụng giá trị mặc định:", userId);
+      }
+      
+      // Log ra để debug
+      console.log("User ID được sử dụng:", userId);
+      console.log("Loại của User ID:", typeof userId);
+  
+      // Chuẩn bị dữ liệu đơn hàng
+      const orderData = {
+        user_id: Number(userId), // Đảm bảo là số
+        recipient_name: selectedAddress.recipient,
+        phone_number: selectedAddress.phone,
+        address: selectedAddress.address,
+        payment_method: paymentMethod,
+        items: cartItems.map(item => ({
+          id: item.product_id || item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image_url: item.image_url
+        }))
+      };
+  
+      console.log("Dữ liệu đơn hàng gửi đi:", orderData);
+  
+      // Gọi API tạo đơn hàng
+      const response = await fetch('http://localhost:8000/api/orders/create/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(orderData)
+      });
+  
+      const responseText = await response.text();
+      console.log("Response text:", responseText);
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+          navigate('/login');
+          return;
+        }
+        
+        try {
+          const errorData = JSON.parse(responseText);
+          console.error("Lỗi từ API:", errorData);
+          throw new Error(errorData.message || `Lỗi HTTP: ${response.status}`);
+        } catch (e) {
+          throw new Error(`Lỗi HTTP: ${response.status}`);
+        }
+      }
+  
+      const result = JSON.parse(responseText);
+      console.log("Kết quả tạo đơn hàng:", result);
+  
+      // Xóa giỏ hàng sau khi đặt hàng thành công
+      try {
+        await clearCart(); // Sử dụng hàm clearCart từ CartContext
+      } catch (cartError) {
+        console.error("Lỗi khi xóa giỏ hàng:", cartError);
+      }
+  
+      // Hiển thị thông báo và chuyển hướng
+      alert('Đặt hàng thành công! Cảm ơn bạn đã mua sắm.');
+      
+      // Chuyển hướng đến trang xác nhận đơn hàng
+      navigate('/order-confirmation', { 
+        state: { 
+          orderId: result.order_id,
+          totalAmount: result.total_amount
+        } 
+      });
+    } catch (error) {
+      console.error('Lỗi khi đặt hàng:', error);
+      alert(`Có lỗi xảy ra khi đặt hàng: ${error.message}`);
+    }
   };
 
   // Go back to cart
@@ -253,16 +409,16 @@ function Checkout() {
               
               <div className="checkout-card-body p-0">
                 {cartItems.map((item, index) => (
-                  <div key={item.id} className={`order-item p-3 ${index < cartItems.length - 1 ? 'border-bottom' : ''}`}>
+                  <div key={item.id || item.product_id} className={`order-item p-3 ${index < cartItems.length - 1 ? 'border-bottom' : ''}`}>
                     <div className="row align-items-center">
                     <div className="col-md-2">
                       <img 
-                        src={item.image_url} // Sử dụng thuộc tính image_url theo API của bạn
+                        src={item.image_url} 
                         alt={item.name} 
                         className="img-fluid order-item-image" 
                         onError={(e) => {
                           e.target.onerror = null;
-                          e.target.src = '/assets/placeholder.png'; // Fallback nếu hình ảnh lỗi
+                          e.target.src = '/assets/placeholder.png';
                         }}
                       />
                     </div>
