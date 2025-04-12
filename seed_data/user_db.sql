@@ -1,5 +1,5 @@
-CREATE DATABASE user_service_db;
-USE user_service_db;
+CREATE DATABASE user_db;
+USE user_db;
 
 -- Tạo bảng TaiKhoan
 CREATE TABLE TaiKhoan (
@@ -13,7 +13,7 @@ CREATE TABLE TaiKhoan (
 CREATE TABLE NguoiDung (
     MaNguoiDung INT AUTO_INCREMENT PRIMARY KEY,
     TenNguoiDung VARCHAR(50) NOT NULL,
-    DiaChi TEXT,
+    DiaChi TEXT NOT NULL,
     Email VARCHAR(50) UNIQUE NOT NULL,
     SoDienThoai VARCHAR(15) UNIQUE NOT NULL,
     MaTaiKhoan INT UNIQUE NOT NULL,

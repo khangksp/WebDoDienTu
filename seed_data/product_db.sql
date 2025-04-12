@@ -1,0 +1,44 @@
+CREATE DATABASE product_db;
+USE product_db;
+
+-- Tạo bảng DanhMuc
+CREATE TABLE DanhMuc (
+    MaDanhMuc INT AUTO_INCREMENT PRIMARY KEY,
+    TenDanhMuc VARCHAR(50) NOT NULL
+);
+
+-- Tạo bảng HangSanXuat
+CREATE TABLE HangSanXuat (
+    MaHangSanXuat INT AUTO_INCREMENT PRIMARY KEY,
+    TenHangSanXuat VARCHAR(50) NOT NULL
+);
+
+-- Tạo bảng ThongSo
+CREATE TABLE ThongSo (
+    MaThongSo INT AUTO_INCREMENT PRIMARY KEY,
+    TenThongSo VARCHAR(50) NOT NULL
+);
+
+-- Tạo bảng SanPham
+CREATE TABLE SanPham (
+    MaSanPham INT AUTO_INCREMENT PRIMARY KEY,
+    TenSanPham VARCHAR(100) NOT NULL,
+    GiaBan DECIMAL(9,0) NOT NULL,
+    SoLuongTon INT NOT NULL,
+    MoTa TEXT NOT NULL,
+    HinhAnh TEXT NOT NULL,
+    MaDanhMuc INT,
+    MaHangSanXuat INT,
+    FOREIGN KEY (MaDanhMuc) REFERENCES DanhMuc(MaDanhMuc) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (MaHangSanXuat) REFERENCES HangSanXuat(MaHangSanXuat) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- Tạo bảng ChiTietThongSo
+CREATE TABLE ChiTietThongSo (
+    MaChiTietThongSo INT AUTO_INCREMENT PRIMARY KEY,
+    MaSanPham INT NOT NULL,
+    MaThongSo INT NOT NULL,
+    GiaTriThongSo TEXT NOT NULL,
+    FOREIGN KEY (MaSanPham) REFERENCES SanPham(MaSanPham) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (MaThongSo) REFERENCES ThongSo(MaThongSo) ON DELETE CASCADE ON UPDATE CASCADE
+);
