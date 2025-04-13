@@ -17,22 +17,20 @@ const StaffDashboard = () => {
   const [categories, setCategories] = useState([]);
   const [hangSanXuats, setHangSanXuats] = useState([]);
   const [thongSos, setThongSos] = useState([]);
-  const [khuyenMais, setKhuyenMais] = useState([]);
 
   // State cho form
-  const [categoryData, setCategoryData] = useState({ name: '', description: '' });
+  const [categoryData, setCategoryData] = useState({ TenDanhMuc: '', MoTa: '' });
   const [hangSanXuatData, setHangSanXuatData] = useState({ TenHangSanXuat: '' });
   const [thongSoData, setThongSoData] = useState({ TenThongSo: '' });
   const [productData, setProductData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    stock: '',
-    category: '',
-    hang_san_xuat: '',
-    thong_so: '',
-    khuyen_mai: '',
-    image: null,
+    TenSanPham: '',
+    MoTa: '',
+    GiaBan: '',
+    SoLuongTon: '',
+    DanhMuc: '',
+    HangSanXuat: '',
+    ThongSo: [],
+    HinhAnh: null,
   });
 
   const [errorMessage, setErrorMessage] = useState('');
@@ -42,16 +40,14 @@ const StaffDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [categoriesRes, hangSanXuatsRes, thongSosRes, khuyenMaisRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/products/categories/`),
+        const [categoriesRes, hangSanXuatsRes, thongSosRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/products/danh-muc/`),
           axios.get(`${API_BASE_URL}/products/hang-san-xuat/`),
           axios.get(`${API_BASE_URL}/products/thong-so/`),
-          axios.get(`${API_BASE_URL}/products/khuyen-mai/`), // Giả định endpoint này tồn tại
         ]);
         setCategories(categoriesRes.data);
         setHangSanXuats(hangSanXuatsRes.data);
         setThongSos(thongSosRes.data);
-        setKhuyenMais(khuyenMaisRes.data);
       } catch (error) {
         console.error('Lỗi khi lấy dữ liệu:', error);
         setErrorMessage('Không thể lấy dữ liệu từ API');
@@ -78,7 +74,7 @@ const StaffDashboard = () => {
     } else if (type === 'thongSo') {
       setThongSoData((prev) => ({ ...prev, [field]: e.target.value }));
     } else if (type === 'product') {
-      if (field === 'image') {
+      if (field === 'HinhAnh') {
         setProductData((prev) => ({ ...prev, [field]: e.target.files[0] }));
       } else {
         setProductData((prev) => ({ ...prev, [field]: e.target.value }));
@@ -96,9 +92,9 @@ const StaffDashboard = () => {
     let config = {};
 
     if (type === 'category') {
-      url = `${API_BASE_URL}/products/categories/`;
+      url = `${API_BASE_URL}/products/danh-muc/`;
       data = categoryData;
-      if (!data.name || !data.description) {
+      if (!data.TenDanhMuc || !data.MoTa) {
         setErrorMessage('Vui lòng nhập đầy đủ thông tin danh mục');
         return;
       }
@@ -117,19 +113,25 @@ const StaffDashboard = () => {
         return;
       }
     } else if (type === 'product') {
-      url = `${API_BASE_URL}/products/products/`;
+      url = `${API_BASE_URL}/products/san-pham/`;
       data = new FormData();
-      data.append('name', productData.name);
-      data.append('description', productData.description);
-      data.append('price', productData.price);
-      data.append('stock', productData.stock);
-      if (productData.category) data.append('category', productData.category);
-      if (productData.hang_san_xuat) data.append('hang_san_xuat', productData.hang_san_xuat);
-      if (productData.thong_so) data.append('thong_so', productData.thong_so);
-      if (productData.khuyen_mai) data.append('khuyen_mai', productData.khuyen_mai);
-      if (productData.image) data.append('image', productData.image);
+      data.append('TenSanPham', productData.TenSanPham);
+      data.append('MoTa', productData.MoTa);
+      data.append('GiaBan', productData.GiaBan);
+      data.append('SoLuongTon', productData.SoLuongTon);
+      if (productData.DanhMuc) data.append('DanhMuc', productData.DanhMuc);
+      if (productData.HangSanXuat) data.append('HangSanXuat', productData.HangSanXuat);
+      
+      // Thông số kỹ thuật - có thể cần thêm xử lý đặc biệt cho ChiTietThongSo
+      if (productData.ThongSo && productData.ThongSo.length > 0) {
+        // Gửi dữ liệu ChiTietThongSo nếu API hỗ trợ
+        data.append('ChiTietThongSo', JSON.stringify(productData.ThongSo));
+      }
+      
+      if (productData.HinhAnh) data.append('HinhAnh', productData.HinhAnh);
       config = { headers: { 'Content-Type': 'multipart/form-data' } };
-      if (!data.get('name') || !data.get('description') || !data.get('price') || !data.get('stock')) {
+      
+      if (!data.get('TenSanPham') || !data.get('MoTa') || !data.get('GiaBan') || !data.get('SoLuongTon')) {
         setErrorMessage('Vui lòng nhập đầy đủ thông tin sản phẩm');
         return;
       }
@@ -139,9 +141,9 @@ const StaffDashboard = () => {
       const response = await axios.post(url, data, config);
       setSuccessMessage(`Thêm ${type} thành công!`);
       if (type === 'category') {
-        setCategoryData({ name: '', description: '' });
+        setCategoryData({ TenDanhMuc: '', MoTa: '' });
         // Cập nhật lại danh sách danh mục
-        const categoriesRes = await axios.get(`${API_BASE_URL}/products/categories/`);
+        const categoriesRes = await axios.get(`${API_BASE_URL}/products/danh-muc/`);
         setCategories(categoriesRes.data);
       } else if (type === 'hangSanXuat') {
         setHangSanXuatData({ TenHangSanXuat: '' });
@@ -155,15 +157,14 @@ const StaffDashboard = () => {
         setThongSos(thongSosRes.data);
       } else if (type === 'product') {
         setProductData({
-          name: '',
-          description: '',
-          price: '',
-          stock: '',
-          category: '',
-          hang_san_xuat: '',
-          thong_so: '',
-          khuyen_mai: '',
-          image: null,
+          TenSanPham: '',
+          MoTa: '',
+          GiaBan: '',
+          SoLuongTon: '',
+          DanhMuc: '',
+          HangSanXuat: '',
+          ThongSo: [],
+          HinhAnh: null,
         });
       }
     } catch (error) {
@@ -188,8 +189,8 @@ const StaffDashboard = () => {
                 <label>Tên Danh Mục</label>
                 <input
                   type="text"
-                  value={categoryData.name}
-                  onChange={handleInputChange('category', 'name')}
+                  value={categoryData.TenDanhMuc}
+                  onChange={handleInputChange('category', 'TenDanhMuc')}
                   placeholder="Nhập tên danh mục"
                 />
               </div>
@@ -197,8 +198,8 @@ const StaffDashboard = () => {
                 <label>Mô Tả</label>
                 <input
                   type="text"
-                  value={categoryData.description}
-                  onChange={handleInputChange('category', 'description')}
+                  value={categoryData.MoTa}
+                  onChange={handleInputChange('category', 'MoTa')}
                   placeholder="Nhập mô tả danh mục"
                 />
               </div>
@@ -262,8 +263,8 @@ const StaffDashboard = () => {
                   <label>Tên Sản Phẩm</label>
                   <input
                     type="text"
-                    value={productData.name}
-                    onChange={handleInputChange('product', 'name')}
+                    value={productData.TenSanPham}
+                    onChange={handleInputChange('product', 'TenSanPham')}
                     placeholder="Nhập tên sản phẩm"
                   />
                 </div>
@@ -271,17 +272,17 @@ const StaffDashboard = () => {
                   <label>Mô Tả</label>
                   <input
                     type="text"
-                    value={productData.description}
-                    onChange={handleInputChange('product', 'description')}
+                    value={productData.MoTa}
+                    onChange={handleInputChange('product', 'MoTa')}
                     placeholder="Nhập mô tả sản phẩm"
                   />
                 </div>
                 <div className="form-group">
-                  <label>Giá</label>
+                  <label>Giá Bán</label>
                   <input
                     type="number"
-                    value={productData.price}
-                    onChange={handleInputChange('product', 'price')}
+                    value={productData.GiaBan}
+                    onChange={handleInputChange('product', 'GiaBan')}
                     placeholder="Nhập giá sản phẩm"
                   />
                 </div>
@@ -289,8 +290,8 @@ const StaffDashboard = () => {
                   <label>Số Lượng Tồn Kho</label>
                   <input
                     type="number"
-                    value={productData.stock}
-                    onChange={handleInputChange('product', 'stock')}
+                    value={productData.SoLuongTon}
+                    onChange={handleInputChange('product', 'SoLuongTon')}
                     placeholder="Nhập số lượng tồn kho"
                   />
                 </div>
@@ -300,13 +301,13 @@ const StaffDashboard = () => {
                 <div className="form-group">
                   <label>Danh Mục</label>
                   <select
-                    value={productData.category}
-                    onChange={handleInputChange('product', 'category')}
+                    value={productData.DanhMuc}
+                    onChange={handleInputChange('product', 'DanhMuc')}
                   >
                     <option value="">Chọn danh mục</option>
                     {categories.map((category) => (
                       <option key={category.id} value={category.id}>
-                        {category.name}
+                        {category.TenDanhMuc}
                       </option>
                     ))}
                   </select>
@@ -314,8 +315,8 @@ const StaffDashboard = () => {
                 <div className="form-group">
                   <label>Hãng Sản Xuất</label>
                   <select
-                    value={productData.hang_san_xuat}
-                    onChange={handleInputChange('product', 'hang_san_xuat')}
+                    value={productData.HangSanXuat}
+                    onChange={handleInputChange('product', 'HangSanXuat')}
                   >
                     <option value="">Chọn hãng sản xuất</option>
                     {hangSanXuats.map((hang) => (
@@ -328,8 +329,17 @@ const StaffDashboard = () => {
                 <div className="form-group">
                   <label>Thông Số</label>
                   <select
-                    value={productData.thong_so}
-                    onChange={handleInputChange('product', 'thong_so')}
+                    value={productData.selectedThongSo || ""}
+                    onChange={(e) => {
+                      const thongSoId = e.target.value;
+                      if (thongSoId) {
+                        // Hiển thị form nhập giá trị cho thông số
+                        setProductData(prev => ({
+                          ...prev,
+                          selectedThongSo: thongSoId
+                        }));
+                      }
+                    }}
                   >
                     <option value="">Chọn thông số</option>
                     {thongSos.map((thongSo) => (
@@ -339,25 +349,76 @@ const StaffDashboard = () => {
                     ))}
                   </select>
                 </div>
-                <div className="form-group">
-                  <label>Khuyến Mãi</label>
-                  <select
-                    value={productData.khuyen_mai}
-                    onChange={handleInputChange('product', 'khuyen_mai')}
-                  >
-                    <option value="">Chọn khuyến mãi (nếu có)</option>
-                    {khuyenMais.map((khuyenMai) => (
-                      <option key={khuyenMai.id} value={khuyenMai.id}>
-                        {khuyenMai.TenKhuyenMai}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {productData.selectedThongSo && (
+                  <div className="form-group">
+                    <label>Giá Trị Thông Số</label>
+                    <div className="thong-so-value-container">
+                      <input
+                        type="text"
+                        placeholder="Nhập giá trị thông số"
+                        value={productData.thongSoValue || ""}
+                        onChange={(e) => setProductData(prev => ({
+                          ...prev,
+                          thongSoValue: e.target.value
+                        }))}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-add-thong-so"
+                        onClick={() => {
+                          if (productData.selectedThongSo && productData.thongSoValue) {
+                            const newThongSo = {
+                              ThongSo: productData.selectedThongSo,
+                              GiaTriThongSo: productData.thongSoValue
+                            };
+                            setProductData(prev => ({
+                              ...prev,
+                              ThongSo: [...prev.ThongSo, newThongSo],
+                              selectedThongSo: "",
+                              thongSoValue: ""
+                            }));
+                          }
+                        }}
+                      >
+                        Thêm
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                {productData.ThongSo && productData.ThongSo.length > 0 && (
+                  <div className="form-group">
+                    <label>Thông Số Đã Thêm</label>
+                    <div className="thong-so-list">
+                      {productData.ThongSo.map((ts, index) => {
+                        const thongSoInfo = thongSos.find(t => t.id === parseInt(ts.ThongSo));
+                        return (
+                          <div key={index} className="thong-so-item">
+                            {thongSoInfo?.TenThongSo}: {ts.GiaTriThongSo}
+                            <button
+                              type="button"
+                              className="btn-remove"
+                              onClick={() => {
+                                setProductData(prev => ({
+                                  ...prev,
+                                  ThongSo: prev.ThongSo.filter((_, i) => i !== index)
+                                }));
+                              }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                
                 <div className="form-group">
                   <label>Hình Ảnh</label>
                   <input
                     type="file"
-                    onChange={handleInputChange('product', 'image')}
+                    onChange={handleInputChange('product', 'HinhAnh')}
                     accept="image/*"
                   />
                 </div>
@@ -391,6 +452,7 @@ const StaffDashboard = () => {
           <SidebarItem 
             icon={LogOut} 
             label="Đăng Xuất" 
+            section="logout"
             onClick={() => {
               localStorage.clear();
               window.location.href = '/login';

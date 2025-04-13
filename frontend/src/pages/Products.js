@@ -54,7 +54,7 @@ const Products = () => {
 
     // Fetch danh mục sản phẩm
     useEffect(() => {
-        axios.get(`${API_BASE_URL}/products/categories/`)
+        axios.get(`${API_BASE_URL}/products/danh-muc/`)
             .then(response => {
                 setCategories(response.data);
             })
@@ -65,37 +65,37 @@ const Products = () => {
 
     // Fetch sản phẩm
     useEffect(() => {
-        let url = `${API_BASE_URL}/products/products/`;
+        let url = `${API_BASE_URL}/products/san-pham/`;
         
         const params = new URLSearchParams();
         
         // Nếu có category được chọn, thêm filter
         if (selectedCategory) {
-        params.append('category', selectedCategory);
+            params.append('DanhMuc', selectedCategory);
         }
         
         // Nếu có từ khóa tìm kiếm, thêm filter
         if (searchTerm) {
-        params.append('search', searchTerm);
+            params.append('search', searchTerm);
         }
         
         // Nếu có tham số, thêm vào URL
         if (params.toString()) {
-        url += `?${params.toString()}`;
+            url += `?${params.toString()}`;
         }
         
         setLoading(true);
         axios.get(url)
-        .then(response => {
-            console.log("Dữ liệu API:", response.data);
-            setProducts(response.data);
-            setLoading(false);
-        })
-        .catch(error => {
-            console.error("Lỗi khi gọi API:", error);
-            setError("Không thể tải dữ liệu sản phẩm");
-            setLoading(false);
-        });
+            .then(response => {
+                console.log("Dữ liệu API:", response.data);
+                setProducts(response.data);
+                setLoading(false);
+            })
+            .catch(error => {
+                console.error("Lỗi khi gọi API:", error);
+                setError("Không thể tải dữ liệu sản phẩm");
+                setLoading(false);
+            });
     }, [selectedCategory, searchTerm]); // Chạy lại khi selectedCategory hoặc searchTerm thay đổi
 
     // Xử lý khi chọn danh mục
@@ -187,7 +187,7 @@ const Products = () => {
                             className={`btn ${selectedCategory === category.id ? 'btn-secondary' : 'btn-outline-secondary'}`}
                             onClick={() => handleCategoryClick(category.id)}
                         >
-                            {category.name}
+                            {category.TenDanhMuc}
                         </button>
                     ))}
                 </div>
@@ -218,12 +218,12 @@ const Products = () => {
                                 onClick={() => handleProductClick(product.id)}
                                 style={{ cursor: 'pointer' }}
                             >
-                                {product.image_url && (
+                                {product.HinhAnh_URL && (
                                     <div className="product-image-container">
                                         <img 
-                                            src={product.image_url} 
+                                            src={product.HinhAnh_URL} 
                                             className="card-img-top product-image" 
-                                            alt={product.name}
+                                            alt={product.TenSanPham}
                                             onError={(e) => {
                                                 e.target.onerror = null;
                                                 e.target.src = '/assets/placeholder.png'; // Ảnh dự phòng
@@ -232,25 +232,25 @@ const Products = () => {
                                     </div>
                                 )}
                                 <div className="card-body d-flex flex-column">
-                                    <h5 className="card-title product-title">{product.name}</h5>
+                                    <h5 className="card-title product-title">{product.TenSanPham}</h5>
                                     <div className="product-description mb-2">
                                         <p className="card-text">
-                                            {product.description 
-                                                ? (product.description.substring(0, 60) + "...") 
+                                            {product.MoTa 
+                                                ? (product.MoTa.substring(0, 60) + "...") 
                                                 : t('khongCoMoTa')
                                             }
                                         </p>
                                     </div>
                                     <div className="product-details">
                                         <p className="card-text mb-1">
-                                            <strong>{t('hang')}</strong> {product.hang_san_xuat_name || "N/A"}
+                                            <strong>{t('hang')}</strong> {product.TenHangSanXuat || "N/A"}
                                         </p>
                                         <p className="card-text mb-1">
-                                            <strong>{t('thongSo')}</strong> {product.thong_so_name || "N/A"}
+                                            <strong>{t('thongSo')}</strong> {product.ChiTietThongSo?.length ? product.ChiTietThongSo[0].TenThongSo : "N/A"}
                                         </p>
                                     </div>
                                     <p className="card-text text-danger fw-bold mt-auto fs-5">
-                                        {Number(product.price).toLocaleString()} VND
+                                        {Number(product.GiaBan).toLocaleString()} VND
                                     </p>
                                     <div className="d-flex justify-content-between mt-2">
                                         <button 

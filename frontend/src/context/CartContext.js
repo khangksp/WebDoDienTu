@@ -61,17 +61,17 @@ export const CartProvider = ({ children }) => {
         alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
         return;
       }
-      console.log('Token being sent:', token);
-
+  
+      // Chuẩn bị dữ liệu sản phẩm, hỗ trợ cả tên trường cũ và mới
       const response = await axios.post(
         `${API_BASE_URL}/api/cart/add/`,
         {
           product_id: product.id,
-          name: product.name,
-          price: product.price,
-          image_url: product.image_url,
+          name: product.TenSanPham || product.name, // Hỗ trợ cả hai trường
+          price: product.GiaBan || product.price,   // Hỗ trợ cả hai trường 
+          image_url: product.HinhAnh_URL || product.HinhAnh || product.image_url, // Hỗ trợ nhiều trường
           quantity: quantity,
-          category: product.category,
+          category: product.DanhMuc || product.TenDanhMuc || product.category || '',
           selected_color: product.selectedColor || 'default',
           size: product.size || 'Standard'
         },

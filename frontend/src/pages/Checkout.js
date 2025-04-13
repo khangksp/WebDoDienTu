@@ -90,7 +90,10 @@ function Checkout() {
   });
 
   // Calculate total price
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalPrice = cartItems.reduce((sum, item) => {
+    const price = item.GiaBan || item.price;
+    return sum + price * item.quantity;
+  }, 0);
   const shippingFee = 0; // Free shipping
   const grandTotal = totalPrice + shippingFee;
 
@@ -235,10 +238,10 @@ function Checkout() {
         payment_method: paymentMethod,
         items: cartItems.map(item => ({
           id: item.product_id || item.id,
-          name: item.name,
-          price: item.price,
+          TenSanPham: item.TenSanPham || item.name,
+          GiaBan: item.GiaBan || item.price,
           quantity: item.quantity,
-          image_url: item.image_url
+          HinhAnh_URL: item.HinhAnh_URL || item.image_url
         }))
       };
   
@@ -411,20 +414,20 @@ function Checkout() {
                 {cartItems.map((item, index) => (
                   <div key={item.id || item.product_id} className={`order-item p-3 ${index < cartItems.length - 1 ? 'border-bottom' : ''}`}>
                     <div className="row align-items-center">
-                    <div className="col-md-2">
-                      <img 
-                        src={item.image_url} 
-                        alt={item.name} 
-                        className="img-fluid order-item-image" 
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = '/assets/placeholder.png';
-                        }}
-                      />
-                    </div>
+                      <div className="col-md-2">
+                        <img 
+                          src={item.HinhAnh_URL || item.image_url} 
+                          alt={item.TenSanPham || item.name} 
+                          className="img-fluid order-item-image" 
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/assets/placeholder.png';
+                          }}
+                        />
+                      </div>
                       
                       <div className="col-md-6">
-                        <h6 className="item-name">{item.name}</h6>
+                        <h6 className="item-name">{item.TenSanPham || item.name}</h6>
                       </div>
                       
                       <div className="col-md-2 text-center">
@@ -432,7 +435,7 @@ function Checkout() {
                       </div>
                       
                       <div className="col-md-2 text-end">
-                        <div className="item-price">{formatPrice(item.price * item.quantity)}</div>
+                        <div className="item-price">{formatPrice((item.GiaBan || item.price) * item.quantity)}</div>
                       </div>
                     </div>
                   </div>

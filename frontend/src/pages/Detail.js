@@ -49,11 +49,11 @@ function Detail() {
       // Chuẩn bị dữ liệu sản phẩm
       const productData = {
         id: product.id,
-        name: product.name,
-        price: product.price,
-        image_url: product.image_url,
+        TenSanPham: product.TenSanPham || product.name,
+        GiaBan: product.GiaBan || product.price,
+        HinhAnh_URL: product.HinhAnh_URL || product.image_url,
         quantity: quantity,
-        category: product.category_name,
+        category: product.TenDanhMuc || product.category_name,
         selectedColor: 'default', // Nếu có thể chọn màu
         size: 'Standard' // Nếu có thể chọn kích thước
       };
@@ -79,15 +79,15 @@ function Detail() {
     const fetchProductData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:8000/api/products/products/${productId}/`);
+        const response = await axios.get(`http://localhost:8000/api/products/san-pham/${productId}/`);
         setProduct(response.data);
         
         // Sau khi lấy sản phẩm, lấy danh sách sản phẩm khác để hiển thị trong phần liên quan
-        const allProductsResponse = await axios.get(`http://localhost:8000/api/products/products/`);
+        const allProductsResponse = await axios.get(`http://localhost:8000/api/products/san-pham/`);
         
         // Lọc sản phẩm liên quan (cùng danh mục nhưng khác ID)
         const related = allProductsResponse.data.filter(p => 
-          p.category === response.data.category && p.id !== response.data.id
+          p.DanhMuc === response.data.DanhMuc && p.id !== response.data.id
         );
         setRelatedProducts(related.slice(0, 4)); // Lấy tối đa 4 sản phẩm liên quan
         
@@ -185,8 +185,8 @@ function Detail() {
             <div className="product-image-gallery">
               <div className="main-image">
                 <img 
-                  src={product.image_url} 
-                  alt={product.name} 
+                  src={product.HinhAnh_URL || product.image_url} 
+                  alt={product.TenSanPham || product.name} 
                   className="img-fluid rounded shadow"
                 />
               </div>
@@ -197,23 +197,31 @@ function Detail() {
           {/* Product Info Section */}
           <div className="col-md-6">
             <div className="product-info p-3">
-              <h1 className="product-title mb-3">{product.name}</h1>
+              <h1 className="product-title mb-3">{product.TenSanPham || product.name}</h1>
               
               {/* Thẻ thông tin sản phẩm */}
               <div className="product-features d-flex flex-wrap mb-3">
-                {product.category_name && (
+                {(product.TenDanhMuc || product.category_name) && (
                   <div className="feature-badge me-3 mb-2">
                     <FontAwesomeIcon icon={faTags} className="me-1" />
-                    <span>{product.category_name}</span>
+                    <span>{product.TenDanhMuc || product.category_name}</span>
                   </div>
                 )}
-                {product.hang_san_xuat_name && (
+                {(product.TenHangSanXuat || product.hang_san_xuat_name) && (
                   <div className="feature-badge me-3 mb-2">
                     <FontAwesomeIcon icon={faBoxOpen} className="me-1" />
-                    <span>{product.hang_san_xuat_name}</span>
+                    <span>{product.TenHangSanXuat || product.hang_san_xuat_name}</span>
                   </div>
                 )}
-                {product.thong_so_name && (
+                {/* Kiểm tra và hiển thị thông số */}
+                {(product.ChiTietThongSo && product.ChiTietThongSo.length > 0) && (
+                  <div className="feature-badge me-3 mb-2">
+                    <FontAwesomeIcon icon={faExchangeAlt} className="me-1" />
+                    <span>{product.ChiTietThongSo[0].TenThongSo}: {product.ChiTietThongSo[0].GiaTriThongSo}</span>
+                  </div>
+                )}
+                {/* Hiển thị thông số cũ nếu có */}
+                {(!product.ChiTietThongSo && product.thong_so_name) && (
                   <div className="feature-badge me-3 mb-2">
                     <FontAwesomeIcon icon={faExchangeAlt} className="me-1" />
                     <span>{product.thong_so_name}</span>
@@ -230,15 +238,15 @@ function Detail() {
               {/* Price Section */}
               <div className="product-price mb-3">
                 <h5 className="mb-1 text-muted">{t('gia')}</h5>
-                <h3 className="price">{Number(product.price).toLocaleString()} VNĐ</h3>
+                <h3 className="price">{Number(product.GiaBan || product.price).toLocaleString()} VNĐ</h3>
               </div>
               
               {/* Description - Fixed version */}
               <div className="product-description mb-3">
                 <h5 className="mb-1 text-muted">{t('moTaSanPham')}</h5>
-                {product.description ? (
+                {(product.MoTa || product.description) ? (
                   <div className="description-content">
-                    {product.description}
+                    {product.MoTa || product.description}
                   </div>
                 ) : (
                   <p className="text-muted">{t('koCoMoTa')}</p>
@@ -260,12 +268,12 @@ function Detail() {
                   <button 
                     className="btn btn-outline-secondary quantity-btn"
                     onClick={() => setQuantity(quantity + 1)}
-                    disabled={quantity >= product.stock}
+                    disabled={quantity >= (product.SoLuongTon || product.stock)}
                   >
                     <FontAwesomeIcon icon={faPlus} />
                   </button>
                 </div>
-                <p className="mt-2 text-muted">{t('con')} {product.stock} {t('sp')}</p>
+                <p className="mt-2 text-muted">{t('con')} {product.SoLuongTon || product.stock} {t('sp')}</p>
               </div>
               
               {/* Add to Cart Button */}
@@ -273,10 +281,10 @@ function Detail() {
               <button 
                 className="btn-add-to-cart" 
                 onClick={handleAddToCart}
-                disabled={product.stock <= 0}
+                disabled={(product.SoLuongTon || product.stock) <= 0}
               >
                 <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
-                {product.stock > 0 ? 'Thêm vào giỏ hàng' : 'Hết hàng'}
+                {(product.SoLuongTon || product.stock) > 0 ? 'Thêm vào giỏ hàng' : 'Hết hàng'}
               </button>
               </div>
             </div>
@@ -342,11 +350,19 @@ function Detail() {
                     style={{ cursor: 'pointer' }}
                   >
                     <div className="related-product-image mb-3">
-                      <img src={relatedProduct.image_url} alt={relatedProduct.name} className="img-fluid" />
+                      <img 
+                        src={relatedProduct.HinhAnh_URL || relatedProduct.image_url} 
+                        alt={relatedProduct.TenSanPham || relatedProduct.name} 
+                        className="img-fluid" 
+                      />
                     </div>
                     <div className="related-product-info">
-                      <h5 className="related-product-title mb-2">{relatedProduct.name}</h5>
-                      <p className="related-product-price">{Number(relatedProduct.price).toLocaleString()} VNĐ</p>
+                      <h5 className="related-product-title mb-2">
+                        {relatedProduct.TenSanPham || relatedProduct.name}
+                      </h5>
+                      <p className="related-product-price">
+                        {Number(relatedProduct.GiaBan || relatedProduct.price).toLocaleString()} VNĐ
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -391,11 +407,19 @@ function Detail() {
                       style={{ cursor: 'pointer' }}
                     >
                       <div className="random-product-image mb-3">
-                        <img src={randomProduct.image_url} alt={randomProduct.name} className="img-fluid" />
+                        <img 
+                          src={randomProduct.HinhAnh_URL || randomProduct.image_url} 
+                          alt={randomProduct.TenSanPham || randomProduct.name} 
+                          className="img-fluid" 
+                        />
                       </div>
                       <div className="random-product-info">
-                        <h5 className="random-product-title mb-2">{randomProduct.name}</h5>
-                        <p className="random-product-price">{Number(randomProduct.price).toLocaleString()} VNĐ</p>
+                        <h5 className="random-product-title mb-2">
+                          {randomProduct.TenSanPham || randomProduct.name}
+                        </h5>
+                        <p className="random-product-price">
+                          {Number(randomProduct.GiaBan || randomProduct.price).toLocaleString()} VNĐ
+                        </p>
                       </div>
                     </div>
                   </div>

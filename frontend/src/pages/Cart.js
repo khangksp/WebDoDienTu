@@ -141,12 +141,22 @@ function Cart() {
                       </div>
                       
                       <div className="col-md-2">
-                        <img src={item.image_url} alt={item.name} className="img-fluid" />
+                      <img 
+                        src={item.image_url || item.HinhAnh_URL}
+                        alt={item.name || item.TenSanPham} 
+                        className="img-fluid"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/assets/placeholder.png'; // Fallback nếu ảnh lỗi
+                        }}
+                      />
                       </div>
                       
                       <div className="col-md-5">
-                        <h5 className="product-title">{item.name}</h5>
-                        <p className="text-muted small mb-2">{t('gia')}: {formatPrice(item.price)}</p>
+
+                        <h5 className="product-title">{item.name || item.TenSanPham}</h5>
+
+                        <p className="text-muted small mb-2">{t('gia')}: {formatPrice(item.price || item.GiaBan)}</p>
                         
                         {/* Hiển thị màu sắc nếu có */}
                         {item.selected_color && item.selected_color !== 'default' && (

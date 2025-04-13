@@ -32,7 +32,7 @@ function HomePage() {
 
   // Fetch danh mục sản phẩm
   useEffect(() => {
-    axios.get("http://localhost:8000/api/products/categories/")
+    axios.get("http://localhost:8000/api/products/danh-muc/")
       .then(response => {
         setCategories(response.data);
       })
@@ -44,7 +44,7 @@ function HomePage() {
   // Fetch sản phẩm
   useEffect(() => {
     setLoading(true);
-    axios.get("http://localhost:8000/api/products/products/")
+    axios.get("http://localhost:8000/api/products/san-pham/")
       .then(response => {
         console.log("Dữ liệu API:", response.data);
         setProducts(response.data);
@@ -143,9 +143,9 @@ function HomePage() {
               style={{ cursor: 'pointer' }}
             >
               <div className="category-icon">
-                <FontAwesomeIcon icon={getCategoryIcon(category.name)} />
+                <FontAwesomeIcon icon={getCategoryIcon(category.TenDanhMuc)} />
               </div>
-              <p>{category.name}</p>
+              <p>{category.TenDanhMuc}</p>
             </div>
           ))}
         </div>
@@ -172,36 +172,36 @@ function HomePage() {
                 <div className="card home-product-card h-100" onClick={() => handleProductClick(product.id)}>
                   <div className="product-image-container">
                     <img 
-                      src={product.image_url} 
+                      src={product.HinhAnh_URL} 
                       className="card-img-top product-image" 
-                      alt={product.name}
+                      alt={product.TenSanPham}
                     />
                   </div>
                   <div className="card-body d-flex flex-column">
-                    <h5 className="card-title product-title">{product.name}</h5>
+                    <h5 className="card-title product-title">{product.TenSanPham}</h5>
                     
-                    {product.description && (
+                    {product.MoTa && (
                       <p className="card-text product-description">
-                        {product.description.substring(0, 60)}...
+                        {product.MoTa.substring(0, 60)}...
                       </p>
                     )}
                     
                     <div className="product-details">
-                      {product.hang_san_xuat_name && (
+                      {product.TenHangSanXuat && (
                         <p className="card-text mb-1">
-                          <strong>{t('hang')}</strong> {product.hang_san_xuat_name}
+                          <strong>{t('hang')}</strong> {product.TenHangSanXuat}
                         </p>
                       )}
                       
-                      {product.thong_so_name && (
+                      {product.ChiTietThongSo && product.ChiTietThongSo.length > 0 && (
                         <p className="card-text mb-1">
-                          <strong>{t('thongSo')}</strong> {product.thong_so_name}
+                          <strong>{t('thongSo')}</strong> {product.ChiTietThongSo[0].TenThongSo}: {product.ChiTietThongSo[0].GiaTriThongSo}
                         </p>
                       )}
                     </div>
                     
                     <p className="card-text text-danger fw-bold mt-auto fs-5">
-                      {Number(product.price).toLocaleString()} VND
+                      {Number(product.GiaBan).toLocaleString()} VND
                     </p>
                     
                     <div className="d-flex justify-content-between mt-2">

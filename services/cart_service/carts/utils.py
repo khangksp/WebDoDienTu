@@ -33,25 +33,27 @@ def add_to_cart(user_id, product_data, quantity=1):
     """
     cart = get_cart(user_id)
     
-    # Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa
+    # Lấy thông tin sản phẩm, hỗ trợ cả tên trường cũ và mới
     product_id = product_data.get('product_id')
+    # Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa
     existing_item = next((item for item in cart['items'] if item['product_id'] == product_id), None)
     
     if existing_item:
         existing_item['quantity'] += quantity
     else:
+        # Thêm mới với khả năng xử lý cả hai loại tên trường
         cart['items'].append({
             'product_id': product_id,
-            'name': product_data.get('name'),
+            'name': product_data.get('name', ''),
             'price': float(product_data.get('price', 0)),
-            'image_url': product_data.get('image_url'),
+            'image_url': product_data.get('image_url', ''),
             'quantity': quantity,
             'category': product_data.get('category', ''),
             'selected_color': product_data.get('selected_color', 'default'),
             'size': product_data.get('size', 'Standard')
         })
     
-    # Cập nhật tổng giá trị
+    # Cập nhật tổng tiền
     cart['total'] = sum(item['price'] * item['quantity'] for item in cart['items'])
     
     # Lưu giỏ hàng vào Redis
