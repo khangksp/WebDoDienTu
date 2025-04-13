@@ -13,6 +13,9 @@ import {
   faClock,
   faSignOutAlt,
   faUserCircle,
+  faEdit,
+  faSave,
+  faTimesCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { faFacebookF, faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { useLanguage } from "../context/LanguageContext";
@@ -23,7 +26,6 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Navbar.css";
 import '../pages/style/dashboard.css'
-
 
 const NavbarStyles = `
 <style>
@@ -61,6 +63,40 @@ const NavbarStyles = `
     margin-right: 8px;
     color: #6b7280;
   }
+
+  .input-icon-wrapper {
+    position: relative;
+    margin-bottom: 15px;
+  }
+
+  .input-icon {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    color: #6b7280;
+  }
+
+  .input-icon-wrapper input {
+    padding-left: 35px;
+    width: 100%;
+  }
+
+  .btn-edit, .btn-save, .btn-cancel {
+    margin: 5px;
+  }
+
+  .btn-edit {
+    background-color: #007bff;
+  }
+
+  .btn-save {
+    background-color: #28a745;
+  }
+
+  .btn-cancel {
+    background-color: #6c757d;
+  }
 </style>
 `;
 
@@ -73,7 +109,14 @@ function Navbar() {
   const [isToggled, setIsToggled] = useState(false);
   const [indicatorStyle, setIndicatorStyle] = useState({});
   const [errorMessage, setErrorMessage] = useState("");
-  const [showUserInfoModal, setShowUserInfoModal] = useState(false); // State cho popup thông tin người dùng
+  const [showUserInfoModal, setShowUserInfoModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false); // New state for edit mode
+  const [editData, setEditData] = useState({
+    tennguoidung: "",
+    email: "",
+    sodienthoai: "",
+    diachi: "",
+  }); // State for editable fields
 
   // Modal states
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -104,7 +147,7 @@ function Navbar() {
     forgotPassword: useRef(null),
     smsLogin: useRef(null),
     verification: useRef(null),
-    userInfo: useRef(null), // Ref cho popup thông tin người dùng
+    userInfo: useRef(null),
   };
   const verificationInputRefs = useRef([]);
 
@@ -112,44 +155,79 @@ function Navbar() {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 992);
 
-  // Check auth status and fetch user info
-  useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      axios
-        .get(`${API_BASE_URL}/auth/users/`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then((response) => {
-          const userData = response.data.users[0];
-          setIsAuthenticated(true);
-          setUsername(userData.nguoidung_data?.tennguoidung || userData.tendangnhap || "User");
-          setLoaiquyen(userData.loaiquyen || "khach");
+  // Fetch user info
+// Fetch user info
+useEffect(() => {
+  const token = localStorage.getItem("access_token");
+  const storedMataikhoan = localStorage.getItem("mataikhoan");
+  
+  console.log("Initial auth check - Token:", token ? "exists" : "none", 
+              "Stored ID:", storedMataikhoan);
+  
+  if (!token || !storedMataikhoan) {
+    console.log("Missing credentials, not authenticated");
+    setIsAuthenticated(false);
+    return;
+  }
 
-          axios
-            .get(`${API_BASE_URL}/auth/users/${userData.mataikhoan}/`, {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-            .then((res) => {
-              if (res.data.status === "ok") {
-                setUserInfo(res.data.user);
-              }
-            })
-            .catch((err) => {
-              console.error("Fetch user info failed:", err);
-            });
-        })
-        .catch((error) => {
-          console.error("Auth check failed:", error);
-          localStorage.clear();
-          setIsAuthenticated(false);
-          setUsername("");
-          setLoaiquyen("khach");
-          setUserInfo(null);
+  const fetchUser = async () => {
+    try {
+      // First, get the list of users
+      console.log("Fetching users list...");
+      const response = await axios.get(`${API_BASE_URL}/auth/users/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      // Log the structure to see what we're working with
+      console.log("API response structure:", 
+                  Object.keys(response.data),
+                  response.data.users ? "has users field" : "no users field");
+      
+      // Handle different response structures
+      const users = Array.isArray(response.data) ? response.data : 
+                   (response.data.users ? response.data.users : []);
+      
+      console.log(`Found ${users.length} users`);
+      
+      // Find the user with matching ID
+      const userData = users.find(
+        user => user.mataikhoan && 
+               user.mataikhoan.toString() === storedMataikhoan
+      );
+      
+      if (userData) {
+        console.log("Found matching user:", userData.tendangnhap);
+        setIsAuthenticated(true);
+        setUsername(userData.nguoidung_data?.tennguoidung || userData.tendangnhap || "User");
+        setLoaiquyen(userData.loaiquyen || "khach");
+        setUserInfo(userData);
+        
+        // Set edit data directly from userData
+        setEditData({
+          tennguoidung: userData.nguoidung_data?.tennguoidung || "",
+          email: userData.nguoidung_data?.email || "",
+          sodienthoai: userData.nguoidung_data?.sodienthoai || "",
+          diachi: userData.nguoidung_data?.diachi || "",
         });
+      } else {
+        console.log("No matching user found for ID:", storedMataikhoan);
+        throw new Error("User not found");
+      }
+    } catch (error) {
+      console.error("Auth check failed:", 
+                   error.response?.status || "No status",
+                   error.message);
+                   
+      // Don't clear local storage immediately - user might be offline
+      setIsAuthenticated(false);
+      setUsername("");
+      setLoaiquyen("khach");
+      setUserInfo(null);
     }
-  }, []);
+  };
 
+  fetchUser();
+}, []);
   // Navigation indicator
   useEffect(() => {
     const activeTab = document.querySelector(".nav-link.active");
@@ -244,6 +322,7 @@ function Navbar() {
     setShowSmsLoginModal(false);
     setShowVerificationModal(false);
     setShowUserInfoModal(false);
+    setIsEditing(false);
     setLoginData({ tendangnhap: "", password: "" });
     setRegisterData({
       tendangnhap: "",
@@ -260,6 +339,49 @@ function Navbar() {
     setErrorMessage("");
   };
 
+  // Handle edit input changes
+  const handleEditChange = (field) => (e) => {
+    setEditData((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  // Handle update submission
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem("access_token");
+    if (!token || !userInfo?.mataikhoan) {
+      setErrorMessage(t("vuiLongDangNhap"));
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/auth/users/update/${userInfo.mataikhoan}/`,
+        {
+          nguoidung: {
+            tennguoidung: editData.tennguoidung,
+            email: editData.email,
+            sodienthoai: editData.sodienthoai,
+            diachi: editData.diachi,
+          },
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.status === "ok") {
+        setUserInfo(response.data.user);
+        setIsEditing(false);
+        setErrorMessage("");
+        alert(t("capNhatThanhCong"));
+      }
+    } catch (error) {
+      const errorMsg =
+        error.response?.data?.message || t("capNhatThatBai");
+      setErrorMessage(errorMsg);
+    }
+  };
+
   // Auth handlers
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -267,28 +389,41 @@ function Navbar() {
       setErrorMessage(t("vuiLongNhapDayDuThongTin"));
       return;
     }
-
+  
     try {
+      console.log("Logging in with:", loginData.tendangnhap);
       const response = await axios.post(`${API_BASE_URL}/auth/login/`, {
         tendangnhap: loginData.tendangnhap,
         password: loginData.password,
       });
-
+  
+      console.log("Login response:", response.data);
       const { access, refresh, user } = response.data;
+      
+      // First clear any existing auth data
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("mataikhoan");
+      
+      // Then set the new values
       localStorage.setItem("access_token", access);
       if (refresh) localStorage.setItem("refresh_token", refresh);
-
+      localStorage.setItem("mataikhoan", user.mataikhoan.toString());
+      
+      console.log("Stored credentials - Token:", access?.slice(0,10) + "...", 
+                  "User ID:", user.mataikhoan);
+  
       setIsAuthenticated(true);
       setUsername(user.nguoidung_data?.tennguoidung || user.tendangnhap || "User");
       setLoaiquyen(user.loaiquyen || "khach");
-
-      const userResponse = await axios.get(`${API_BASE_URL}/auth/users/${user.mataikhoan}/`, {
-        headers: { Authorization: `Bearer ${access}` },
+      setUserInfo(user);
+      setEditData({
+        tennguoidung: user.nguoidung_data?.tennguoidung || "",
+        email: user.nguoidung_data?.email || "",
+        sodienthoai: user.nguoidung_data?.sodienthoai || "",
+        diachi: user.nguoidung_data?.diachi || "",
       });
-      if (userResponse.data.status === "ok") {
-        setUserInfo(userResponse.data.user);
-      }
-
+  
       resetModals();
       if (user.loaiquyen === "admin") {
         navigate("/admin");
@@ -298,6 +433,7 @@ function Navbar() {
         navigate("/");
       }
     } catch (error) {
+      console.error("Login error:", error.response?.data);
       setErrorMessage(
         t("dangNhapThatBai") + ": " + (error.response?.data?.message || t("loiKhongXacDinh"))
       );
@@ -306,7 +442,7 @@ function Navbar() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    const { tendangnhap, password, confirmPassword, loaiquyen, tennguoidung, email, sodienthoai } =
+    const { tendangnhap, password, confirmPassword, tennguoidung, email, sodienthoai } =
       registerData;
 
     if (!tendangnhap || !password || !confirmPassword || !tennguoidung || !email || !sodienthoai) {
@@ -322,7 +458,7 @@ function Navbar() {
       const response = await axios.post(`${API_BASE_URL}/auth/register/`, {
         tendangnhap,
         password,
-        loaiquyen,
+        loaiquyen: "khach",
         nguoidung: {
           tennguoidung,
           email,
@@ -541,7 +677,14 @@ function Navbar() {
             <div className="login-modal-header">
               <h4>{t("thongTinTaiKhoan")}</h4>
               <p>{t("quanLyTaiKhoan")}</p>
-              <button className="close-button" onClick={() => setShowUserInfoModal(false)}>
+              <button
+                className="close-button"
+                onClick={() => {
+                  setShowUserInfoModal(false);
+                  setIsEditing(false);
+                  setErrorMessage("");
+                }}
+              >
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
@@ -553,32 +696,99 @@ function Navbar() {
                       icon={faUserCircle}
                       style={{ fontSize: "50px", color: "#6b7280" }}
                     />
-                    <h5 className="mt-2">{userInfo.nguoidung_data.tennguoidung}</h5>
+                    <h5 className="mt-2">{userInfo.nguoidung_data?.tennguoidung || t("khongCoTen")}</h5>
                   </div>
-                  <div className="user-info mb-2">
-                    <FontAwesomeIcon icon={faEnvelope} className="me-2" />
-                    <span>
-                      <strong>{t("email")}:</strong> {userInfo.nguoidung_data.email}
-                    </span>
-                  </div>
-                  <div className="user-info mb-2">
-                    <FontAwesomeIcon icon={faMobileAlt} className="me-2" />
-                    <span>
-                      <strong>{t("sdt")}:</strong> {userInfo.nguoidung_data.sodienthoai}
-                    </span>
-                  </div>
-                  <div className="user-info mb-2">
-                    <FontAwesomeIcon icon={faUserCircle} className="me-2" />
-                    <span>
-                      <strong>{t("diaChi")}:</strong>{" "}
-                      {userInfo.nguoidung_data.diachi || t("chuaCapNhat")}
-                    </span>
-                  </div>
-                  <hr />
-                  <button className="btn btn-danger w-100" onClick={handleLogout}>
-                    <FontAwesomeIcon icon={faSignOutAlt} className="me-2" />
-                    {t("dangXuat")}
-                  </button>
+
+                  {isEditing ? (
+                    <form onSubmit={handleUpdate}>
+                      {[
+                        { icon: faUser, placeholder: t("tenNguoiDung"), field: "tennguoidung", type: "text" },
+                        { icon: faEnvelope, placeholder: t("email"), field: "email", type: "email" },
+                        { icon: faMobileAlt, placeholder: t("sdt"), field: "sodienthoai", type: "tel" },
+                        { icon: faUserCircle, placeholder: t("diaChi"), field: "diachi", type: "text" },
+                      ].map((input) => (
+                        <div className="input-icon-wrapper" key={input.field}>
+                          <FontAwesomeIcon icon={input.icon} className="input-icon" />
+                          <input
+                            type={input.type}
+                            placeholder={input.placeholder}
+                            className="form-control"
+                            value={editData[input.field]}
+                            onChange={handleEditChange(input.field)}
+                          />
+                        </div>
+                      ))}
+                      {errorMessage && <p className="text-danger text-center">{errorMessage}</p>}
+                      <div className="d-flex justify-content-between">
+                        <button type="submit" className="btn btn-save">
+                          <FontAwesomeIcon icon={faSave} className="me-2" />
+                          {t("luu")}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-cancel"
+                          onClick={() => {
+                            setIsEditing(false);
+                            setErrorMessage("");
+                            setEditData({
+                              tennguoidung: userInfo.nguoidung_data?.tennguoidung || "",
+                              email: userInfo.nguoidung_data?.email || "",
+                              sodienthoai: userInfo.nguoidung_data?.sodienthoai || "",
+                              diachi: userInfo.nguoidung_data?.diachi || "",
+                            });
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faTimesCircle} className="me-2" />
+                          {t("huy")}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      <div className="user-info mb-2">
+                        <FontAwesomeIcon icon={faUser} className="me-2" />
+                        <span>
+                          <strong>{t("tenNguoiDung")}:</strong>{" "}
+                          {userInfo.nguoidung_data?.tennguoidung || t("chuaCapNhat")}
+                        </span>
+                      </div>
+                      <div className="user-info mb-2">
+                        <FontAwesomeIcon icon={faEnvelope} className="me-2" />
+                        <span>
+                          <strong>{t("email")}:</strong>{" "}
+                          {userInfo.nguoidung_data?.email || t("chuaCapNhat")}
+                        </span>
+                      </div>
+                      <div className="user-info mb-2">
+                        <FontAwesomeIcon icon={faMobileAlt} className="me-2" />
+                        <span>
+                          <strong>{t("sdt")}:</strong>{" "}
+                          {userInfo.nguoidung_data?.sodienthoai || t("chuaCapNhat")}
+                        </span>
+                      </div>
+                      <div className="user-info mb-2">
+                        <FontAwesomeIcon icon={faUserCircle} className="me-2" />
+                        <span>
+                          <strong>{t("diaChi")}:</strong>{" "}
+                          {userInfo.nguoidung_data?.diachi || t("chuaCapNhat")}
+                        </span>
+                      </div>
+                      <hr />
+                      <div className="d-flex justify-content-between">
+                        <button
+                          className="btn btn-edit"
+                          onClick={() => setIsEditing(true)}
+                        >
+                          <FontAwesomeIcon icon={faEdit} className="me-2" />
+                          {t("chinhSua")}
+                        </button>
+                        <button className="btn btn-danger" onClick={handleLogout}>
+                          <FontAwesomeIcon icon={faSignOutAlt} className="me-2" />
+                          {t("dangXuat")}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </>
               ) : (
                 <p className="text-center">{t("dangTai")}</p>
@@ -710,18 +920,6 @@ function Navbar() {
                     />
                   </div>
                 ))}
-                <div className="input-icon-wrapper">
-                  <FontAwesomeIcon icon={faUser} className="input-icon" />
-                  <select
-                    className="form-control"
-                    value={registerData.loaiquyen}
-                    onChange={handleInputChange("register", "loaiquyen")}
-                  >
-                    <option value="khach">{t("khachHang")}</option>
-                    <option value="admin">{t("quanTri")}</option>
-                    <option value="nhanvien">{t("nhanVien")}</option>
-                  </select>
-                </div>
                 {errorMessage && <p className="text-danger text-center">{errorMessage}</p>}
                 <button type="submit" className="btn btn-danger w-100">
                   {t("dangKy")}

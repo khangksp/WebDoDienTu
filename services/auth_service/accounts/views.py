@@ -86,31 +86,20 @@ class RegisterView(APIView):
             {"status": "error", "message": "Tạo người dùng thất bại", "errors": serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
-
 class UserUpdateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, user_id):
-        # Lấy đối tượng TaiKhoan
         taikhoan = get_object_or_404(TaiKhoan, mataikhoan=user_id)
+        is_admin = request.user.loaiquyen == 'admin'
+        is_self = request.user.mataikhoan == user_id
 
-        # Kiểm tra quyền admin
-        if request.user.loaiquyen != 'admin':
+        if not (is_self or is_admin):
             return Response(
-                {"status": "error", "message": "Chỉ admin mới được sửa thông tin người dùng"},
+                {"status": "error", "message": "Bạn không có quyền sửa thông tin người dùng này"},
                 status=status.HTTP_403_FORBIDDEN
             )
-        if 'tendangnhap' in request.data:
-            return Response(
-                {"status": "error", "message": "Tên đăng nhập không được phép cập nhật"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Lấy hoặc tạo đối tượng NguoiDung
-        nguoidung = taikhoan.nguoidung.first()
-        if not nguoidung and any(key in request.data.get('nguoidung', {}) for key in ['tennguoidung', 'email', 'sodienthoai', 'diachi']):
-            nguoidung = NguoiDung(fk_taikhoan=taikhoan)
 
-        # Lấy dữ liệu từ request
         tendangnhap = request.data.get('tendangnhap')
         password = request.data.get('password')
         loaiquyen = request.data.get('loaiquyen')
@@ -120,8 +109,18 @@ class UserUpdateView(APIView):
         sodienthoai = nguoidung_data.get('sodienthoai')
         diachi = nguoidung_data.get('diachi')
 
-        # Cập nhật tendangnhap
-        if tendangnhap:
+        if not is_admin:
+            if any([tendangnhap, password, loaiquyen]):
+                return Response(
+                    {"status": "error", "message": "Chỉ admin mới được cập nhật tên đăng nhập, mật khẩu hoặc loại quyền"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        nguoidung = taikhoan.nguoidung.first()
+        if not nguoidung and any([tennguoidung, email, sodienthoai, diachi]):
+            nguoidung = NguoiDung(fk_taikhoan=taikhoan)
+
+        if tendangnhap and is_admin:
             if TaiKhoan.objects.exclude(mataikhoan=taikhoan.mataikhoan).filter(tendangnhap=tendangnhap).exists():
                 return Response(
                     {"status": "error", "message": "Tên đăng nhập đã được sử dụng bởi người dùng khác"},
@@ -129,8 +128,7 @@ class UserUpdateView(APIView):
                 )
             taikhoan.tendangnhap = tendangnhap
 
-        # Cập nhật password
-        if password:
+        if password and is_admin:
             if len(password) < 6:
                 return Response(
                     {"status": "error", "message": "Mật khẩu phải có ít nhất 6 ký tự"},
@@ -138,8 +136,7 @@ class UserUpdateView(APIView):
                 )
             taikhoan.set_password(password)
 
-        # Cập nhật loaiquyen
-        if loaiquyen:
+        if loaiquyen and is_admin:
             VALID_ROLES = ['admin', 'khach', 'nhanvien']
             if loaiquyen not in VALID_ROLES:
                 return Response(
@@ -148,55 +145,44 @@ class UserUpdateView(APIView):
                 )
             taikhoan.loaiquyen = loaiquyen
 
-        # Cập nhật nguoidung
         if nguoidung:
-            # Kiểm tra tennguoidung
-            if tennguoidung is not None:  # Nếu gửi tennguoidung
-                if nguoidung.tennguoidung and (tennguoidung == '' or tennguoidung is None):
+            if tennguoidung is not None:
+                if not tennguoidung and nguoidung.tennguoidung:
                     return Response(
-                        {"status": "error", "message": "Tên người dùng không được để trống vì đã có giá trị"},
+                        {"status": "error", "message": "Tên người dùng không được để trống"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 nguoidung.tennguoidung = tennguoidung
 
-            # Kiểm tra email
             if email is not None:
-                if nguoidung.email and (email == '' or email is None):
+                if not email and nguoidung.email:
                     return Response(
-                        {"status": "error", "message": "Email không được để trống vì đã có giá trị"},
+                        {"status": "error", "message": "Email không được để trống"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 if email and NguoiDung.objects.exclude(fk_taikhoan=taikhoan).filter(email=email).exists():
                     return Response(
-                        {"status": "error", "message": "Email đã được sử dụng bởi người dùng khác"},
+                        {"status": "error", "message": "Email đã được sử dụng"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 nguoidung.email = email
 
-            # Kiểm tra sodienthoai
             if sodienthoai is not None:
-                if nguoidung.sodienthoai and (sodienthoai == '' or sodienthoai is None):
+                if not sodienthoai and nguoidung.sodienthoai:
                     return Response(
-                        {"status": "error", "message": "Số điện thoại không được để trống vì đã có giá trị"},
+                        {"status": "error", "message": "Số điện thoại không được để trống"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 if sodienthoai and NguoiDung.objects.exclude(fk_taikhoan=taikhoan).filter(sodienthoai=sodienthoai).exists():
                     return Response(
-                        {"status": "error", "message": "Số điện thoại đã được sử dụng bởi người dùng khác"},
+                        {"status": "error", "message": "Số điện thoại đã được sử dụng"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 nguoidung.sodienthoai = sodienthoai
 
-            # Kiểm tra diachi
             if diachi is not None:
-                if nguoidung.diachi and (diachi == '' or diachi is None):
-                    return Response(
-                        {"status": "error", "message": "Địa chỉ không được để trống vì đã có giá trị"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
                 nguoidung.diachi = diachi
 
-        # Lưu dữ liệu
         try:
             taikhoan.save()
             if nguoidung:
@@ -207,7 +193,6 @@ class UserUpdateView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        # Serialize dữ liệu trả về
         serializer = TaiKhoanSerializer(taikhoan)
         user_data = serializer.data
         user_data.pop('nguoidung', None)
@@ -260,3 +245,9 @@ class UserDetailView(APIView):
             "status": "ok",
             "user": user_data
         }, status=status.HTTP_200_OK)
+class CurrentUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = TaiKhoanSerializer(request.user)
+        return Response({"status": "ok", "user": serializer.data})
