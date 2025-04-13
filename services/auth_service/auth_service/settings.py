@@ -95,7 +95,16 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# In settings.py
 
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # or your SMTP server
+EMAIL_PORT = 587  # or the appropriate port for your SMTP server
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'ductaionlinemini@gmail.com'  # your email address
+EMAIL_HOST_PASSWORD = 'saob njvh nkjz bomc'  # your email password or app password
+DEFAULT_FROM_EMAIL = 'Your Store ductaionlinemini@gmail.com'
 # REST Framework and JWT Authentication Settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

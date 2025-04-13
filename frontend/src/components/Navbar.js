@@ -507,22 +507,35 @@ useEffect(() => {
       }
     }
   };
-
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     if (!registerData.email) {
       setErrorMessage(t("vuiLongNhapEmail"));
       return;
     }
-
+  
     try {
-      await axios.post(`${API_BASE_URL}/auth/password-reset/`, { email: registerData.email });
-      resetModals();
-      alert(t("huongDanLayLaiMatKhau"));
+      // Show loading message
+      setErrorMessage(t("dangXuLy"));
+      
+      const response = await axios.post(`${API_BASE_URL}/auth/password-reset/`, { 
+        email: registerData.email 
+      });
+      
+      if (response.data.status === "ok") {
+        resetModals();
+        alert(response.data.message || t("matKhauMoiDaGuiToi"));
+      } else {
+        setErrorMessage(response.data.message || t("yeuCauLayLaiMatKhauThatBai"));
+      }
     } catch (error) {
-      setErrorMessage(
-        t("yeuCauLayLaiMatKhauThatBai") + ": " + (error.response?.data?.message || t("loiKhongXacDinh"))
-      );
+      console.error("Password reset error:", error.response?.data);
+      
+      if (error.response?.data?.message) {
+        setErrorMessage(error.response.data.message);
+      } else {
+        setErrorMessage(t("yeuCauLayLaiMatKhauThatBai"));
+      }
     }
   };
 

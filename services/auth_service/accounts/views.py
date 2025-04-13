@@ -7,6 +7,10 @@ from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from .models import TaiKhoan, NguoiDung
 from .serializers import TaiKhoanSerializer
+import random
+import string
+from django.core.mail import send_mail
+from django.conf import settings
 
 class UserListView(APIView):
     permission_classes = [AllowAny]
@@ -251,3 +255,69 @@ class CurrentUserView(APIView):
     def get(self, request):
         serializer = TaiKhoanSerializer(request.user)
         return Response({"status": "ok", "user": serializer.data})
+    
+class PasswordResetView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response(
+                {"status": "error", "message": "Email là bắt buộc"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Find user with this email
+        try:
+            nguoidung = NguoiDung.objects.get(email=email)
+            taikhoan = nguoidung.fk_taikhoan
+        except NguoiDung.DoesNotExist:
+            return Response(
+                {"status": "error", "message": "Không tìm thấy tài khoản với email này"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Generate new random password
+        new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        
+        # Update user's password
+        taikhoan.set_password(new_password)
+        taikhoan.save()
+
+        # Send email with new password
+        subject = 'Mật khẩu mới của bạn'
+        message = f'''
+        Xin chào {nguoidung.tennguoidung or 'bạn'},
+        
+        Chúng tôi nhận được yêu cầu đặt lại mật khẩu của bạn.
+        
+        Tên đăng nhập: {taikhoan.tendangnhap}
+        Mật khẩu mới: {new_password}
+        
+        Vui lòng đăng nhập và thay đổi mật khẩu của bạn ngay sau khi đăng nhập.
+        
+        Trân trọng,
+        [Electric store]
+        '''
+        
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            return Response(
+                {"status": "ok", "message": "Mật khẩu mới đã được gửi đến email của bạn"},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            # Revert password change if email sending fails
+            taikhoan.set_password(password)
+            taikhoan.save()
+            
+            return Response(
+                {"status": "error", "message": f"Lỗi gửi email: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
