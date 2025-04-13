@@ -444,7 +444,8 @@ useEffect(() => {
     e.preventDefault();
     const { tendangnhap, password, confirmPassword, tennguoidung, email, sodienthoai } =
       registerData;
-
+  
+    // Basic validations
     if (!tendangnhap || !password || !confirmPassword || !tennguoidung || !email || !sodienthoai) {
       setErrorMessage(t("vuiLongNhapDayDuThongTin"));
       return;
@@ -453,7 +454,7 @@ useEffect(() => {
       setErrorMessage(t("matKhauKhongKhop"));
       return;
     }
-
+  
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/register/`, {
         tendangnhap,
@@ -465,16 +466,45 @@ useEffect(() => {
           sodienthoai,
         },
       });
+      
       resetModals();
       setShowLoginModal(true);
       alert(t("dangKyThanhCong"));
     } catch (error) {
-      const errorMsg =
-        error.response?.data?.message ||
-        error.response?.data?.errors?.non_field_errors?.[0] ||
-        Object.values(error.response?.data?.errors || {})[0] ||
-        t("loiKhongXacDinh");
-      setErrorMessage(t("dangKyThatBai") + ": " + errorMsg);
+      console.error("Registration error:", error.response?.data);
+      
+      // Handle specific error messages from the backend
+      if (error.response?.data?.errors) {
+        const errors = error.response.data.errors;
+        
+        // Check for specific field errors
+        if (errors.tendangnhap) {
+          setErrorMessage(t("tenDangNhapDaTonTai"));
+        } else if (errors.nguoidung?.email) {
+          setErrorMessage(t("emailDaTonTai"));
+        } else if (errors.nguoidung?.sodienthoai) {
+          setErrorMessage(t("soDienThoaiDaTonTai"));
+        } else if (error.response.data.message && error.response.data.message.includes("đã được sử dụng")) {
+          // Check for message containing "đã được sử dụng"
+          setErrorMessage(error.response.data.message);
+        } else {
+          // Generic error with the first error message found
+          const firstError = Object.values(errors)[0];
+          if (Array.isArray(firstError)) {
+            setErrorMessage(firstError[0]);
+          } else if (typeof firstError === 'object') {
+            setErrorMessage(Object.values(firstError)[0]);
+          } else {
+            setErrorMessage(firstError);
+          }
+        }
+      } else if (error.response?.data?.message) {
+        // If there's a general message
+        setErrorMessage(error.response.data.message);
+      } else {
+        // Fallback error message
+        setErrorMessage(t("dangKyThatBai") + ": " + t("loiKhongXacDinh"));
+      }
     }
   };
 
