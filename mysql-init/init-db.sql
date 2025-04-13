@@ -16,13 +16,12 @@ GRANT ALL PRIVILEGES ON payment_db.* TO 'user'@'%';
 -- Sử dụng cơ sở dữ liệu auth_db
 USE auth_db;
 
--- Tạo bảng users với trường vaitro
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    vaitro ENUM('admin', 'nhanvien', 'khach') NOT NULL DEFAULT 'khach', -- Thêm trường vaitro
+-- Tạo bảng taikhoan
+CREATE TABLE IF NOT EXISTS taikhoan (
+    mataikhoan INT AUTO_INCREMENT PRIMARY KEY,
+    tendangnhap VARCHAR(255) NOT NULL UNIQUE,
+    matkhau VARCHAR(255) NOT NULL,
+    loaiquyen ENUM('admin', 'nhanvien', 'khach') NOT NULL DEFAULT 'khach',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_login TIMESTAMP NULL DEFAULT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -30,9 +29,24 @@ CREATE TABLE IF NOT EXISTS users (
     is_superuser BOOLEAN NOT NULL DEFAULT FALSE
 );
 
+-- Tạo bảng nguoidung
+CREATE TABLE IF NOT EXISTS nguoidung (
+    manguoidung INT AUTO_INCREMENT PRIMARY KEY,
+    tennguoidung VARCHAR(255) NOT NULL,
+    diachi VARCHAR(255),
+    email VARCHAR(255) NOT NULL UNIQUE,
+    sodienthoai VARCHAR(255) NOT NULL UNIQUE,
+    fk_taikhoan INT NOT NULL,
+    FOREIGN KEY (fk_taikhoan) REFERENCES taikhoan(mataikhoan) ON DELETE CASCADE
+);
 -- Chèn dữ liệu mẫu với trường vaitro
-INSERT IGNORE INTO users (username, password, email, vaitro) 
-VALUES ('admin', 'hashed_password', 'admin@example.com', 'admin');
+-- Chèn dữ liệu vào bảng taikhoan
+INSERT INTO taikhoan (tendangnhap, matkhau, loaiquyen, created_at, last_login, is_active, is_staff, is_superuser)
+SELECT taikhoan, matkhau, vaitro, created_at, last_login, is_active, is_staff, is_superuser
+FROM users;
 
+INSERT INTO nguoidung (tennguoidung, diachi, email, sodienthoai, fk_taikhoan)
+SELECT taikhoan, NULL, email, sodienthoai, id
+FROM users;
 -- Áp dụng các thay đổi quyền
 FLUSH PRIVILEGES;
