@@ -241,16 +241,16 @@ class UserDeleteView(APIView):
         }, status=status.HTTP_200_OK)
 
 class UserDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request, user_id):
         taikhoan = get_object_or_404(TaiKhoan, mataikhoan=user_id)
 
-        if request.user.loaiquyen != 'admin' and request.user.id != taikhoan.id:
-            return Response(
-                {"status": "error", "message": "Bạn không có quyền xem thông tin người dùng này"},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # if request.user.loaiquyen != 'admin' and request.user.id != taikhoan.id:
+        #     return Response(
+        #         {"status": "error", "message": "Bạn không có quyền xem thông tin người dùng này"},
+        #         status=status.HTTP_403_FORBIDDEN
+        #     )
 
         serializer = TaiKhoanSerializer(taikhoan)
         user_data = serializer.data
