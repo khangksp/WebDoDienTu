@@ -22,6 +22,8 @@ import { API_BASE_URL } from "../config";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Navbar.css";
+import '../pages/style/dashboard.css'
+
 
 const NavbarStyles = `
 <style>
