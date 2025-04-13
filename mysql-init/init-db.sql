@@ -6,7 +6,12 @@ CREATE DATABASE IF NOT EXISTS payment_db;
 
 -- Tạo người dùng 'user' nếu chưa tồn tại và đặt mật khẩu
 CREATE USER IF NOT EXISTS 'user'@'%' IDENTIFIED BY 'password';
+-- Tạo người dùng 'user' nếu chưa tồn tại và đặt mật khẩu
+-- Tạo người dùng 'user' nếu chưa tồn tại và đặt mật khẩu
+-- Tạo người dùng 'user' nếu chưa tồn tại và đặt mật khẩu
+-- Tạo người dùng 'user' nếu chưa tồn tại và đặt mật khẩu
 
+-- Tạo người dùng 'user' nếu chưa tồn tại và đặt mật khẩu
 -- Cấp toàn quyền cho người dùng 'user' trên các cơ sở dữ liệu
 GRANT ALL PRIVILEGES ON auth_db.* TO 'user'@'%';
 GRANT ALL PRIVILEGES ON product_db.* TO 'user'@'%';
