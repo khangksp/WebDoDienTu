@@ -63,11 +63,24 @@ body {
 }
 
 
-/* Make carousel controls more visible */
-.carousel-control-prev, .carousel-control-next {
-  margin-top: 70px;
-  width: 50px;
+.carousel-control-prev,
+.carousel-control-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    height: auto;
+    padding: 10px;
+    background: transparent !important;
+    border: none;
+    opacity: 1;
+    transition: opacity 0.3s ease;
 }
+
 
 .carousel-control-prev-icon, .carousel-control-next-icon {
   border-radius: 50%;
