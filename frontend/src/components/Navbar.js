@@ -155,6 +155,10 @@ function Navbar() {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 992);
 
+  const handleMenuClick = () => {
+    setIsToggled(false); // Đóng thanh trượt khi chọn một mục trong menu
+  };
+
   // Fetch user info
 // Fetch user info
 useEffect(() => {
@@ -660,6 +664,8 @@ useEffect(() => {
                   key={item.path}
                   className={`nav-link nav2 ${location.pathname === item.path ? "active" : ""}`}
                   to={item.path}
+
+                  onClick={handleMenuClick}
                 >
                   {item.label}
                 </Link>
