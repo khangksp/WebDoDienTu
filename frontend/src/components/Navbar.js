@@ -571,8 +571,6 @@ useEffect(() => {
     e.preventDefault();
     if (isAuthenticated) {
       setShowUserInfoModal(true);
-    } else if (isMobile) {
-      navigate("/login");
     } else {
       resetModals();
       setShowLoginModal(true);
@@ -621,103 +619,106 @@ useEffect(() => {
   return (
     <>
       <div dangerouslySetInnerHTML={{ __html: NavbarStyles }} />
-      <nav className="navbar navbar-expand-lg navbar-light bg-white">
-        <div className="container">
-          <Link className="navbar-brand" to="/">
-            <img src="/assets/logoweb.png" alt="Logo" className="logo" />
-          </Link>
-
-          <button
-            className={`navbar-toggler ${isToggled ? "" : "collapsed"}`}
-            type="button"
-            onClick={() => setIsToggled(!isToggled)}
-          >
-            <span className="toggler-icon top-bar"></span>
-            <span className="toggler-icon middle-bar"></span>
-            <span className="toggler-icon bottom-bar"></span>
-          </button>
-
-          <div className={`collapse navbar-collapse ${isToggled ? "show" : ""}`}>
-            <form onSubmit={handleSearch} className="d-lg-none mb-3">
-              <div className="input-group">
-                <span className="input-group-text">
-                  <FontAwesomeIcon icon={faSearch} />
-                </span>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder={t("timKiem")}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </form>
-
-            <div className="navbar-nav mx-auto position-relative">
-              {[
-                { path: "/", label: t("trangChu") },
-                { path: "/about", label: t("gioiThieu") },
-                { path: "/products", label: t("sanPham") },
-                { path: "/contact", label: t("lienHe") },
-              ].map((item) => (
-                <Link
-                  key={item.path}
-                  className={`nav-link nav2 ${location.pathname === item.path ? "active" : ""}`}
-                  to={item.path}
-
-                  onClick={handleMenuClick}
-                >
-                  {item.label}
-                </Link>
-              ))}
-              <div className="indicator" style={indicatorStyle}></div>
-            </div>
-
-            <div className="d-lg-none d-flex justify-content-between align-items-center">
-              <LanguageSwitcher />
-              <div className="d-flex">
-                <a className="nav-link me-3" href="#" onClick={handleAccountClick}>
-                  <FontAwesomeIcon icon={faUser} />
-                  <span className="d-none d-lg-inline ms-1">
-                    {isAuthenticated ? username : t("taiKhoan")}
-                  </span>
-                </a>
-                <Link className="nav-link" to="/cart">
-                  <FontAwesomeIcon icon={faCartShopping} />
-                  <span className="d-none d-lg-inline ms-1">{t("gioHang")}</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          <div className="d-none d-lg-flex align-items-center">
-            <form onSubmit={handleSearch} className="d-none d-lg-flex align-items-center">
-              <div className="input-group search-container">
-                <span className="input-group-text">
-                  <FontAwesomeIcon icon={faSearch} />
-                </span>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder={t("timKiem")}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </form>
-
-            <LanguageSwitcher />
-            <a className="nav-link ms-3" href="#" onClick={handleAccountClick}>
-              <FontAwesomeIcon icon={faUser} className="me-1" />
-              {isAuthenticated ? username : t("taiKhoan")}
-            </a>
-            <Link className="nav-link ms-3" to="/cart">
-              <FontAwesomeIcon icon={faCartShopping} className="me-1" />
-              {t("gioHang")}
+        <nav className="navbar navbar-expand-lg navbar-light bg-white">
+          <div className="container position-relative">
+            <Link className="navbar-brand" to="/">
+              <img src="/assets/logoweb.png" alt="Logo" className="logo" />
             </Link>
+
+            <button
+              className={`navbar-toggler ${isToggled ? "" : "collapsed"}`}
+              type="button"
+              onClick={() => setIsToggled(!isToggled)}
+            >
+              <span className="toggler-icon top-bar"></span>
+              <span className="toggler-icon middle-bar"></span>
+              <span className="toggler-icon bottom-bar"></span>
+            </button>
+
+            <div className={`collapse navbar-collapse ${isToggled ? "show" : ""}`}>
+              <div className="mobile-menu-top">
+                <form onSubmit={handleSearch} className="d-lg-none mb-3">
+                  <div className="input-group">
+                    <span className="input-group-text">
+                      <FontAwesomeIcon icon={faSearch} />
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder={t("timKiem")}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </form>
+
+                <div className="navbar-nav mx-auto position-relative">
+                  {[
+                    { path: "/", label: t("trangChu") },
+                    { path: "/about", label: t("gioiThieu") },
+                    { path: "/products", label: t("sanPham") },
+                    { path: "/contact", label: t("lienHe") },
+                  ].map((item) => (
+                    <Link
+                      key={item.path}
+                      className={`nav-link nav2 ${location.pathname === item.path ? "active" : ""}`}
+                      to={item.path}
+
+                      onClick={handleMenuClick}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                  <div className="indicator" style={indicatorStyle}></div>
+                </div>
+              </div>
+            
+
+              <div className="d-lg-none d-flex justify-content-between align-items-center">
+                <LanguageSwitcher />
+                <div className="d-flex">
+                  <a className="nav-link me-3" href="#" onClick={handleAccountClick}>
+                    <FontAwesomeIcon icon={faUser} />
+                    <span className="d-none d-lg-inline ms-1">
+                      {isAuthenticated ? username : t("taiKhoan")}
+                    </span>
+                  </a>
+                  <Link className="nav-link" to="/cart">
+                    <FontAwesomeIcon icon={faCartShopping} />
+                    <span className="d-none d-lg-inline ms-1">{t("gioHang")}</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="d-none d-lg-flex align-items-center">
+              <form onSubmit={handleSearch} className="d-none d-lg-flex align-items-center">
+                <div className="input-group search-container">
+                  <span className="input-group-text">
+                    <FontAwesomeIcon icon={faSearch} />
+                  </span>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder={t("timKiem")}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </form>
+
+              <LanguageSwitcher />
+              <a className="nav-link ms-3" href="#" onClick={handleAccountClick}>
+                <FontAwesomeIcon icon={faUser} className="me-1" />
+                {isAuthenticated ? username : t("taiKhoan")}
+              </a>
+              <Link className="nav-link ms-3" to="/cart">
+                <FontAwesomeIcon icon={faCartShopping} className="me-1" />
+                {t("gioHang")}
+              </Link>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
 
       {/* User Info Modal */}
       {showUserInfoModal && (
