@@ -5,20 +5,32 @@ import {
   Folder, 
   Factory, 
   Settings2, 
-  PlusCircle 
+  PlusCircle,
+  Search,
+  Edit,
+  Trash2,
+  X,
+  CheckCircle,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import axios from 'axios';
 import './style/nhanvien.css';
 import { API_BASE_URL } from '../config';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+
 const StaffDashboard = () => {
   const [activeSection, setActiveSection] = useState('category');
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'form'
 
-  // State cho danh sách dữ liệu từ API
+  // State for data lists
   const [categories, setCategories] = useState([]);
   const [hangSanXuats, setHangSanXuats] = useState([]);
   const [thongSos, setThongSos] = useState([]);
+  const [products, setProducts] = useState([]);
 
-  // State cho form
+  // State for form data
   const [categoryData, setCategoryData] = useState({ TenDanhMuc: '', MoTa: '' });
   const [hangSanXuatData, setHangSanXuatData] = useState({ TenHangSanXuat: '' });
   const [thongSoData, setThongSoData] = useState({ TenThongSo: '' });
@@ -31,35 +43,117 @@ const StaffDashboard = () => {
     HangSanXuat: '',
     ThongSo: [],
     HinhAnh: null,
+    selectedThongSo: '',
+    thongSoValue: ''
   });
 
+  // State for editing
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
+
+  // State for search
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // State for messages
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // State for confirmation modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteItemType, setDeleteItemType] = useState('');
+  const [deleteItemId, setDeleteItemId] = useState(null);
+  const [deleteItemName, setDeleteItemName] = useState('');
 
-  // Lấy danh sách từ API khi component mount
+  // Fetch data from API when component mounts or when active section changes
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [categoriesRes, hangSanXuatsRes, thongSosRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/products/danh-muc/`),
-          axios.get(`${API_BASE_URL}/products/hang-san-xuat/`),
-          axios.get(`${API_BASE_URL}/products/thong-so/`),
-        ]);
-        setCategories(categoriesRes.data);
-        setHangSanXuats(hangSanXuatsRes.data);
-        setThongSos(thongSosRes.data);
-      } catch (error) {
-        console.error('Lỗi khi lấy dữ liệu:', error);
-        setErrorMessage('Không thể lấy dữ liệu từ API');
-      }
-    };
     fetchData();
-  }, []);
+  }, [activeSection]);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      switch (activeSection) {
+        case 'category':
+          const categoriesRes = await axios.get(`${API_BASE_URL}/products/danh-muc/`);
+          setCategories(categoriesRes.data);
+          break;
+        case 'hangSanXuat':
+          const hangSanXuatsRes = await axios.get(`${API_BASE_URL}/products/hang-san-xuat/`);
+          setHangSanXuats(hangSanXuatsRes.data);
+          break;
+        case 'thongSo':
+          const thongSosRes = await axios.get(`${API_BASE_URL}/products/thong-so/`);
+          setThongSos(thongSosRes.data);
+          break;
+        case 'product':
+          // Fetch all needed data for products
+          const [productsRes, categoriesForProductRes, hangSanXuatsForProductRes, thongSosForProductRes] = 
+            await Promise.all([
+              axios.get(`${API_BASE_URL}/products/san-pham/`),
+              axios.get(`${API_BASE_URL}/products/danh-muc/`),
+              axios.get(`${API_BASE_URL}/products/hang-san-xuat/`),
+              axios.get(`${API_BASE_URL}/products/thong-so/`)
+            ]);
+          setProducts(productsRes.data);
+          setCategories(categoriesForProductRes.data);
+          setHangSanXuats(hangSanXuatsForProductRes.data);
+          setThongSos(thongSosForProductRes.data);
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy dữ liệu:', error);
+      setErrorMessage('Không thể lấy dữ liệu từ API');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    switch (activeSection) {
+      case 'category':
+        setCategoryData({ TenDanhMuc: '', MoTa: '' });
+        break;
+      case 'hangSanXuat':
+        setHangSanXuatData({ TenHangSanXuat: '' });
+        break;
+      case 'thongSo':
+        setThongSoData({ TenThongSo: '' });
+        break;
+      case 'product':
+        setProductData({
+          TenSanPham: '',
+          MoTa: '',
+          GiaBan: '',
+          SoLuongTon: '',
+          DanhMuc: '',
+          HangSanXuat: '',
+          ThongSo: [],
+          HinhAnh: null,
+          selectedThongSo: '',
+          thongSoValue: ''
+        });
+        break;
+      default:
+        break;
+    }
+    setIsEditing(false);
+    setEditId(null);
+  };
 
   const SidebarItem = ({ icon: Icon, label, section }) => (
     <div 
       className={`sidebar-item ${activeSection === section ? 'active' : ''}`} 
-      onClick={() => setActiveSection(section)}
+      onClick={() => {
+        setActiveSection(section);
+        setViewMode('grid');
+        resetForm();
+        setErrorMessage('');
+        setSuccessMessage('');
+        setSearchTerm('');
+      }}
     >
       <Icon className="sidebar-icon" />
       <span>{label}</span>
@@ -67,6 +161,7 @@ const StaffDashboard = () => {
   );
 
   const handleInputChange = (type, field) => (e) => {
+    setErrorMessage('');
     if (type === 'category') {
       setCategoryData((prev) => ({ ...prev, [field]: e.target.value }));
     } else if (type === 'hangSanXuat') {
@@ -82,10 +177,151 @@ const StaffDashboard = () => {
     }
   };
 
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const filteredData = () => {
+    switch (activeSection) {
+      case 'category':
+        return categories.filter(item => 
+          item.TenDanhMuc.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (item.MoTa && item.MoTa.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+      case 'hangSanXuat':
+        return hangSanXuats.filter(item => 
+          item.TenHangSanXuat.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      case 'thongSo':
+        return thongSos.filter(item => 
+          item.TenThongSo.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      case 'product':
+        return products.filter(item => 
+          item.TenSanPham.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (item.MoTa && item.MoTa.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (item.TenDanhMuc && item.TenDanhMuc.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (item.TenHangSanXuat && item.TenHangSanXuat.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+      default:
+        return [];
+    }
+  };
+
+  const handleEdit = (type, id) => {
+    setIsEditing(true);
+    setEditId(id);
+    setViewMode('form');
+    
+    switch (type) {
+      case 'category':
+        const category = categories.find(c => c.id === id);
+        if (category) {
+          setCategoryData({
+            TenDanhMuc: category.TenDanhMuc,
+            MoTa: category.MoTa || ''
+          });
+        }
+        break;
+      case 'hangSanXuat':
+        const hangSanXuat = hangSanXuats.find(h => h.id === id);
+        if (hangSanXuat) {
+          setHangSanXuatData({
+            TenHangSanXuat: hangSanXuat.TenHangSanXuat
+          });
+        }
+        break;
+      case 'thongSo':
+        const thongSo = thongSos.find(t => t.id === id);
+        if (thongSo) {
+          setThongSoData({
+            TenThongSo: thongSo.TenThongSo
+          });
+        }
+        break;
+      case 'product':
+        const product = products.find(p => p.id === id);
+        if (product) {
+          setProductData({
+            TenSanPham: product.TenSanPham,
+            MoTa: product.MoTa || '',
+            GiaBan: product.GiaBan,
+            SoLuongTon: product.SoLuongTon,
+            DanhMuc: product.DanhMuc || '',
+            HangSanXuat: product.HangSanXuat || '',
+            ThongSo: product.ChiTietThongSo || [],
+            HinhAnh: null, // Cannot prefill file input
+            selectedThongSo: '',
+            thongSoValue: ''
+          });
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
+  const confirmDelete = (type, id, name) => {
+    setDeleteItemType(type);
+    setDeleteItemId(id);
+    setDeleteItemName(name);
+    setShowDeleteModal(true);
+  };
+
+  const handleDelete = async () => {
+    setIsLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+    
+    let url = '';
+    let successMessage = '';
+    let errorMessage = '';
+    
+    switch (deleteItemType) {
+      case 'category':
+        url = `${API_BASE_URL}/products/danh-muc/${deleteItemId}/`;
+        successMessage = 'Xóa danh mục thành công!';
+        errorMessage = 'Xóa danh mục thất bại';
+        break;
+      case 'hangSanXuat':
+        url = `${API_BASE_URL}/products/hang-san-xuat/${deleteItemId}/`;
+        successMessage = 'Xóa hãng sản xuất thành công!';
+        errorMessage = 'Xóa hãng sản xuất thất bại';
+        break;
+      case 'thongSo':
+        url = `${API_BASE_URL}/products/thong-so/${deleteItemId}/`;
+        successMessage = 'Xóa thông số thành công!';
+        errorMessage = 'Xóa thông số thất bại';
+        break;
+      case 'product':
+        url = `${API_BASE_URL}/products/san-pham/${deleteItemId}/`;
+        successMessage = 'Xóa sản phẩm thành công!';
+        errorMessage = 'Xóa sản phẩm thất bại';
+        break;
+      default:
+        break;
+    }
+    
+    try {
+      await axios.delete(url);
+      setSuccessMessage(successMessage);
+      fetchData();
+    } catch (error) {
+      setErrorMessage(
+        `${errorMessage}: ` + 
+        (error.response?.data?.detail || 'Có thể mục này đang được sử dụng ở nơi khác')
+      );
+    } finally {
+      setIsLoading(false);
+      setShowDeleteModal(false);
+    }
+  };
+
   const handleSubmit = async (type, e) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
+    setIsLoading(true);
 
     let url = '';
     let data = {};
@@ -93,27 +329,34 @@ const StaffDashboard = () => {
 
     if (type === 'category') {
       url = `${API_BASE_URL}/products/danh-muc/`;
+      if (isEditing) url += `${editId}/`;
       data = categoryData;
-      if (!data.TenDanhMuc || !data.MoTa) {
-        setErrorMessage('Vui lòng nhập đầy đủ thông tin danh mục');
+      if (!data.TenDanhMuc) {
+        setErrorMessage('Vui lòng nhập tên danh mục');
+        setIsLoading(false);
         return;
       }
     } else if (type === 'hangSanXuat') {
       url = `${API_BASE_URL}/products/hang-san-xuat/`;
+      if (isEditing) url += `${editId}/`;
       data = hangSanXuatData;
       if (!data.TenHangSanXuat) {
         setErrorMessage('Vui lòng nhập tên hãng sản xuất');
+        setIsLoading(false);
         return;
       }
     } else if (type === 'thongSo') {
       url = `${API_BASE_URL}/products/thong-so/`;
+      if (isEditing) url += `${editId}/`;
       data = thongSoData;
       if (!data.TenThongSo) {
         setErrorMessage('Vui lòng nhập tên thông số');
+        setIsLoading(false);
         return;
       }
     } else if (type === 'product') {
       url = `${API_BASE_URL}/products/san-pham/`;
+      if (isEditing) url += `${editId}/`;
       data = new FormData();
       data.append('TenSanPham', productData.TenSanPham);
       data.append('MoTa', productData.MoTa);
@@ -122,9 +365,8 @@ const StaffDashboard = () => {
       if (productData.DanhMuc) data.append('DanhMuc', productData.DanhMuc);
       if (productData.HangSanXuat) data.append('HangSanXuat', productData.HangSanXuat);
       
-      // Thông số kỹ thuật - có thể cần thêm xử lý đặc biệt cho ChiTietThongSo
+      // Thông số kỹ thuật
       if (productData.ThongSo && productData.ThongSo.length > 0) {
-        // Gửi dữ liệu ChiTietThongSo nếu API hỗ trợ
         data.append('ChiTietThongSo', JSON.stringify(productData.ThongSo));
       }
       
@@ -133,57 +375,356 @@ const StaffDashboard = () => {
       
       if (!data.get('TenSanPham') || !data.get('MoTa') || !data.get('GiaBan') || !data.get('SoLuongTon')) {
         setErrorMessage('Vui lòng nhập đầy đủ thông tin sản phẩm');
+        setIsLoading(false);
         return;
       }
     }
 
     try {
-      const response = await axios.post(url, data, config);
-      setSuccessMessage(`Thêm ${type} thành công!`);
-      if (type === 'category') {
-        setCategoryData({ TenDanhMuc: '', MoTa: '' });
-        // Cập nhật lại danh sách danh mục
-        const categoriesRes = await axios.get(`${API_BASE_URL}/products/danh-muc/`);
-        setCategories(categoriesRes.data);
-      } else if (type === 'hangSanXuat') {
-        setHangSanXuatData({ TenHangSanXuat: '' });
-        // Cập nhật lại danh sách hãng sản xuất
-        const hangSanXuatsRes = await axios.get(`${API_BASE_URL}/products/hang-san-xuat/`);
-        setHangSanXuats(hangSanXuatsRes.data);
-      } else if (type === 'thongSo') {
-        setThongSoData({ TenThongSo: '' });
-        // Cập nhật lại danh sách thông số
-        const thongSosRes = await axios.get(`${API_BASE_URL}/products/thong-so/`);
-        setThongSos(thongSosRes.data);
-      } else if (type === 'product') {
-        setProductData({
-          TenSanPham: '',
-          MoTa: '',
-          GiaBan: '',
-          SoLuongTon: '',
-          DanhMuc: '',
-          HangSanXuat: '',
-          ThongSo: [],
-          HinhAnh: null,
-        });
+      if (isEditing) {
+        await axios.put(url, data, config);
+        setSuccessMessage(`Cập nhật ${type} thành công!`);
+      } else {
+        await axios.post(url, data, config);
+        setSuccessMessage(`Thêm ${type} thành công!`);
       }
+      
+      resetForm();
+      fetchData();
+      setViewMode('grid');
     } catch (error) {
       setErrorMessage(
-        `Thêm ${type} thất bại: ` + 
+        `${isEditing ? 'Cập nhật' : 'Thêm'} ${type} thất bại: ` + 
         (error.response?.data?.detail || 'Lỗi không xác định')
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const renderContent = () => {
+  const renderGridView = () => {
+    const items = filteredData();
+    
+    switch (activeSection) {
+      case 'category':
+        return (
+          <div className="grid-container">
+            <div className="grid-header">
+              <div className="grid-search">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm danh mục..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  className="search-input"
+                />
+                <Search className="search-icon" />
+              </div>
+              <button 
+                className="btn btn-add"
+                onClick={() => {
+                  resetForm();
+                  setViewMode('form');
+                }}
+              >
+                <PlusCircle size={16} />
+                Thêm Danh Mục
+              </button>
+            </div>
+            <div className="grid-table-wrapper">
+              <table className="grid-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Tên Danh Mục</th>
+                    <th>Mô Tả</th>
+                    <th>Ngày Tạo</th>
+                    <th>Hành Động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.length > 0 ? (
+                    items.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.id}</td>
+                        <td>{item.TenDanhMuc}</td>
+                        <td>{item.MoTa}</td>
+                        <td>{new Date(item.NgayTao).toLocaleDateString('vi-VN')}</td>
+                        <td className="action-buttons">
+                          <button 
+                            className="btn-icon btn-edit"
+                            onClick={() => handleEdit('category', item.id)}
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button 
+                            className="btn-icon btn-delete"
+                            onClick={() => confirmDelete('category', item.id, item.TenDanhMuc)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="no-data">Không có dữ liệu</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+        
+      case 'hangSanXuat':
+        return (
+          <div className="grid-container">
+            <div className="grid-header">
+              <div className="grid-search">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm hãng sản xuất..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  className="search-input"
+                />
+                <Search className="search-icon" />
+              </div>
+              <button 
+                className="btn btn-add"
+                onClick={() => {
+                  resetForm();
+                  setViewMode('form');
+                }}
+              >
+                <PlusCircle size={16} />
+                Thêm Hãng Sản Xuất
+              </button>
+            </div>
+            <div className="grid-table-wrapper">
+              <table className="grid-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Tên Hãng Sản Xuất</th>
+                    <th>Hành Động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.length > 0 ? (
+                    items.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.id}</td>
+                        <td>{item.TenHangSanXuat}</td>
+                        <td className="action-buttons">
+                          <button 
+                            className="btn-icon btn-edit"
+                            onClick={() => handleEdit('hangSanXuat', item.id)}
+                            aria-label="Sửa"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button 
+                            className="btn-icon btn-delete"
+                            onClick={() => confirmDelete('hangSanXuat', item.id, item.TenHangSanXuat)}
+                            aria-label="Xóa"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="3" className="no-data">Không có dữ liệu</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      
+      case 'thongSo':
+        return (
+          <div className="grid-container">
+            <div className="grid-header">
+              <div className="grid-search">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm thông số..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  className="search-input"
+                />
+                <Search className="search-icon" />
+              </div>
+              <button 
+                className="btn btn-add"
+                onClick={() => {
+                  resetForm();
+                  setViewMode('form');
+                }}
+              >
+                <PlusCircle size={16} />
+                Thêm Thông Số
+              </button>
+            </div>
+            <div className="grid-table-wrapper">
+              <table className="grid-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Tên Thông Số</th>
+                    <th>Hành Động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.length > 0 ? (
+                    items.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.id}</td>
+                        <td>{item.TenThongSo}</td>
+                        <td className="action-buttons">
+                          <button 
+                            className="btn-icon btn-edit"
+                            onClick={() => handleEdit('thongSo', item.id)}
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button 
+                            className="btn-icon btn-delete"
+                            onClick={() => confirmDelete('thongSo', item.id, item.TenThongSo)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="3" className="no-data">Không có dữ liệu</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      
+      case 'product':
+        return (
+          <div className="grid-container">
+            <div className="grid-header">
+              <div className="grid-search">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm sản phẩm..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  className="search-input"
+                />
+                <Search className="search-icon" />
+              </div>
+              <button 
+                className="btn btn-add"
+                onClick={() => {
+                  resetForm();
+                  setViewMode('form');
+                }}
+              >
+                <PlusCircle size={16} />
+                Thêm Sản Phẩm
+              </button>
+            </div>
+            <div className="grid-table-wrapper">
+              <table className="grid-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Hình Ảnh</th>
+                    <th>Tên Sản Phẩm</th>
+                    <th>Giá Bán</th>
+                    <th>Tồn Kho</th>
+                    <th>Danh Mục</th>
+                    <th>Hãng SX</th>
+                    <th>Hành Động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.length > 0 ? (
+                    items.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.id}</td>
+                        <td>
+                          {item.HinhAnh_URL ? (
+                            <img 
+                              src={item.HinhAnh_URL} 
+                              alt={item.TenSanPham} 
+                              className="product-thumbnail"
+                            />
+                          ) : (
+                            <div className="no-image">No Image</div>
+                          )}
+                        </td>
+                        <td>{item.TenSanPham}</td>
+                        <td>{parseInt(item.GiaBan).toLocaleString('vi-VN')} đ</td>
+                        <td>{item.SoLuongTon}</td>
+                        <td>{item.TenDanhMuc || 'N/A'}</td>
+                        <td>{item.TenHangSanXuat || 'N/A'}</td>
+                        <td className="action-buttons">
+                          <button 
+                            className="btn-icon btn-edit"
+                            onClick={() => handleEdit('product', item.id)}
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button 
+                            className="btn-icon btn-delete"
+                            onClick={() => confirmDelete('product', item.id, item.TenSanPham)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="8" className="no-data">Không có dữ liệu</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+        
+      default:
+        return null;
+    }
+  };
+
+  const renderFormView = () => {
     switch (activeSection) {
       case 'category':
         return (
           <div className="form-card">
-            <h2>
-              <Folder className="form-icon" />
-              Thêm Danh Mục
-            </h2>
+            <div className="form-header">
+              <h2>
+                <Folder className="form-icon" />
+                {isEditing ? 'Sửa Danh Mục' : 'Thêm Danh Mục'}
+              </h2>
+              <button 
+                className="btn-back"
+                onClick={() => {
+                  resetForm();
+                  setViewMode('grid');
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
             <form onSubmit={(e) => handleSubmit('category', e)}>
               <div className="form-group">
                 <label>Tên Danh Mục</label>
@@ -196,45 +737,60 @@ const StaffDashboard = () => {
               </div>
               <div className="form-group">
                 <label>Mô Tả</label>
-                <input
-                  type="text"
+                <textarea
                   value={categoryData.MoTa}
                   onChange={handleInputChange('category', 'MoTa')}
                   placeholder="Nhập mô tả danh mục"
                 />
               </div>
-              <button type="submit" className="btn btn-category">Thêm Danh Mục</button>
-            </form>
-          </div>
-        );
-      case 'hangSanXuat':
-        return (
-          <div className="form-card">
-            <h2>
-              <Factory className="form-icon" />
-              Thêm Hãng Sản Xuất
-            </h2>
-            <form onSubmit={(e) => handleSubmit('hangSanXuat', e)}>
-              <div className="form-group">
-                <label>Tên Hãng Sản Xuất</label>
-                <input
-                  type="text"
-                  value={hangSanXuatData.TenHangSanXuat}
-                  onChange={handleInputChange('hangSanXuat', 'TenHangSanXuat')}
-                  placeholder="Nhập tên hãng sản xuất"
-                />
+              <div className="form-actions">
+                <button 
+                  type="button" 
+                  className="btn btn-cancel"
+                  onClick={() => {
+                    resetForm();
+                    setViewMode('grid');
+                  }}
+                >
+                  Hủy
+                </button>
+
+                <button 
+                  type="submit" 
+                  className="btn btn-category"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <RefreshCw className="spinner" size={16} />
+                  ) : (
+                    <>
+                      {isEditing ? 'Cập Nhật' : 'Thêm'} Danh Mục
+                    </>
+                  )}
+                </button>
               </div>
-              <button type="submit" className="btn btn-hangSanXuat">Thêm Hãng Sản Xuất</button>
             </form>
           </div>
         );
+        
       case 'thongSo':
         return (
           <div className="form-card">
-            <h2>
-              <Settings2 className="form-icon" />
-              Thêm Thông Số
-            </h2>
+            <div className="form-header">
+              <h2>
+                <Settings2 className="form-icon" />
+                {isEditing ? 'Sửa Thông Số' : 'Thêm Thông Số'}
+              </h2>
+              <button 
+                className="btn-back"
+                onClick={() => {
+                  resetForm();
+                  setViewMode('grid');
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
             <form onSubmit={(e) => handleSubmit('thongSo', e)}>
               <div className="form-group">
                 <label>Tên Thông Số</label>
@@ -245,17 +801,110 @@ const StaffDashboard = () => {
                   placeholder="Nhập tên thông số"
                 />
               </div>
-              <button type="submit" className="btn btn-thongSo">Thêm Thông Số</button>
+              <div className="form-actions">
+                <button 
+                  type="button" 
+                  className="btn btn-cancel"
+                  onClick={() => {
+                    resetForm();
+                    setViewMode('grid');
+                  }}
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-thongSo"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <RefreshCw className="spinner" size={16} />
+                  ) : (
+                    <>
+                      {isEditing ? 'Cập Nhật' : 'Thêm'} Thông Số
+                    </>
+                  )}
+                </button>
+              </div>
             </form>
           </div>
         );
+
+        case 'hangSanXuat':
+          return (
+            <div className="form-card">
+              <div className="form-header">
+                <h2>
+                  <Factory className="form-icon" />
+                  {isEditing ? 'Sửa Hãng Sản Xuất' : 'Thêm Hãng Sản Xuất'}
+                </h2>
+                <button 
+                  className="btn-back"
+                  onClick={() => {
+                    resetForm();
+                    setViewMode('grid');
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <form onSubmit={(e) => handleSubmit('hangSanXuat', e)}>
+                <div className="form-group">
+                  <label>Tên Hãng Sản Xuất</label>
+                  <input
+                    type="text"
+                    value={hangSanXuatData.TenHangSanXuat}
+                    onChange={handleInputChange('hangSanXuat', 'TenHangSanXuat')}
+                    placeholder="Nhập tên hãng sản xuất"
+                  />
+                </div>
+                <div className="form-actions">
+                  <button 
+                    type="button" 
+                    className="btn btn-cancel"
+                    onClick={() => {
+                      resetForm();
+                      setViewMode('grid');
+                    }}
+                  >
+                    Hủy
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="btn btn-hangSanXuat"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <RefreshCw className="spinner" size={16} />
+                    ) : (
+                      <>
+                        {isEditing ? 'Cập Nhật' : 'Thêm'} Hãng Sản Xuất
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          );
+      
       case 'product':
         return (
           <div className="form-card form-card-product">
-            <h2>
-              <PlusCircle className="form-icon" />
-              Thêm Sản Phẩm
-            </h2>
+            <div className="form-header">
+              <h2>
+                <PlusCircle className="form-icon" />
+                {isEditing ? 'Sửa Sản Phẩm' : 'Thêm Sản Phẩm'}
+              </h2>
+              <button 
+                className="btn-back"
+                onClick={() => {
+                  resetForm();
+                  setViewMode('grid');
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
             <form onSubmit={(e) => handleSubmit('product', e)} className="form-columns">
               {/* Cột 1 */}
               <div className="form-column">
@@ -270,8 +919,7 @@ const StaffDashboard = () => {
                 </div>
                 <div className="form-group">
                   <label>Mô Tả</label>
-                  <input
-                    type="text"
+                  <textarea
                     value={productData.MoTa}
                     onChange={handleInputChange('product', 'MoTa')}
                     placeholder="Nhập mô tả sản phẩm"
@@ -421,16 +1069,95 @@ const StaffDashboard = () => {
                     onChange={handleInputChange('product', 'HinhAnh')}
                     accept="image/*"
                   />
+                  {isEditing && (
+                    <div className="file-note">
+                      Để trống nếu không muốn thay đổi hình ảnh
+                    </div>
+                  )}
                 </div>
               </div>
               {/* Button nằm ở dưới cùng, full width */}
-              <button type="submit" className="btn btn-product">Thêm Sản Phẩm</button>
+              <div className="form-actions full-width">
+                <button 
+                  type="button" 
+                  className="btn btn-cancel"
+                  onClick={() => {
+                    resetForm();
+                    setViewMode('grid');
+                  }}
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-product"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <RefreshCw className="spinner" size={16} />
+                  ) : (
+                    <>
+                      {isEditing ? 'Cập Nhật' : 'Thêm'} Sản Phẩm
+                    </>
+                  )}
+                </button>
+              </div>
             </form>
           </div>
         );
+        
       default:
         return null;
     }
+  };
+
+  const renderContent = () => {
+    return viewMode === 'grid' ? renderGridView() : renderFormView();
+  };
+
+  // Delete confirmation modal
+  const renderDeleteModal = () => {
+    if (!showDeleteModal) return null;
+    
+    return (
+      <div className="modal-overlay">
+        <div className="modal-container">
+          <div className="modal-header">
+            <AlertCircle className="modal-icon" />
+            <h3>Xác nhận xóa</h3>
+            <button 
+              className="btn-close"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="modal-body">
+            <p>Bạn có chắc chắn muốn xóa <strong>{deleteItemName}</strong>?</p>
+            <p className="warning-text">Hành động này không thể hoàn tác!</p>
+          </div>
+          <div className="modal-footer">
+            <button 
+              className="btn btn-cancel"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              Hủy
+            </button>
+            <button 
+              className="btn btn-confirm-delete"
+              onClick={handleDelete}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <RefreshCw className="spinner" size={16} />
+              ) : (
+                'Xóa'
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -441,41 +1168,69 @@ const StaffDashboard = () => {
           <h2>Nhân Viên Dashboard</h2>
         </div>
         <nav className="sidebar-nav">
-          <SidebarItem icon={Package} label="Xử Lý Sản Phẩm" section="products" />
+          {/* Thay thế SidebarItem bằng div có kiểu dáng tương tự */}
+          <div className="sidebar-category">
+            <Package className="sidebar-icon" />
+            <span>Xử Lý Sản Phẩm</span>
+          </div>
           <div className="sidebar-subitem">
-            <SidebarItem icon={Folder} label="Thêm Danh Mục" section="category" />
-            <SidebarItem icon={Factory} label="Thêm Hãng Sản Xuất" section="hangSanXuat" />
-            <SidebarItem icon={Settings2} label="Thêm Thông Số" section="thongSo" />
-            <SidebarItem icon={PlusCircle} label="Thêm Sản Phẩm" section="product" />
+            <SidebarItem icon={Folder} label="Danh Mục" section="category" />
+            <SidebarItem icon={Factory} label="Hãng Sản Xuất" section="hangSanXuat" />
+            <SidebarItem icon={Settings2} label="Thông Số" section="thongSo" />
+            <SidebarItem icon={PlusCircle} label="Sản Phẩm" section="product" />
           </div>
           <div className="sidebar-divider"></div>
-          <SidebarItem 
-            icon={LogOut} 
-            label="Đăng Xuất" 
-            section="logout"
+          <div 
+            className="sidebar-item"
             onClick={() => {
               localStorage.clear();
-              window.location.href = '/login';
-            }} 
-          />
+              window.location.href = '/';
+            }}
+          >
+            <LogOut className="sidebar-icon" />
+            <span>Đăng Xuất</span>
+          </div>
         </nav>
       </div>
 
       {/* Content Area */}
       <div className="content">
-        <h1>Xử Lý Sản Phẩm</h1>
+        <h1>
+          {activeSection === 'category' && 'Quản Lý Danh Mục'}
+          {activeSection === 'hangSanXuat' && 'Quản Lý Hãng Sản Xuất'}
+          {activeSection === 'thongSo' && 'Quản Lý Thông Số'}
+          {activeSection === 'product' && 'Quản Lý Sản Phẩm'}
+        </h1>
         {renderContent()}
+        
         {/* Thông báo */}
         {errorMessage && (
           <div className="alert alert-error">
+            <AlertCircle size={20} />
             {errorMessage}
+            <button 
+              className="btn-close-alert"
+              onClick={() => setErrorMessage('')}
+            >
+              <X size={16} />
+            </button>
           </div>
         )}
         {successMessage && (
           <div className="alert alert-success">
+            <CheckCircle size={20} />
             {successMessage}
+            <button 
+              className="btn-close-alert"
+              onClick={() => setSuccessMessage('')}
+            >
+              <X size={16} />
+            </button>
           </div>
         )}
+        
+        {/* Modal */}
+        {renderDeleteModal()}
       </div>
     </div>
   );

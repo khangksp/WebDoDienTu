@@ -192,15 +192,16 @@ const AdminDashboard = () => {
           <SidebarItem icon={BarChart3} label="Tổng Quan" tab="overview" />
           <SidebarItem icon={Edit} label="Sửa Người Dùng" tab="edit" />
           <SidebarItem icon={Trash2} label="Xóa Người Dùng" tab="delete" />
-          <SidebarItem
-            icon={LogOut}
-            label="Đăng Xuất"
-            tab="logout"
+          <div 
+            className="sidebar-item"
             onClick={() => {
               localStorage.clear();
               window.location.href = '/';
             }}
-          />
+          >
+            <LogOut className="sidebar-icon" />
+            <span>Đăng Xuất</span>
+          </div>
         </nav>
       </div>
 

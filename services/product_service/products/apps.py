@@ -1,5 +1,3 @@
-# File: product_service/products/apps.py
-
 from django.apps import AppConfig
 
 class ProductsConfig(AppConfig):

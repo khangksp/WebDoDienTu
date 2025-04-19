@@ -55,7 +55,7 @@ function Cart() {
     }
   };
 
-  // Function to remove item from cart
+  // Bỏ sản phẩm khỏi giỏ hàng
   const handleRemoveItem = async (id) => {
     await removeFromCart(id);
   };
