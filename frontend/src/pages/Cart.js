@@ -25,6 +25,7 @@ function Cart() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { cart, loading, updateQuantity, removeFromCart } = useCart();
+  const [removingProductIds, setRemovingProductIds] = useState([]);
 
   // Initialize AOS animation library
   useEffect(() => {
@@ -57,7 +58,23 @@ function Cart() {
 
   // Bỏ sản phẩm khỏi giỏ hàng
   const handleRemoveItem = async (id) => {
-    await removeFromCart(id);
+    // Nếu đang xóa sản phẩm này rồi thì không làm gì
+    if (removingProductIds.includes(id)) return;
+    
+    try {
+      // Thêm id vào danh sách đang xóa
+      setRemovingProductIds(prev => [...prev, id]);
+      
+      await removeFromCart(id);
+    } catch (error) {
+      console.error("Lỗi khi xóa sản phẩm:", error);
+      alert("Có lỗi xảy ra khi xóa sản phẩm khỏi giỏ hàng");
+    } finally {
+      // Xóa id khỏi danh sách đang xóa sau 1 giây
+      setTimeout(() => {
+        setRemovingProductIds(prev => prev.filter(item => item !== id));
+      }, 1000);
+    }
   };
 
   // Update selected color (if your cart items have color options)
@@ -211,6 +228,9 @@ function Cart() {
                           <button 
                             className="btn btn-sm text-danger ms-3" 
                             onClick={() => handleRemoveItem(item.product_id)}
+                            aria-label="Xóa sản phẩm"
+                            data-product-id={item.product_id}
+                            disabled={removingProductIds.includes(item.product_id)}
                           >
                             <FontAwesomeIcon icon={faTrash} />
                           </button>

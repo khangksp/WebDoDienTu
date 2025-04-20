@@ -37,6 +37,11 @@ export const CartProvider = ({ children }) => {
     }
   }, []);
 
+  // theo dõi thay đổi của state cart
+  useEffect(() => {
+    console.log('Cart state updated:', cart);
+  }, [cart]);
+
   // Cập nhật giỏ hàng khi refreshTrigger thay đổi
   useEffect(() => {
     const token = localStorage.getItem('access_token');
@@ -119,11 +124,18 @@ export const CartProvider = ({ children }) => {
     try {
       const token = localStorage.getItem('access_token');
       if (!token) return;
-
+  
+      console.log('Đang xóa sản phẩm:', productId);
+      
       const response = await axios.delete(`${API_BASE_URL}/api/cart/remove/${productId}/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setCart(response.data);
+      
+      console.log('Dữ liệu nhận về sau khi xóa:', response.data);
+      
+      // Sử dụng refreshCart thay vì setCart để đảm bảo dữ liệu mới nhất
+      refreshCart();
+      
       return response.data;
     } catch (error) {
       console.error('Error removing from cart:', error);

@@ -86,10 +86,21 @@ def remove_from_cart(user_id, product_id):
     """
     cart = get_cart(user_id)
     
-    cart['items'] = [item for item in cart['items'] if item['product_id'] != product_id]
+    # Đảm bảo so sánh cùng kiểu dữ liệu
+    product_id_str = str(product_id)
+    
+    # Debug log
+    print(f"Removing product {product_id_str} from cart for user {user_id}")
+    print(f"Cart before removal: {cart}")
+    
+    # Lọc items với so sánh chuỗi
+    cart['items'] = [item for item in cart['items'] if str(item['product_id']) != product_id_str]
     
     # Cập nhật tổng giá trị
     cart['total'] = sum(item['price'] * item['quantity'] for item in cart['items'])
+    
+    # Debug log
+    print(f"Cart after removal: {cart}")
     
     # Lưu giỏ hàng vào Redis
     save_cart(user_id, cart)
