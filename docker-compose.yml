@@ -212,27 +212,27 @@ services:
       timeout: 5s
       retries: 5
 
-  seed_data:
-    build: ./seed_data
-    container_name: seed_data
-    volumes:
-      - ./seed_data:/app
-    depends_on:
-      mysql:
-        condition: service_healthy
-      auth_service:
-        condition: service_started
-      product_service:
-        condition: service_started
-      order_service:
-        condition: service_started
-      payment_service:
-        condition: service_started
-    environment:
-      - API_GATEWAY_URL=http://api_gateway:8000  # Updated to use the API Gateway
-    networks:
-      - microservice_network
-    command: ["python", "seed.py"]
+  # seed_data:
+  #   build: ./seed_data
+  #   container_name: seed_data
+  #   volumes:
+  #     - ./seed_data:/app
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #     auth_service:
+  #       condition: service_started
+  #     product_service:
+  #       condition: service_started
+  #     order_service:
+  #       condition: service_started
+  #     payment_service:
+  #       condition: service_started
+  #   environment:
+  #     - API_GATEWAY_URL=http://api_gateway:8000  # Updated to use the API Gateway
+  #   networks:
+  #     - microservice_network
+  #   command: ["python", "seed.py"]
   
   frontend:
     build: ./frontend
