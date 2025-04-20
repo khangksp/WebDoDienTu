@@ -244,6 +244,38 @@
   background-color: #dc2626;
 }
 
+.language-switcher {
+  min-width: 80px;
+  display: flex;
+  justify-content: center;
+}
+
+.language-switcher-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: center;
+}
+
+.language-switcher select {
+  min-width: 60px;
+  width: 60px;
+}
+
+/* Fixed width containers for navigation elements */
+.d-none.d-lg-flex.align-items-center {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.d-none.d-lg-flex.align-items-center > a,
+.d-none.d-lg-flex.align-items-center > div {
+  min-width: 80px;
+  text-align: center;
+  white-space: nowrap;
+}
+
 /* Login Modal */
 .login-modal-overlay {
   position: fixed;
@@ -510,7 +542,25 @@
 
   .d-lg-none .language-switcher {
     margin-left: auto;
+    min-width: 110px;
+    text-align: center;
   }
+
+  .d-lg-none.d-flex.justify-content-between.align-items-center {
+    width: 100%;
+  }
+  
+  .d-lg-none.d-flex.justify-content-between.align-items-center > div {
+    display: flex;
+    justify-content: space-between;
+    min-width: 120px;
+  }
+  
+  .d-lg-none.d-flex.justify-content-between.align-items-center .nav-link {
+    min-width: 40px;
+    text-align: center;
+  }
+
 }
 
 

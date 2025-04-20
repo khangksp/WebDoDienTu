@@ -85,6 +85,11 @@ services:
       - SECRET_KEY=django-insecure-product-service-key
       - DEBUG=True
       - API_GATEWAY_URL=http://localhost:8000
+      - RUNNING_IN_DOCKER=True
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASS=guest
     networks:
       - microservice_network
     command: >
@@ -148,6 +153,11 @@ services:
       - DB_PORT=3306
       - SECRET_KEY=django-insecure-order-service-key
       - DEBUG=True
+      - RUNNING_IN_DOCKER=True
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASS=guest
     networks:
       - microservice_network
     command: >
@@ -174,6 +184,11 @@ services:
       - DB_PORT=3306
       - SECRET_KEY=django-insecure-payment-service-key
       - DEBUG=True
+      - RUNNING_IN_DOCKER=True
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASS=guest
     networks:
       - microservice_network
     command: >

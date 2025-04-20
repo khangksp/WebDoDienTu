@@ -28,20 +28,26 @@ consumer_thread = None
 channel = None  # Khai báo biến channel ở phạm vi global
 
 def get_rabbitmq_connection():
-    """
-    Tạo và trả về kết nối đến RabbitMQ
-    """
     try:
+        import os
+        print(f"RABBITMQ_HOST={RABBITMQ_HOST}, RABBITMQ_PORT={RABBITMQ_PORT}")
+        print(f"RUNNING_IN_DOCKER={os.environ.get('RUNNING_IN_DOCKER')}")
+        
         credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
         parameters = pika.ConnectionParameters(
             host=RABBITMQ_HOST,
-            port=RABBITMQ_PORT,
+            port=int(RABBITMQ_PORT),  # Đảm bảo port là số nguyên
             credentials=credentials,
             heartbeat=600,
             blocked_connection_timeout=300
         )
-        return pika.BlockingConnection(parameters)
+        connection = pika.BlockingConnection(parameters)
+        print("Kết nối thành công đến RabbitMQ!")
+        return connection
     except Exception as e:
+        import traceback
+        print(f"Lỗi chi tiết: {str(e)}")
+        print(traceback.format_exc())
         logger.error(f"Không thể kết nối đến RabbitMQ: {e}")
         return None
 

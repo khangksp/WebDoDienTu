@@ -36,3 +36,68 @@
     transform: rotate(360deg);
   }
 }
+
+* {
+  -webkit-backface-visibility: hidden;
+  -moz-backface-visibility: hidden;
+  -ms-backface-visibility: hidden;
+  backface-visibility: hidden;
+  
+  -webkit-perspective: 1000;
+  -moz-perspective: 1000;
+  -ms-perspective: 1000;
+  perspective: 1000;
+}
+
+/* Đảm bảo transitions được áp dụng cho tất cả elements */
+div, p, a, button, input, img, span, h1, h2, h3, h4, h5, h6 {
+  -webkit-transition: all 0.3s ease;
+  -moz-transition: all 0.3s ease;
+  -o-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+}
+
+/* Cải thiện smoothness cho tất cả animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate3d(0, 20px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@-webkit-keyframes fadeIn {
+  from { opacity: 0; -webkit-transform: translate3d(0, 20px, 0); }
+  to { opacity: 1; -webkit-transform: translate3d(0, 0, 0); }
+}
+
+/* Đảm bảo scrolling mượt mà */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Cải thiện rendering cho animations */
+.aos-animate {
+  -webkit-transform: translateZ(0);
+  -moz-transform: translateZ(0);
+  -ms-transform: translateZ(0);
+  -o-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+/* Đảm bảo animation không bị giật trong React */
+.aos-init[data-aos] {
+  transition-duration: 1s;
+  transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* Thêm hiệu ứng khi hover cho các elements */
+.btn:hover, a:hover, .card:hover, .product-card:hover {
+  transform: translateY(-2px);
+  transition: transform 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Làm mượt các hiệu ứng animation */
+.animate__animated {
+  --animate-duration: 1s;
+  --animate-delay: 0.3s;
+}
