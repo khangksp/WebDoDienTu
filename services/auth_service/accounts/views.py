@@ -13,7 +13,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 
 class UserListView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         # if request.user.loaiquyen != 'admin':
@@ -290,7 +290,6 @@ class PasswordResetView(APIView):
         Xin chào {nguoidung.tennguoidung or 'bạn'},
         
         Chúng tôi nhận được yêu cầu đặt lại mật khẩu của bạn.
-        
         Tên đăng nhập: {taikhoan.tendangnhap}
         Mật khẩu mới: {new_password}
         
