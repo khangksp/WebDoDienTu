@@ -271,7 +271,7 @@
 
 .d-none.d-lg-flex.align-items-center > a,
 .d-none.d-lg-flex.align-items-center > div {
-  min-width: 80px;
+  min-width: 110px;
   text-align: center;
   white-space: nowrap;
 }
