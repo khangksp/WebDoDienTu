@@ -217,6 +217,7 @@ services:
     container_name: seed_data
     volumes:
       - ./seed_data:/app
+      - ./frontend:/app/frontend
     depends_on:
       mysql:
         condition: service_healthy

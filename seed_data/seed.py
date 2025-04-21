@@ -72,7 +72,7 @@ products = [
         "SoLuongTon": 50,
         "DanhMuc": 1,  # Điện thoại
         "HangSanXuat": 1,  # Apple
-        "HinhAnh_url": "https://cdn.tgdd.vn/Products/Images/42/299033/iphone-15-pro-max-blue-thumbnew-600x600.jpg",
+        "HinhAnh_url": "/app/frontend/public/assets/iphone-15-pro-xanh-duong_1694567560.png",
         "ChiTietThongSo": [
             {"ThongSo": 1, "GiaTriThongSo": "A17 Pro 6 nhân"},
             {"ThongSo": 2, "GiaTriThongSo": "8GB"},
@@ -91,7 +91,7 @@ products = [
         "SoLuongTon": 40,
         "DanhMuc": 1,  # Điện thoại
         "HangSanXuat": 2,  # Samsung
-        "HinhAnh_url": "https://cdn.tgdd.vn/Products/Images/42/310597/samsung-galaxy-s24-ultra-den-thumb-600x600.jpg",
+        "HinhAnh_url": "/app/frontend/public/assets/samsung-galaxy-s24-ultra-cu-1tb.png",
         "ChiTietThongSo": [
             {"ThongSo": 1, "GiaTriThongSo": "Snapdragon 8 Gen 3"},
             {"ThongSo": 2, "GiaTriThongSo": "12GB"},
@@ -110,7 +110,7 @@ products = [
         "SoLuongTon": 15,
         "DanhMuc": 2,  # Laptop
         "HangSanXuat": 1,  # Apple
-        "HinhAnh_url": "https://cdn.tgdd.vn/Products/Images/44/309150/macbook-pro-16-inch-m3-max-2023-thumb-600x600.jpg",
+        "HinhAnh_url": "/app/frontend/public/assets/macbook-pro-og-202410.jpg",
         "ChiTietThongSo": [
             {"ThongSo": 1, "GiaTriThongSo": "Apple M3 Max 16 nhân CPU, 40 nhân GPU"},
             {"ThongSo": 2, "GiaTriThongSo": "64GB"},
@@ -128,7 +128,7 @@ products = [
         "SoLuongTon": 20,
         "DanhMuc": 2,  # Laptop
         "HangSanXuat": 11, 
-        "HinhAnh_url": "https://cdn.tgdd.vn/Products/Images/44/309150/macbook-pro-16-inch-m3-max-2023-thumb-600x600.jpg",
+        "HinhAnh_url": "/app/frontend/public/assets/text_ng_n_35__8_10_4.png",
         "ChiTietThongSo": [
             {"ThongSo": 1, "GiaTriThongSo": "Apple M3 Max 16 nhân CPU, 40 nhân GPU"},
             {"ThongSo": 2, "GiaTriThongSo": "64GB"},
@@ -189,22 +189,30 @@ def wait_for_services():
     return all_available
 
 
-def download_and_process_image(url, category_id):
+def download_and_process_image(image_source, category_id):
     """Download and process an image, returning the file object"""
     try:
-        # Try to download the image
-        logger.info(f"Downloading image from {url}")
-        response = urllib.request.urlopen(url, timeout=10)
-        image_data = response.read()
+        # Check if the source is a URL or local file path
+        if image_source.startswith(('http://', 'https://')):
+            # Handle as URL
+            logger.info(f"Downloading image from URL: {image_source}")
+            response = urllib.request.urlopen(image_source, timeout=10)
+            image_data = response.read()
+            image = Image.open(BytesIO(image_data))
+        else:
+            # Handle as local file
+            logger.info(f"Opening local image: {image_source}")
+            if os.path.exists(image_source):
+                image = Image.open(image_source)
+            else:
+                logger.error(f"Local file not found: {image_source}")
+                return None
         
-        # Process with PIL to validate and potentially resize
-        image = Image.open(BytesIO(image_data))
-        
-        # Convert to RGB if needed (in case of RGBA)
+        # Process image (resize, convert, etc)
         if image.mode != 'RGB':
             image = image.convert('RGB')
         
-        # Resize if too large (optional)
+        # Resize if too large
         max_size = 1200
         if image.width > max_size or image.height > max_size:
             image.thumbnail((max_size, max_size))
@@ -215,12 +223,11 @@ def download_and_process_image(url, category_id):
         buffer.seek(0)
         
         logger.info(f"Image processed successfully")
-        # Return the image data
         return buffer
     
     except Exception as e:
-        logger.error(f"Error downloading image from {url}: {e}")
-        # Use a placeholder instead
+        logger.error(f"Error processing image {image_source}: {e}")
+        # Try placeholder as fallback
         try:
             placeholder_url = image_placeholders.get(category_id, "https://via.placeholder.com/600x600.png?text=Product")
             logger.info(f"Using placeholder image: {placeholder_url}")
@@ -374,16 +381,23 @@ def seed_specifications():
     return spec_mapping
 
 
-def seed_products(use_placeholder=True):
-    """Seed products with detailed error handling"""
+def seed_products(use_placeholder=False):  # Mặc định là False để sử dụng file local
     logger.info("Creating products...")
     product_count = 0
     
     for product in products:
         try:
-            # Download image or use placeholder
+            # Download image or process local file
             image_file = None
+            if not use_placeholder:
+                # Sử dụng hình ảnh từ file local
+                image_file = download_and_process_image(product['HinhAnh_url'], product['DanhMuc'])
+                if not image_file:
+                    logger.warning(f"Could not process local image, trying placeholder...")
+                    use_placeholder = True  # Fallback to placeholder if local file fails
+            
             if use_placeholder:
+                # Use placeholder as fallback
                 placeholder_url = image_placeholders.get(product['DanhMuc'], "https://via.placeholder.com/600x600.png?text=Product")
                 logger.info(f"Using placeholder image for {product['TenSanPham']}: {placeholder_url}")
                 try:
@@ -391,8 +405,7 @@ def seed_products(use_placeholder=True):
                     image_file = BytesIO(response.read())
                 except Exception as e:
                     logger.error(f"Error with placeholder image: {e}")
-            else:
-                image_file = download_and_process_image(product['HinhAnh_url'], product['DanhMuc'])
+                    image_file = None
             
             # Create form data for multipart request
             form_data = {
@@ -528,7 +541,7 @@ def seed_data():
     time.sleep(5)
     
     # Seed products
-    product_count = seed_products(use_placeholder=True)
+    product_count = seed_products(use_placeholder=False) # Set to False to use real images
     logger.info(f"Created {product_count} products")
     
     return True
