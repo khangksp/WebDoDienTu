@@ -1,4 +1,5 @@
 import os
+import socket
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -10,7 +11,10 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-product-service-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*', 'localhost', 'product_service', 'product_service:8000']
+
+HOSTNAME = socket.gethostname()
+ALLOWED_HOSTS = ['*', 'localhost', 'product_service', 'product_service:8000', 'api_gateway', 'api_gateway:8000', HOSTNAME]
+
 
 # Application definition
 
