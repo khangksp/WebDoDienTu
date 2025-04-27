@@ -12,25 +12,26 @@ import {
   X,
   CheckCircle,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  ShoppingBag
 } from 'lucide-react';
 import axios from 'axios';
 import './style/nhanvien.css';
 import { API_BASE_URL } from '../config';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import { useAuth } from '../context/AuthContext';
 
 const StaffDashboard = () => {
   const [activeSection, setActiveSection] = useState('category');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'form'
+  const [viewMode, setViewMode] = useState('grid');
 
-  // State for data lists
   const [categories, setCategories] = useState([]);
   const [hangSanXuats, setHangSanXuats] = useState([]);
   const [thongSos, setThongSos] = useState([]);
   const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
 
-  // State for form data
   const [categoryData, setCategoryData] = useState({ TenDanhMuc: '', MoTa: '' });
   const [hangSanXuatData, setHangSanXuatData] = useState({ TenHangSanXuat: '' });
   const [thongSoData, setThongSoData] = useState({ TenThongSo: '' });
@@ -47,25 +48,24 @@ const StaffDashboard = () => {
     thongSoValue: ''
   });
 
-  // State for editing
+  const [showUpdateStatusModal, setShowUpdateStatusModal] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [newStatus, setNewStatus] = useState('');
+
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
 
-  // State for search
   const [searchTerm, setSearchTerm] = useState('');
 
-  // State for messages
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  // State for confirmation modal
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteItemType, setDeleteItemType] = useState('');
   const [deleteItemId, setDeleteItemId] = useState(null);
   const [deleteItemName, setDeleteItemName] = useState('');
 
-  // Fetch data from API when component mounts or when active section changes
   useEffect(() => {
     fetchData();
   }, [activeSection]);
@@ -87,7 +87,6 @@ const StaffDashboard = () => {
           setThongSos(thongSosRes.data);
           break;
         case 'product':
-          // Fetch all needed data for products
           const [productsRes, categoriesForProductRes, hangSanXuatsForProductRes, thongSosForProductRes] = 
             await Promise.all([
               axios.get(`${API_BASE_URL}/products/san-pham/`),
@@ -99,6 +98,10 @@ const StaffDashboard = () => {
           setCategories(categoriesForProductRes.data);
           setHangSanXuats(hangSanXuatsForProductRes.data);
           setThongSos(thongSosForProductRes.data);
+          break;
+        case 'order':
+          const ordersRes = await axios.get(`${API_BASE_URL}/orders/list-orders/`);
+          setOrders(ordersRes.data.orders);
           break;
         default:
           break;
@@ -203,6 +206,12 @@ const StaffDashboard = () => {
           (item.TenDanhMuc && item.TenDanhMuc.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (item.TenHangSanXuat && item.TenHangSanXuat.toLowerCase().includes(searchTerm.toLowerCase()))
         );
+      case 'order':
+        return orders.filter(item =>
+          item.TenNguoiNhan.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.SoDienThoai.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.DiaChi.toLowerCase().includes(searchTerm.toLowerCase())
+        );
       default:
         return [];
     }
@@ -250,7 +259,7 @@ const StaffDashboard = () => {
             DanhMuc: product.DanhMuc || '',
             HangSanXuat: product.HangSanXuat || '',
             ThongSo: product.ChiTietThongSo || [],
-            HinhAnh: null, // Cannot prefill file input
+            HinhAnh: null,
             selectedThongSo: '',
             thongSoValue: ''
           });
@@ -297,6 +306,11 @@ const StaffDashboard = () => {
         url = `${API_BASE_URL}/products/san-pham/${deleteItemId}/`;
         successMessage = 'Xóa sản phẩm thành công!';
         errorMessage = 'Xóa sản phẩm thất bại';
+        break;
+      case 'order':
+        url = `${API_BASE_URL}/orders/delete/${deleteItemId}/`;
+        successMessage = 'Xóa đơn hàng thành công!';
+        errorMessage = 'Xóa đơn hàng thất bại';
         break;
       default:
         break;
@@ -365,7 +379,6 @@ const StaffDashboard = () => {
       if (productData.DanhMuc) data.append('DanhMuc', productData.DanhMuc);
       if (productData.HangSanXuat) data.append('HangSanXuat', productData.HangSanXuat);
       
-      // Thông số kỹ thuật
       if (productData.ThongSo && productData.ThongSo.length > 0) {
         data.append('ChiTietThongSo', JSON.stringify(productData.ThongSo));
       }
@@ -395,6 +408,38 @@ const StaffDashboard = () => {
     } catch (error) {
       setErrorMessage(
         `${isEditing ? 'Cập nhật' : 'Thêm'} ${type} thất bại: ` + 
+        (error.response?.data?.detail || 'Lỗi không xác định')
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const openUpdateStatusModal = (orderId, currentStatus) => {
+    setSelectedOrderId(orderId);
+    setNewStatus(currentStatus.toString());
+    setShowUpdateStatusModal(true);
+  };
+
+  const handleUpdateStatus = async () => {
+    setIsLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/orders/update-status/${selectedOrderId}/`,
+        { MaTrangThai: parseInt(newStatus) }
+      );
+
+      if (response.status === 200) {
+        setSuccessMessage('Cập nhật trạng thái đơn hàng thành công!');
+        fetchData();
+        setShowUpdateStatusModal(false);
+      }
+    } catch (error) {
+      setErrorMessage(
+        'Cập nhật trạng thái thất bại: ' + 
         (error.response?.data?.detail || 'Lỗi không xác định')
       );
     } finally {
@@ -699,6 +744,80 @@ const StaffDashboard = () => {
             </div>
           </div>
         );
+
+      case 'order':
+        return (
+          <div className="grid-container">
+            <div className="grid-header">
+              <div className="grid-search">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm đơn hàng..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  className="search-input"
+                />
+                <Search className="search-icon" />
+              </div>
+            </div>
+            <div className="grid-table-wrapper">
+              <table className="grid-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Tên Khách Hàng</th>
+                    <th>Số Điện Thoại</th>
+                    <th>Địa Chỉ</th>
+                    <th>Tổng Tiền</th>
+                    <th>Trạng Thái</th>
+                    <th>Ngày Đặt Hàng</th>
+                    <th>Hành Động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.length > 0 ? (
+                    items.map((item) => (
+                      <tr key={item.MaDonHang}>
+                        <td>{item.MaDonHang}</td>
+                        <td>{item.TenNguoiNhan}</td>
+                        <td>{item.SoDienThoai}</td>
+                        <td>{item.DiaChi}</td>
+                        <td>{parseInt(item.TongTien).toLocaleString('vi-VN')} đ</td>
+                        <td>
+                          <span className={`status-badge status-${item.MaTrangThai}`}>
+                            {item.MaTrangThai === 1 && 'Chờ xử lý'}
+                            {item.MaTrangThai === 2 && 'Đang giao hàng'}
+                            {item.MaTrangThai === 3 && 'Đã hoàn thành'}
+                            {item.MaTrangThai === 4 && 'Đã hủy'}
+                          </span>
+                        </td>
+                        <td>{new Date(item.NgayDatHang).toLocaleDateString('vi-VN')}</td>
+                        <td className="action-buttons">
+                          <button 
+                            className="btn-icon btn-edit"
+                            onClick={() => openUpdateStatusModal(item.MaDonHang, item.MaTrangThai)}
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button 
+                            className="btn-icon btn-delete"
+                            onClick={() => confirmDelete('order', item.MaDonHang, `Đơn hàng #${item.MaDonHang}`)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="8" className="no-data">Không có dữ liệu</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
         
       default:
         return null;
@@ -830,62 +949,62 @@ const StaffDashboard = () => {
           </div>
         );
 
-        case 'hangSanXuat':
-          return (
-            <div className="form-card">
-              <div className="form-header">
-                <h2>
-                  <Factory className="form-icon" />
-                  {isEditing ? 'Sửa Hãng Sản Xuất' : 'Thêm Hãng Sản Xuất'}
-                </h2>
+      case 'hangSanXuat':
+        return (
+          <div className = "form-card">
+            <div className="form-header">
+              <h2>
+                <Factory className="form-icon" /> 
+                {isEditing ? 'Sửa Hãng Sản Xuất' : 'Thêm Hãng Sản Xuất'}
+              </h2>
+              <button 
+                className="btn-back"
+                onClick={() => {
+                  resetForm();
+                  setViewMode('grid');
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={(e) => handleSubmit('hangSanXuat', e)}>
+              <div className="form-group">
+                <label>Tên Hãng Sản Xuất</label>
+                <input
+                  type="text"
+                  value={hangSanXuatData.TenHangSanXuat}
+                  onChange={handleInputChange('hangSanXuat', 'TenHangSanXuat')}
+                  placeholder="Nhập tên hãng sản xuất"
+                />
+              </div>
+              <div className="form-actions">
                 <button 
-                  className="btn-back"
+                  type="button" 
+                  className="btn btn-cancel"
                   onClick={() => {
                     resetForm();
                     setViewMode('grid');
                   }}
                 >
-                  <X size={18} />
+                  Hủy
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-hangSanXuat"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <RefreshCw className="spinner" size={16} />
+                  ) : (
+                    <>
+                      {isEditing ? 'Cập Nhật' : 'Thêm'} Hãng Sản Xuất
+                    </>
+                  )}
                 </button>
               </div>
-              <form onSubmit={(e) => handleSubmit('hangSanXuat', e)}>
-                <div className="form-group">
-                  <label>Tên Hãng Sản Xuất</label>
-                  <input
-                    type="text"
-                    value={hangSanXuatData.TenHangSanXuat}
-                    onChange={handleInputChange('hangSanXuat', 'TenHangSanXuat')}
-                    placeholder="Nhập tên hãng sản xuất"
-                  />
-                </div>
-                <div className="form-actions">
-                  <button 
-                    type="button" 
-                    className="btn btn-cancel"
-                    onClick={() => {
-                      resetForm();
-                      setViewMode('grid');
-                    }}
-                  >
-                    Hủy
-                  </button>
-                  <button 
-                    type="submit" 
-                    className="btn btn-hangSanXuat"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <RefreshCw className="spinner" size={16} />
-                    ) : (
-                      <>
-                        {isEditing ? 'Cập Nhật' : 'Thêm'} Hãng Sản Xuất
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          );
+            </form>
+          </div>
+        );
       
       case 'product':
         return (
@@ -906,7 +1025,6 @@ const StaffDashboard = () => {
               </button>
             </div>
             <form onSubmit={(e) => handleSubmit('product', e)} className="form-columns">
-              {/* Cột 1 */}
               <div className="form-column">
                 <div className="form-group">
                   <label>Tên Sản Phẩm</label>
@@ -944,7 +1062,6 @@ const StaffDashboard = () => {
                   />
                 </div>
               </div>
-              {/* Cột 2 */}
               <div className="form-column">
                 <div className="form-group">
                   <label>Danh Mục</label>
@@ -981,7 +1098,6 @@ const StaffDashboard = () => {
                     onChange={(e) => {
                       const thongSoId = e.target.value;
                       if (thongSoId) {
-                        // Hiển thị form nhập giá trị cho thông số
                         setProductData(prev => ({
                           ...prev,
                           selectedThongSo: thongSoId
@@ -1076,7 +1192,6 @@ const StaffDashboard = () => {
                   )}
                 </div>
               </div>
-              {/* Button nằm ở dưới cùng, full width */}
               <div className="form-actions full-width">
                 <button 
                   type="button" 
@@ -1115,7 +1230,60 @@ const StaffDashboard = () => {
     return viewMode === 'grid' ? renderGridView() : renderFormView();
   };
 
-  // Delete confirmation modal
+  const renderUpdateStatusModal = () => {
+    if (!showUpdateStatusModal) return null;
+
+    return (
+      <div className="modal-overlay">
+        <div className="modal-container">
+          <div className="modal-header">
+            <AlertCircle className="modal-icon" />
+            <h3>Cập nhật trạng thái đơn hàng</h3>
+            <button 
+              className="btn-close"
+              onClick={() => setShowUpdateStatusModal(false)}
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="modal-body">
+            <div className="form-group">
+              <label>Trạng thái mới</label>
+              <select
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value)}
+              >
+                <option value="1">Chờ xử lý</option>
+                <option value="2">Đang giao hàng</option>
+                <option value="3">Đã hoàn thành</option>
+                <option value="4">Đã hủy</option>
+              </select>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button 
+              className="btn btn-cancel"
+              onClick={() => setShowUpdateStatusModal(false)}
+            >
+              Hủy
+            </button>
+            <button 
+              className="btn btn-confirm"
+              onClick={handleUpdateStatus}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <RefreshCw className="spinner" size={16} />
+              ) : (
+                'Cập nhật'
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderDeleteModal = () => {
     if (!showDeleteModal) return null;
     
@@ -1162,13 +1330,11 @@ const StaffDashboard = () => {
 
   return (
     <div className="staff-dashboard">
-      {/* Sidebar */}
       <div className="sidebar">
         <div className="sidebar-header">
           <h2>Nhân Viên Dashboard</h2>
         </div>
         <nav className="sidebar-nav">
-          {/* Thay thế SidebarItem bằng div có kiểu dáng tương tự */}
           <div className="sidebar-category">
             <Package className="sidebar-icon" />
             <span>Xử Lý Sản Phẩm</span>
@@ -1178,6 +1344,14 @@ const StaffDashboard = () => {
             <SidebarItem icon={Factory} label="Hãng Sản Xuất" section="hangSanXuat" />
             <SidebarItem icon={Settings2} label="Thông Số" section="thongSo" />
             <SidebarItem icon={PlusCircle} label="Sản Phẩm" section="product" />
+          </div>
+          <div className="sidebar-divider"></div>
+          <div className="sidebar-category">
+            <ShoppingBag className="sidebar-icon" />
+            <span>Quản lý Đơn hàng</span>
+          </div>
+          <div className="sidebar-subitem">
+            <SidebarItem icon={ShoppingBag} label="Đơn Hàng" section="order" />
           </div>
           <div className="sidebar-divider"></div>
           <div 
@@ -1193,17 +1367,16 @@ const StaffDashboard = () => {
         </nav>
       </div>
 
-      {/* Content Area */}
       <div className="content">
         <h1>
           {activeSection === 'category' && 'Quản Lý Danh Mục'}
           {activeSection === 'hangSanXuat' && 'Quản Lý Hãng Sản Xuất'}
           {activeSection === 'thongSo' && 'Quản Lý Thông Số'}
           {activeSection === 'product' && 'Quản Lý Sản Phẩm'}
+          {activeSection === 'order' && 'Quản Lý Đơn Hàng'}
         </h1>
         {renderContent()}
         
-        {/* Thông báo */}
         {errorMessage && (
           <div className="alert alert-error">
             <AlertCircle size={20} />
@@ -1229,8 +1402,8 @@ const StaffDashboard = () => {
           </div>
         )}
         
-        {/* Modal */}
         {renderDeleteModal()}
+        {renderUpdateStatusModal()}
       </div>
     </div>
   );

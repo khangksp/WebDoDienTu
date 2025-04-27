@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faMapMarkerAlt, 
-  faEdit, 
-  faCheckCircle, 
-  faTruck, 
-  faMoneyBill, 
-  faCreditCard, 
+import {
+  faMapMarkerAlt,
+  faEdit,
+  faCheckCircle,
+  faTruck,
+  faMoneyBill,
+  faCreditCard,
   faWallet,
   faArrowLeft,
   faShoppingBag
 } from '@fortawesome/free-solid-svg-icons';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './style/checkout.css';
-
+import axios from 'axios';
 import { useLanguage } from "../context/LanguageContext";
 import { useCart } from "../context/CartContext";
 
@@ -50,6 +50,10 @@ function Checkout() {
     }
   }, [navigate]);
   
+  // Lấy thông tin người dùng từ localStorage
+  const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+  const nguoiDungData = userData.nguoidung_data || {};
+
   // Sử dụng sản phẩm từ giỏ hàng hoặc từ location state
   const [cartItems, setCartItems] = useState([]);
   
@@ -64,30 +68,91 @@ function Checkout() {
   
   const [paymentMethod, setPaymentMethod] = useState(location.state?.paymentMethod || 'cash');
   const [showAddressModal, setShowAddressModal] = useState(false);
-  const [addresses, setAddresses] = useState([
-    {
-      id: 1,
-      isDefault: true,
-      recipient: 'Nguyễn Văn A',
-      phone: '0247056600',
-      address: 'Tòa nhà VPBank Tower, Số 89 Láng Hạ, Phường Láng Hạ, Quận Đống Đa, Thành phố Hà Nội'
-    },
-    {
-      id: 2,
-      isDefault: false,
-      recipient: 'Nguyễn Văn A',
-      phone: '0987654321',
-      address: '123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, Thành phố Hồ Chí Minh'
-    }
-  ]);
-  
-  const [selectedAddress, setSelectedAddress] = useState(addresses.find(a => a.isDefault) || addresses[0]);
-  const [newAddress, setNewAddress] = useState({
-    recipient: '',
-    phone: '',
-    address: '',
-    isDefault: false
+
+  // Khởi tạo địa chỉ từ nguoiDungData
+  const [selectedAddress, setSelectedAddress] = useState({
+    id: 1,
+    isDefault: true,
+    recipient: nguoiDungData.tennguoidung || '',
+    phone: nguoiDungData.sodienthoai || '',
+    address: nguoiDungData.diachi || ''
   });
+
+  // Trạng thái cho form chỉnh sửa địa chỉ
+  const [editAddress, setEditAddress] = useState({
+    recipient: nguoiDungData.tennguoidung || '',
+    phone: nguoiDungData.sodienthoai || '',
+    address: nguoiDungData.diachi || ''
+  });
+
+  // Trạng thái cho dropdown Tỉnh/Huyện/Xã
+  const [provinces, setProvinces] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [wards, setWards] = useState([]);
+  const [selectedProvince, setSelectedProvince] = useState('');
+  const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [selectedWard, setSelectedWard] = useState('');
+
+  // Lấy danh sách tỉnh
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      try {
+        const response = await fetch('https://provinces.open-api.vn/api/p/');
+        const data = await response.json();
+        setProvinces(data);
+      } catch (error) {
+        console.error('Lỗi khi lấy danh sách tỉnh:', error);
+      }
+    };
+    fetchProvinces();
+  }, []);
+
+  // Lấy danh sách huyện khi chọn tỉnh
+  useEffect(() => {
+    if (selectedProvince) {
+      const fetchDistricts = async () => {
+        try {
+          const response = await fetch(`https://provinces.open-api.vn/api/p/${selectedProvince}?depth=2`);
+          const data = await response.json();
+          setDistricts(data.districts || []);
+          setWards([]);
+          setSelectedDistrict('');
+          setSelectedWard('');
+        } catch (error) {
+          console.error('Lỗi khi lấy danh sách huyện:', error);
+        }
+      };
+      fetchDistricts();
+    }
+  }, [selectedProvince]);
+
+  // Lấy danh sách xã khi chọn huyện
+  useEffect(() => {
+    if (selectedDistrict) {
+      const fetchWards = async () => {
+        try {
+          const response = await fetch(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`);
+          const data = await response.json();
+          setWards(data.wards || []);
+          setSelectedWard('');
+        } catch (error) {
+          console.error('Lỗi khi lấy danh sách xã:', error);
+        }
+      };
+      fetchWards();
+    }
+  }, [selectedDistrict]);
+
+  // Tự động điền địa chỉ khi chọn xã
+  useEffect(() => {
+    if (selectedWard) {
+      const provinceName = provinces.find(p => p.code === parseInt(selectedProvince))?.name || '';
+      const districtName = districts.find(d => d.code === parseInt(selectedDistrict))?.name || '';
+      const wardName = wards.find(w => w.code === parseInt(selectedWard))?.name || '';
+      const fullAddress = `${wardName}, ${districtName}, ${provinceName}`;
+      setEditAddress(prev => ({ ...prev, address: fullAddress }));
+    }
+  }, [selectedWard, provinces, districts, wards]);
 
   // Calculate total price
   const totalPrice = cartItems.reduce((sum, item) => {
@@ -112,57 +177,79 @@ function Checkout() {
     return new Intl.NumberFormat('vi-VN').format(price) + ' VND';
   };
 
-  // Handle address selection
-  const selectAddress = (address) => {
-    setSelectedAddress(address);
-    setShowAddressModal(false);
-  };
-
   // Handle address form changes
   const handleAddressChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setNewAddress({
-      ...newAddress,
-      [name]: type === 'checkbox' ? checked : value
-    });
+    const { name, value } = e.target;
+    setEditAddress(prev => ({ ...prev, [name]: value }));
   };
 
-  // Add new address
-  const addNewAddress = (e) => {
-    e.preventDefault();
-    const newId = addresses.length > 0 ? Math.max(...addresses.map(a => a.id)) + 1 : 1;
-    const addressToAdd = {
-      ...newAddress,
-      id: newId
-    };
-    
-    // If this is set as default, update other addresses
-    let updatedAddresses = [...addresses];
-    if (newAddress.isDefault) {
-      updatedAddresses = updatedAddresses.map(addr => ({
-        ...addr,
-        isDefault: false
-      }));
-    }
-    
-    updatedAddresses.push(addressToAdd);
-    setAddresses(updatedAddresses);
-    
-    // Select the new address if it's default or there was no address before
-    if (newAddress.isDefault || !selectedAddress) {
-      setSelectedAddress(addressToAdd);
-    }
-    
-    // Reset form and close modal
-    setNewAddress({
-      recipient: '',
-      phone: '',
-      address: '',
-      isDefault: false
-    });
-    setShowAddressModal(false);
-  };
+  // Update addressconst [isLoading, setIsLoading] = useState(false);
 
+// Trong component Checkout// Đảm bảo bạn đã import axios
+
+
+// Trong component Checkout
+const updateAddress = async (e) => {
+  e.preventDefault();
+  const token = localStorage.getItem("access_token");
+  if (!token || !userData?.mataikhoan) {
+    alert(t("vuiLongDangNhap"));
+    navigate('/login');
+    return;
+  }
+
+  try {
+    const response = await axios.put(
+      `http://localhost:8000/api/auth/users/update/${userData.mataikhoan}/`,
+      {
+        nguoidung: {
+          tennguoidung: editAddress.recipient,
+          email: nguoiDungData.email,
+          sodienthoai: editAddress.phone,
+          diachi: editAddress.address,
+        },
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (response.data.status === "ok") {
+      // Cập nhật userData từ response
+      const updatedUser = response.data.user;
+
+      // Cập nhật localStorage để đồng bộ dữ liệu
+      const updatedUserData = {
+        ...userData,
+        nguoidung_data: {
+          ...userData.nguoidung_data,
+          tennguoidung: updatedUser.nguoidung_data?.tennguoidung || editAddress.recipient,
+          email: updatedUser.nguoidung_data?.email || nguoiDungData.email,
+          sodienthoai: updatedUser.nguoidung_data?.sodienthoai || editAddress.phone,
+          diachi: updatedUser.nguoidung_data?.diachi || editAddress.address,
+        },
+      };
+      localStorage.setItem("user_data", JSON.stringify(updatedUserData));
+
+      // Cập nhật selectedAddress để hiển thị trên giao diện
+      setSelectedAddress({
+        id: 1,
+        isDefault: true,
+        recipient: updatedUser.nguoidung_data?.tennguoidung || editAddress.recipient,
+        phone: updatedUser.nguoidung_data?.sodienthoai || editAddress.phone,
+        address: updatedUser.nguoidung_data?.diachi || editAddress.address,
+      });
+
+      // Đóng modal và thông báo thành công
+      setShowAddressModal(false);
+      alert(t("capNhatThanhCong"));
+    }
+  } catch (error) {
+    console.error('Lỗi khi cập nhật địa chỉ:', error);
+    const errorMsg = error.response?.data?.message || t("capNhatThatBai");
+    alert(errorMsg);
+  }
+};
   // Hàm xử lý việc đặt hàng
   const placeOrder = async () => {
     if (!selectedAddress) {
@@ -176,7 +263,6 @@ function Checkout() {
     }
   
     try {
-      // Lấy token xác thực từ localStorage
       const token = localStorage.getItem("access_token");
       
       if (!token) {
@@ -186,19 +272,14 @@ function Checkout() {
         return;
       }
       
-      // Lấy user_id từ nhiều nguồn khác nhau
-      // 1. Từ localStorage
-      const userData = JSON.parse(localStorage.getItem("user_data") || "{}");
-      let userId = userData.id || localStorage.getItem("user_id");
+      let userId = userData.mataikhoan;
       
-      // 2. Từ JWT token nếu không tìm thấy trong localStorage
       if (!userId) {
         const tokenPayload = parseJwt(token);
         userId = tokenPayload.user_id || tokenPayload.id || tokenPayload.sub;
         console.log("Lấy user_id từ JWT token:", userId);
       }
       
-      // 3. Thử gọi API để lấy thông tin user nếu vẫn không có
       if (!userId) {
         try {
           const userResponse = await fetch('http://localhost:8000/api/auth/users/', {
@@ -219,19 +300,16 @@ function Checkout() {
         }
       }
       
-      // 4. Nếu vẫn không có, đặt giá trị mặc định (có thể không hoạt động với backend)
       if (!userId) {
-        userId = 1; // Giá trị mặc định - lưu ý điều này có thể không hoạt động với API của bạn
+        userId = 1;
         console.warn("Không tìm thấy user_id, sử dụng giá trị mặc định:", userId);
       }
       
-      // Log ra để debug
       console.log("User ID được sử dụng:", userId);
       console.log("Loại của User ID:", typeof userId);
   
-      // Chuẩn bị dữ liệu đơn hàng
       const orderData = {
-        user_id: Number(userId), // Đảm bảo là số
+        user_id: Number(userId),
         recipient_name: selectedAddress.recipient,
         phone_number: selectedAddress.phone,
         address: selectedAddress.address,
@@ -247,7 +325,6 @@ function Checkout() {
   
       console.log("Dữ liệu đơn hàng gửi đi:", orderData);
   
-      // Gọi API tạo đơn hàng
       const response = await fetch('http://localhost:8000/api/orders/create/', {
         method: 'POST',
         headers: {
@@ -279,17 +356,14 @@ function Checkout() {
       const result = JSON.parse(responseText);
       console.log("Kết quả tạo đơn hàng:", result);
   
-      // Xóa giỏ hàng sau khi đặt hàng thành công
       try {
-        await clearCart(); // Sử dụng hàm clearCart từ CartContext
+        await clearCart();
       } catch (cartError) {
         console.error("Lỗi khi xóa giỏ hàng:", cartError);
       }
   
-      // Hiển thị thông báo và chuyển hướng
       alert('Đặt hàng thành công! Cảm ơn bạn đã mua sắm.');
       
-      // Chuyển hướng đến trang xác nhận đơn hàng
       navigate('/order-confirmation', { 
         state: { 
           orderId: result.order_id,
@@ -312,7 +386,6 @@ function Checkout() {
       <div className="container py-5">
         <div className="row">
           <div className="col-12 mb-4">
-            {/* Fixed back button with improved styling */}
             <button 
               className="btn btn-outline-secondary px-4 py-2"
               onClick={goBackToCart}
@@ -329,11 +402,7 @@ function Checkout() {
               <FontAwesomeIcon icon={faArrowLeft} /> 
               <span>{t('quayLaiGioHang')}</span>
             </button>
-            <h2 className="checkout-title mt-3" style={
-              { 
-                margin: '0',
-                padding: '0' 
-              }}>{t('thanhToan')}</h2>
+            <h2 className="checkout-title mt-3" style={{ margin: '0', padding: '0' }}>{t('thanhToan')}</h2>
           </div>
 
           <div className="col-lg-8">
@@ -425,15 +494,12 @@ function Checkout() {
                           }}
                         />
                       </div>
-                      
                       <div className="col-md-6">
                         <h6 className="item-name">{item.TenSanPham || item.name}</h6>
                       </div>
-                      
                       <div className="col-md-2 text-center">
                         <div className="item-quantity">x{item.quantity}</div>
                       </div>
-                      
                       <div className="col-md-2 text-end">
                         <div className="item-price">{formatPrice((item.GiaBan || item.price) * item.quantity)}</div>
                       </div>
@@ -449,7 +515,6 @@ function Checkout() {
                 <FontAwesomeIcon icon={faTruck} className="header-icon" />
                 <h5>{t('thongTinVanChuyen')}</h5>
               </div>
-              
               <div className="checkout-card-body">
                 <div className="shipping-info">
                   <p className="mb-1">{t('phuongThucVanChuyen')}</p>
@@ -466,32 +531,26 @@ function Checkout() {
               <div className="checkout-card-header">
                 <h5>{t('tongCong')}</h5>
               </div>
-              
               <div className="checkout-card-body">
                 <div className="summary-item d-flex justify-content-between">
                   <span>{t('tamTinh')}</span>
                   <span>{formatPrice(totalPrice)}</span>
                 </div>
-                
                 <div className="summary-item d-flex justify-content-between">
                   <span>{t('phiVanChuyen')}</span>
                   <span>{shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee)}</span>
                 </div>
-                
                 <hr />
-                
                 <div className="summary-total d-flex justify-content-between">
                   <span className="fw-bold">{t('tongTien')}</span>
                   <span className="fw-bold text-danger">{formatPrice(grandTotal)}</span>
                 </div>
-                
                 <button 
                   className="btn btn-danger btn-place-order w-100 mt-4"
                   onClick={placeOrder}
                 >
                   {t('datHang')}
                 </button>
-                
                 <div className="order-note mt-3">
                   <p className="mb-0 text-muted small">{t('bangCach')}</p>
                 </div>
@@ -517,28 +576,21 @@ function Checkout() {
               
               <div className="modal-body">
                 <div className="address-list">
-                  <h6 className="mb-3">{t('diaChiDaLuu')}</h6>
-                  
-                  {addresses.length > 0 ? (
-                    addresses.map(address => (
-                      <div 
-                        key={address.id} 
-                        className={`address-option ${selectedAddress && address.id === selectedAddress.id ? 'selected' : ''}`}
-                        onClick={() => selectAddress(address)}
-                      >
-                        <div className="recipient">
-                          <span className="fw-bold">{address.recipient}</span>
-                          <span className="text-divider">|</span>
-                          <span>{address.phone}</span>
-                          {address.isDefault && (
-                            <span className="default-badge ms-2">{t('macDinh')}</span>
-                          )}
-                        </div>
-                        <div className="address-text mt-2">
-                          {address.address}
-                        </div>
+                  <h6 className="mb-3">{t('diaChiHienTai')}</h6>
+                  {selectedAddress ? (
+                    <div className="address-option selected">
+                      <div className="recipient">
+                        <span className="fw-bold">{selectedAddress.recipient}</span>
+                        <span className="text-divider">|</span>
+                        <span>{selectedAddress.phone}</span>
+                        {selectedAddress.isDefault && (
+                          <span className="default-badge ms-2">{t('macDinh')}</span>
+                        )}
                       </div>
-                    ))
+                      <div className="address-text mt-2">
+                        {selectedAddress.address}
+                      </div>
+                    </div>
                   ) : (
                     <p>{t('chuaCoDiaChiDuocLuu')}</p>
                   )}
@@ -546,10 +598,10 @@ function Checkout() {
                 
                 <hr />
                 
-                <div className="new-address-form">
-                  <h6 className="mb-3">{t('themDiaChiMoi')}</h6>
+                <div className="edit-address-form">
+                  <h6 className="mb-3">{t('chinhSuaDiaChi')}</h6>
                   
-                  <form onSubmit={addNewAddress}>
+                  <form onSubmit={updateAddress}>
                     <div className="mb-3">
                       <label htmlFor="recipient" className="form-label">{t('hoTenNguoiNhan')}</label>
                       <input 
@@ -557,7 +609,7 @@ function Checkout() {
                         className="form-control" 
                         id="recipient" 
                         name="recipient"
-                        value={newAddress.recipient}
+                        value={editAddress.recipient}
                         onChange={handleAddressChange}
                         required
                       />
@@ -570,12 +622,68 @@ function Checkout() {
                         className="form-control" 
                         id="phone" 
                         name="phone"
-                        value={newAddress.phone}
+                        value={editAddress.phone}
                         onChange={handleAddressChange}
                         required
                       />
                     </div>
                     
+                    <div className="mb-3">
+                      <label htmlFor="province" className="form-label">{t('tinhThanhPho')}</label>
+                      <select
+                        className="form-control"
+                        id="province"
+                        value={selectedProvince}
+                        onChange={(e) => setSelectedProvince(e.target.value)}
+                        required
+                      >
+                        <option value="">{t('chonTinh')}</option>
+                        {provinces.map(province => (
+                          <option key={province.code} value={province.code}>
+                            {province.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="mb-3">
+                      <label htmlFor="district" className="form-label">{t('quanHuyen')}</label>
+                      <select
+                        className="form-control"
+                        id="district"
+                        value={selectedDistrict}
+                        onChange={(e) => setSelectedDistrict(e.target.value)}
+                        required
+                        disabled={!selectedProvince}
+                      >
+                        <option value="">{t('chonHuyen')}</option>
+                        {districts.map(district => (
+                          <option key={district.code} value={district.code}>
+                            {district.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="mb-3">
+                      <label htmlFor="ward" className="form-label">{t('xaPhuong')}</label>
+                      <select
+                        className="form-control"
+                        id="ward"
+                        value={selectedWard}
+                        onChange={(e) => setSelectedWard(e.target.value)}
+                        required
+                        disabled={!selectedDistrict}
+                      >
+                        <option value="">{t('chonXa')}</option>
+                        {wards.map(ward => (
+                          <option key={ward.code} value={ward.code}>
+                            {ward.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     <div className="mb-3">
                       <label htmlFor="address" className="form-label">{t('diaChiDayDu')}</label>
                       <textarea 
@@ -583,22 +691,10 @@ function Checkout() {
                         id="address" 
                         name="address"
                         rows="3"
-                        value={newAddress.address}
+                        value={editAddress.address}
                         onChange={handleAddressChange}
                         required
                       ></textarea>
-                    </div>
-                    
-                    <div className="mb-3 form-check">
-                      <input 
-                        type="checkbox" 
-                        className="form-check-input" 
-                        id="isDefault" 
-                        name="isDefault"
-                        checked={newAddress.isDefault}
-                        onChange={handleAddressChange}
-                      />
-                      <label className="form-check-label" htmlFor="isDefault">{t('datLamDiaChiMacDinh')}</label>
                     </div>
                     
                     <div className="modal-footer justify-content-between">

@@ -3,8 +3,10 @@ import { BarChart3, LogOut, UserPlus, Edit, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import './style/dashboard.css';
 import { API_BASE_URL } from '../config';
-
+import { useAuth } from '../context/AuthContext';
 const AdminDashboard = () => {
+
+
   const [users, setUsers] = useState([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [error, setError] = useState('');
