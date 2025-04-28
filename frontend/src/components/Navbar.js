@@ -29,7 +29,6 @@ import "./Navbar.css";
 import '../pages/style/dashboard.css';
 
 const NavbarStyles = `
-<style>
   .btn {
     padding: 10px 16px;
     border: none;
@@ -78,7 +77,8 @@ const NavbarStyles = `
     color: #6b7280;
   }
 
-  .input-icon-wrapper input {
+  .input-icon-wrapper input,
+  .input-icon-wrapper select {
     padding-left: 35px;
     width: 100%;
   }
@@ -98,7 +98,6 @@ const NavbarStyles = `
   .btn-cancel {
     background-color: #6c757d;
   }
-</style>
 `;
 
 function Navbar() {
@@ -115,6 +114,13 @@ function Navbar() {
     sodienthoai: "",
     diachi: "",
   });
+
+  const [provinces, setProvinces] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [wards, setWards] = useState([]);
+  const [selectedProvince, setSelectedProvince] = useState('');
+  const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [selectedWard, setSelectedWard] = useState('');
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -223,6 +229,126 @@ function Navbar() {
     return () => clearInterval(timer);
   }, [isCountingDown, countdown]);
 
+  // Lấy danh sách tỉnh
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      try {
+        const response = await fetch('https://provinces.open-api.vn/api/p/');
+        if (!response.ok) throw new Error('Lỗi khi lấy danh sách tỉnh');
+        const data = await response.json();
+        setProvinces(data);
+      } catch (error) {
+        console.error('Lỗi khi lấy danh sách tỉnh:', error);
+      }
+    };
+    fetchProvinces();
+  }, []);
+
+  // Lấy danh sách huyện khi chọn tỉnh
+  useEffect(() => {
+    if (selectedProvince) {
+      const fetchDistricts = async () => {
+        try {
+          const response = await fetch(`https://provinces.open-api.vn/api/p/${selectedProvince}?depth=2`);
+          if (!response.ok) throw new Error('Lỗi khi lấy danh sách huyện');
+          const data = await response.json();
+          setDistricts(data.districts || []);
+          setWards([]);
+          setSelectedDistrict('');
+          setSelectedWard('');
+        } catch (error) {
+          console.error('Lỗi khi lấy danh sách huyện:', error);
+        }
+      };
+      fetchDistricts();
+    }
+  }, [selectedProvince]);
+
+  // Lấy danh sách xã khi chọn huyện
+  useEffect(() => {
+    if (selectedDistrict) {
+      const fetchWards = async () => {
+        try {
+          const response = await fetch(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`);
+          if (!response.ok) throw new Error('Lỗi khi lấy danh sách xã');
+          const data = await response.json();
+          setWards(data.wards || []);
+          setSelectedWard('');
+        } catch (error) {
+          console.error('Lỗi khi lấy danh sách xã:', error);
+        }
+      };
+      fetchWards();
+    }
+  }, [selectedDistrict]);
+
+  // Phân tích địa chỉ hiện tại để chọn tỉnh/huyện/xã
+  useEffect(() => {
+    const initializeAddress = async () => {
+      if (editData.diachi && provinces.length > 0 && isEditing) {
+        try {
+          const diachiLower = editData.diachi.toLowerCase();
+          const province = provinces.find(p => 
+            p.name.toLowerCase().includes(diachiLower) || 
+            diachiLower.includes(p.name.toLowerCase().replace('tỉnh ', '').replace('thành phố ', ''))
+          );
+          
+          if (province) {
+            setSelectedProvince(String(province.code));
+
+            const districtResponse = await fetch(`https://provinces.open-api.vn/api/p/${province.code}?depth=2`);
+            if (!districtResponse.ok) throw new Error('Lỗi khi lấy danh sách huyện');
+            const districtData = await districtResponse.json();
+            setDistricts(districtData.districts || []);
+
+            const addressParts = editData.diachi.split(',').map(part => part.trim());
+            if (addressParts.length > 1) {
+              const districtName = addressParts[addressParts.length - 2];
+              const district = districtData.districts.find(d => 
+                d.name.toLowerCase().includes(districtName.toLowerCase())
+              );
+              if (district) {
+                setSelectedDistrict(String(district.code));
+
+                const wardResponse = await fetch(`https://provinces.open-api.vn/api/d/${district.code}?depth=2`);
+                if (!wardResponse.ok) throw new Error('Lỗi khi lấy danh sách xã');
+                const wardData = await wardResponse.json();
+                setWards(wardData.wards || []);
+
+                if (addressParts.length > 2) {
+                  const wardName = addressParts[0];
+                  const ward = wardData.wards.find(w => 
+                    w.name.toLowerCase().includes(wardName.toLowerCase())
+                  );
+                  if (ward) {
+                    setSelectedWard(String(ward.code));
+                  }
+                }
+              }
+            }
+          } else {
+            console.warn('Không tìm thấy tỉnh phù hợp cho địa chỉ:', editData.diachi);
+          }
+        } catch (error) {
+          console.error('Lỗi khi phân tích địa chỉ:', error);
+        }
+      }
+    };
+
+    initializeAddress();
+  }, [provinces, editData.diachi, isEditing]);
+
+  // Cập nhật địa chỉ khi chọn xã
+  useEffect(() => {
+    if (selectedWard && isEditing && selectedProvince && selectedDistrict) {
+      const provinceName = provinces.find(p => p.code === Number(selectedProvince))?.name || '';
+      const districtName = districts.find(d => d.code === Number(selectedDistrict))?.name || '';
+      const wardName = wards.find(w => w.code === Number(selectedWard))?.name || '';
+      const fullAddress = `${wardName}, ${districtName}, ${provinceName}`;
+      setEditData(prev => ({ ...prev, diachi: fullAddress }));
+    }
+  }, [selectedWard, provinces, districts, wards, isEditing, selectedProvince, selectedDistrict]);
+
   const handleInputChange = (type, field) => (e) => {
     if (type === "login") {
       setLoginData((prev) => ({ ...prev, [field]: e.target.value }));
@@ -268,6 +394,11 @@ function Navbar() {
     setCountdown(30);
     setIsCountingDown(false);
     setErrorMessage("");
+    setSelectedProvince('');
+    setSelectedDistrict('');
+    setSelectedWard('');
+    setDistricts([]);
+    setWards([]);
   };
 
   const handleEditChange = (field) => (e) => {
@@ -300,6 +431,10 @@ function Navbar() {
 
       if (response.data.status === "ok") {
         login(response.data.user);
+        localStorage.setItem("user_data", JSON.stringify(response.data.user));
+        localStorage.setItem("tennguoidung", response.data.user.nguoidung_data?.tennguoidung || "");
+        localStorage.setItem("sodienthoai", response.data.user.nguoidung_data?.sodienthoai || "");
+        localStorage.setItem("diachi", response.data.user.nguoidung_data?.diachi || "");
         setIsEditing(false);
         setErrorMessage("");
         alert(t("capNhatThanhCong"));
@@ -318,7 +453,6 @@ function Navbar() {
     }
 
     try {
-      console.log("Logging in with:", loginData.tendangnhap);
       const response = await axios.post(`${API_BASE_URL}/auth/login/`, {
         tendangnhap: loginData.tendangnhap,
         password: loginData.password,
@@ -327,25 +461,38 @@ function Navbar() {
       console.log("Login response:", response.data);
       const { access, refresh, user } = response.data;
 
-      console.log("User loaiquyen:", response.data.user.loaiquyen);
+      if (!user.nguoidung_data) {
+        console.warn("nguoidung_data không tồn tại trong response:", user);
+      } else {
+        console.log("nguoidung_data:", user.nguoidung_data);
+      }
 
       localStorage.setItem("access_token", access);
       if (refresh) localStorage.setItem("refresh_token", refresh);
       localStorage.setItem("mataikhoan", user.mataikhoan.toString());
+      localStorage.setItem("user_data", JSON.stringify(user));
+
+      if (user.nguoidung_data) {
+        localStorage.setItem("tennguoidung", user.nguoidung_data.tennguoidung || "");
+        localStorage.setItem("sodienthoai", user.nguoidung_data.sodienthoai || "");
+        localStorage.setItem("diachi", user.nguoidung_data.diachi || "");
+      }
 
       login(user);
-
       resetModals();
 
-      if (response.data.user.loaiquyen === "admin") {
-        console.log("Navigating to /admin");
-        navigate("/admin", { replace: true });
-      } else if (response.data.user.loaiquyen === "nhanvien") {
-        console.log("Navigating to /nhanvien");
-        navigate("/nhanvien", { replace: true });
+      const redirectPath = localStorage.getItem("redirect_after_login");
+      if (redirectPath) {
+        localStorage.removeItem("redirect_after_login");
+        navigate(redirectPath);
       } else {
-        console.log("Navigating to /");
-        navigate("/", { replace: true });
+        if (user.loaiquyen === "admin") {
+          navigate("/admin", { replace: true });
+        } else if (user.loaiquyen === "nhanvien") {
+          navigate("/nhanvien", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
       }
     } catch (error) {
       console.error("Login error:", error.response?.data);
@@ -515,7 +662,7 @@ function Navbar() {
 
   return (
     <>
-      <div dangerouslySetInnerHTML={{ __html: NavbarStyles }} />
+      <style>{NavbarStyles}</style>
       <nav className="navbar navbar-expand-lg navbar-light bg-white">
         <div className="container position-relative">
           <Link className="navbar-brand" to="/">
@@ -649,7 +796,6 @@ function Navbar() {
                         { icon: faUser, placeholder: t("tenNguoiDung"), field: "tennguoidung", type: "text" },
                         { icon: faEnvelope, placeholder: t("email"), field: "email", type: "email" },
                         { icon: faMobileAlt, placeholder: t("sdt"), field: "sodienthoai", type: "tel" },
-                        { icon: faUserCircle, placeholder: t("diaChi"), field: "diachi", type: "text" },
                       ].map((input) => (
                         <div className="input-icon-wrapper" key={input.field}>
                           <FontAwesomeIcon icon={input.icon} className="input-icon" />
@@ -659,9 +805,60 @@ function Navbar() {
                             className="form-control"
                             value={editData[input.field]}
                             onChange={handleEditChange(input.field)}
+                            required
                           />
                         </div>
                       ))}
+                      <div className="input-icon-wrapper">
+                        <FontAwesomeIcon icon={faUserCircle} className="input-icon" />
+                        <select
+                          className="form-control"
+                          value={selectedProvince}
+                          onChange={(e) => setSelectedProvince(e.target.value)}
+                          required
+                        >
+                          <option value="">{t("chonTinh")}</option>
+                          {provinces.map(province => (
+                            <option key={province.code} value={String(province.code)}>
+                              {province.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="input-icon-wrapper">
+                        <FontAwesomeIcon icon={faUserCircle} className="input-icon" />
+                        <select
+                          className="form-control"
+                          value={selectedDistrict}
+                          onChange={(e) => setSelectedDistrict(e.target.value)}
+                          required
+                          disabled={!selectedProvince}
+                        >
+                          <option value="">{t("chonHuyen")}</option>
+                          {districts.map(district => (
+                            <option key={district.code} value={String(district.code)}>
+                              {district.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="input-icon-wrapper">
+                        <FontAwesomeIcon icon={faUserCircle} className="input-icon" />
+                        <select
+                          className="form-control"
+                          value={selectedWard}
+                          onChange={(e) => setSelectedWard(e.target.value)}
+                          required
+                          disabled={!selectedDistrict}
+                        >
+                          <option value="">{t("chonXa")}</option>
+                          {wards.map(ward => (
+                            <option key={ward.code} value={String(ward.code)}>
+                              {ward.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                       {errorMessage && <p className="text-danger text-center">{errorMessage}</p>}
                       <div className="d-flex justify-content-between">
                         <button type="submit" className="btn btn-save">
@@ -680,6 +877,9 @@ function Navbar() {
                               sodienthoai: user.nguoidung_data?.sodienthoai || "",
                               diachi: user.nguoidung_data?.diachi || "",
                             });
+                            setSelectedProvince('');
+                            setSelectedDistrict('');
+                            setSelectedWard('');
                           }}
                         >
                           <FontAwesomeIcon icon={faTimesCircle} className="me-2" />
