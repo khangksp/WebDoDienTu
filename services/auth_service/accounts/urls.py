@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     LoginView, UserListView, RegisterView, UserUpdateView, 
     UserDeleteView, UserDetailView, CurrentUserView, 
-    PasswordResetView, BalanceReductionView
+    PasswordResetView, BalanceReductionView, BalanceAdditionView
 )
 
 urlpatterns = [
@@ -15,4 +15,5 @@ urlpatterns = [
     path('auth/me/', CurrentUserView.as_view(), name='current-user'),
     path('password-reset/', PasswordResetView.as_view(), name='password-reset'),
     path('balance/reduce/', BalanceReductionView.as_view(), name='balance-reduction'),
+    path('balance/add/', BalanceAdditionView.as_view(), name='balance-addition'),
 ]

@@ -388,3 +388,58 @@ class BalanceReductionView(APIView):
             "message": "Trừ tiền thành công", 
             "sodu_moi": str(nguoidung.sodu)  # Convert to string for JSON serialization
         }, status=status.HTTP_200_OK)
+    
+class BalanceAdditionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Lấy số tiền cần nạp
+        sotien = request.data.get('sotien')
+
+        # Kiểm tra đầu vào
+        if sotien is None:
+            return Response(
+                {"status": "error", "message": "Số tiền là bắt buộc"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            sotien = Decimal(str(sotien))
+        except (ValueError, TypeError, InvalidOperation):
+            return Response(
+                {"status": "error", "message": "Số tiền phải là một số hợp lệ"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if sotien <= 0:
+            return Response(
+                {"status": "error", "message": "Số tiền phải là số dương"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Lấy tài khoản hiện tại
+        taikhoan = request.user
+
+        # Tìm thông tin người dùng liên kết
+        try:
+            nguoidung = taikhoan.nguoidung.first()
+            if not nguoidung:
+                return Response(
+                    {"status": "error", "message": "Không tìm thấy thông tin người dùng"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        except Exception as e:
+            return Response(
+                {"status": "error", "message": f"Lỗi truy xuất thông tin người dùng: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        # Cộng tiền
+        nguoidung.sodu = (nguoidung.sodu or Decimal('0')) + sotien
+        nguoidung.save()
+
+        return Response({
+            "status": "ok",
+            "message": "Nạp tiền thành công",
+            "sodu_moi": str(nguoidung.sodu)
+        }, status=status.HTTP_200_OK)

@@ -15,6 +15,7 @@ import {
   faUndo,
   faExchangeAlt,
   faTimes,
+  faBan
 } from "@fortawesome/free-solid-svg-icons";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../pages/style/dashboard.css";
@@ -46,7 +47,7 @@ function MyOrders() {
   };
 
   const paymentMethodMap = {
-    ewallet: t("viDienTu"),
+    elecpay: t("viDienTu"),
     cash: t("tienMat"),
     banking: t("chuyenKhoan"),
   };
@@ -148,6 +149,80 @@ function MyOrders() {
     if (order) {
       setSelectedOrder(order);
       setShowModal(true);
+    }
+  };
+
+  const handleCancel = async (orderId) => {
+    if (!orderId) return;
+    if (!window.confirm(t("xacNhanHuyDonHang"))) return;
+
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        setError(t("chuaDangNhap"));
+        logout();
+        navigate("/");
+        return;
+      }
+
+      const order = orders.find((o) => o.MaDonHang === orderId);
+      if (!order || !order.TongTien) {
+        throw new Error(t("khongTimThayDonHangHoacTongTien"));
+      }
+
+      // Bước 1: Hủy đơn hàng
+      await axios.put(
+        `${API_BASE_URL}/orders/update-status/${orderId}/`,
+        { MaTrangThai: 6 },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Bước 2: Hoàn tiền vào ví
+      await axios.post(
+        `${API_BASE_URL}/auth/balance/add/`,
+        { sotien: order.TongTien.toString() },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Cập nhật state orders
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.MaDonHang === orderId
+            ? { ...order, MaTrangThai: 6 }
+            : order
+        )
+      );
+
+      // Cập nhật orderStats
+      setOrderStats((prevStats) => {
+        const newStatuses = { ...prevStats.statuses };
+        const processingLabel = statusMap[3].label;
+        const cancelledLabel = statusMap[6].label;
+
+        if (newStatuses[processingLabel]) {
+          newStatuses[processingLabel] = Math.max(
+            0,
+            newStatuses[processingLabel] - 1
+          );
+        }
+        newStatuses[cancelledLabel] = (newStatuses[cancelledLabel] || 0) + 1;
+
+        return { ...prevStats, statuses: newStatuses };
+      });
+
+      setError("");
+      alert(t("huyDonHangVaHoanTienThanhCong"));
+    } catch (err) {
+      console.error("Error cancelling order or refunding:", err);
+      setError(
+        t("loiKhiHuyDonHangHoacHoanTien") +
+          ": " +
+          (err.response?.data?.message || t("loiKhongXacDinh"))
+      );
     }
   };
 
@@ -413,6 +488,16 @@ function MyOrders() {
                       <FontAwesomeIcon icon={faEye} className="me-2" />
                       {t("xemChiTiet")}
                     </button>
+                    {order.MaTrangThai === 3 && (
+                      <button
+                        className="btn-cancel"
+                        onClick={() => handleCancel(order.MaDonHang)}
+                        disabled={!order.MaDonHang}
+                      >
+                        <FontAwesomeIcon icon={faBan} className="me-2" />
+                        {t("huyDonHang")}
+                      </button>
+                    )}
                     {order.MaTrangThai === 5 && (
                       <>
                         <button
@@ -444,7 +529,6 @@ function MyOrders() {
         </div>
       )}
 
-      {/* Order Details Modal */}
       {showModal && selectedOrder && (
         <div className="order-modal">
           <div className="order-modal-content">

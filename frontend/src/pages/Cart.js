@@ -42,8 +42,7 @@ function Cart() {
   // Payment methods
   const paymentMethods = [
     { id: 'cash', name: 'Tiền mặt', icon: faMoneyBill, description: 'Thanh toán khi nhận hàng (COD)' },
-    { id: 'bank', name: 'Chuyển khoản', icon: faCreditCard, description: 'Chuyển khoản qua ngân hàng' },
-    { id: 'ewallet', name: 'Ví điện tử', icon: faWallet, description: 'Thanh toán qua ví MoMo, ZaloPay, VNPay' }
+    { id: 'ewallet', name: 'Ví điện tử', icon: faWallet, description: 'Thanh toán qua ví của electronic store' }
   ];
 
   // Function to update quantity

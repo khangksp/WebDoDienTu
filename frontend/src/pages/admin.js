@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, LogOut, UserPlus, Edit, Trash2, PieChart, MessageSquare, RefreshCw } from 'lucide-react';
+import { BarChart3, LogOut, UserPlus, Edit, Trash2, PieChart, MessageSquare, RefreshCw, Wallet } from 'lucide-react';
 import axios from 'axios';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
@@ -42,6 +42,11 @@ const AdminDashboard = () => {
   const [feedbackFilter, setFeedbackFilter] = useState('all');
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [feedbackStatus, setFeedbackStatus] = useState({});
+
+  // States cho phần Nạp Tiền
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [balanceLoading, setBalanceLoading] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -90,7 +95,6 @@ const AdminDashboard = () => {
         setFeedbacks(feedbackData);
         setFeedbackCount(feedbackData.length);
         
-        // Khởi tạo trạng thái phản hồi (mặc định: 'pending')
         const statusObj = {};
         feedbackData.forEach((item, index) => {
           statusObj[index] = 'pending';
@@ -104,7 +108,6 @@ const AdminDashboard = () => {
     } catch (err) {
       console.error('Error fetching feedback:', err);
       setFeedbackError('Không thể tải danh sách phản hồi: ' + (err.message || 'Lỗi không xác định'));
-      // Sử dụng dữ liệu mẫu trong trường hợp API thất bại
       const mockData = [
         {
           name: 'Nguyễn Văn A',
@@ -132,7 +135,6 @@ const AdminDashboard = () => {
       setFeedbacks(mockData);
       setFeedbackCount(mockData.length);
       
-      // Khởi tạo trạng thái phản hồi (mặc định: 'pending')
       const statusObj = {};
       mockData.forEach((item, index) => {
         statusObj[index] = 'pending';
@@ -143,14 +145,12 @@ const AdminDashboard = () => {
     }
   };
 
-  // Thay đổi trạng thái feedback
   const updateFeedbackStatus = (id, status) => {
     setFeedbackStatus(prev => ({
       ...prev,
       [id]: status
     }));
     
-    // Đây là nơi bạn có thể thêm code để cập nhật trạng thái trong database (nếu có)
     setSuccess(`Đã cập nhật trạng thái phản hồi #${id+1} thành ${status === 'pending' ? 'Chưa xử lý' : status === 'processing' ? 'Đang xử lý' : status === 'completed' ? 'Đã xử lý' : 'Bỏ qua'}`);
     setTimeout(() => setSuccess(''), 3000);
   };
@@ -283,8 +283,50 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleAddBalance = async (e) => {
+    e.preventDefault();
+    if (!selectedUserId) {
+      setError('Vui lòng chọn người dùng');
+      return;
+    }
+    if (!amount || isNaN(amount) || Number(amount) <= 0) {
+      setError('Vui lòng nhập số tiền hợp lệ (lớn hơn 0)');
+      return;
+    }
+
+    setBalanceLoading(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.post(
+        `${API_BASE_URL}/auth/balance/add/`,
+        {
+          user_id: Number(selectedUserId),
+          sotien: amount
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.status === 'ok') {
+        setSuccess(`Nạp ${Number(amount).toLocaleString('vi-VN')} VNĐ cho người dùng thành công`);
+        setAmount('');
+        setSelectedUserId('');
+        fetchUsers(); // Cập nhật danh sách người dùng để hiển thị số dư mới
+        setError('');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Nạp tiền thất bại');
+      setSuccess('');
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
+
   const processAnalyticsData = () => {
-    // Lọc đơn hàng theo ngày
     const filteredOrdersDelivered = orders.filter(order => {
       const orderDate = new Date(order.NgayDatHang);
       orderDate.setHours(0, 0, 0, 0);
@@ -330,7 +372,6 @@ const AdminDashboard = () => {
       );
     });
 
-    // Tạo danh sách các ngày trong khoảng thời gian
     const dateRange = [];
     const defaultStart = orders.length > 0 
       ? new Date(Math.min(...orders.map(o => new Date(o.NgayDatHang)))) 
@@ -349,7 +390,6 @@ const AdminDashboard = () => {
       dateRange.push(new Date(d).toLocaleDateString('vi-VN'));
     }
 
-    // Tính doanh thu theo ngày (MaTrangThai = 5)
     const revenueByDate = dateRange.reduce((acc, date) => {
       const dailyRevenue = filteredOrdersDelivered
         .filter(order => new Date(order.NgayDatHang).toLocaleDateString('vi-VN') === date)
@@ -358,7 +398,6 @@ const AdminDashboard = () => {
       return acc;
     }, {});
 
-    // Tính số lượng khách hàng theo ngày (MaTrangThai = 5)
     const customersByDate = dateRange.reduce((acc, date) => {
       const dailyCustomers = new Set(
         filteredOrdersDelivered
@@ -369,7 +408,6 @@ const AdminDashboard = () => {
       return acc;
     }, {});
 
-    // Tính số lượng đơn bị hủy theo ngày (MaTrangThai = 6)
     const cancelledOrdersByDate = dateRange.reduce((acc, date) => {
       const dailyCancelled = filteredOrdersCancelled
         .filter(order => new Date(order.NgayDatHang).toLocaleDateString('vi-VN') === date)
@@ -378,7 +416,6 @@ const AdminDashboard = () => {
       return acc;
     }, {});
 
-    // Tính tổng tiền hoàn theo ngày (MaTrangThai = 7)
     const refundedAmountByDate = dateRange.reduce((acc, date) => {
       const dailyRefunded = filteredOrdersRefunded
         .filter(order => new Date(order.NgayDatHang).toLocaleDateString('vi-VN') === date)
@@ -583,19 +620,15 @@ const AdminDashboard = () => {
     </div>
   );
 
-  // Lọc feedback theo trạng thái
   const filterFeedbacks = () => {
     if (feedbackFilter === 'all') {
       return feedbacks;
     }
-    
     return feedbacks.filter((feedback, index) => feedbackStatus[index] === feedbackFilter);
   };
-  
-  // Format timestamp
+
   const formatDate = (timestamp) => {
     if (!timestamp) return '';
-    
     try {
       const date = new Date(timestamp);
       return date.toLocaleString('vi-VN', {
@@ -610,9 +643,12 @@ const AdminDashboard = () => {
     }
   };
 
+  const formatCurrency = (value) => {
+    return Number(value).toLocaleString('vi-VN') + ' VNĐ';
+  };
+
   return (
     <div className="admin-dashboard">
-      {/* Sidebar */}
       <div className="sidebar">
         <div className="sidebar-header">
           <h2>Admin Dashboard</h2>
@@ -623,6 +659,7 @@ const AdminDashboard = () => {
           <SidebarItem icon={Trash2} label="Xóa Người Dùng" tab="delete" />
           <SidebarItem icon={PieChart} label="Phân tích" tab="analytics" />
           <SidebarItem icon={MessageSquare} label="Phản hồi" tab="feedback" badge={feedbackCount} />
+          <SidebarItem icon={Wallet} label="Nạp Tiền" tab="balance" />
           <div 
             className="sidebar-item"
             onClick={() => {
@@ -636,13 +673,10 @@ const AdminDashboard = () => {
         </nav>
       </div>
 
-      {/* Content Area */}
       <div className="content">
-        {/* Thông báo */}
         {error && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
 
-        {/* Tab Tổng Quan */}
         {activeTab === 'overview' && (
           <>
             <h1>Tổng Quan</h1>
@@ -650,8 +684,6 @@ const AdminDashboard = () => {
               <h3>Tổng Người Dùng</h3>
               <p>{totalUsers}</p>
             </div>
-
-            {/* Form thêm người dùng */}
             <div className="add-user-form">
               <h2>Thêm Người Dùng</h2>
               <form onSubmit={handleAddUser}>
@@ -750,8 +782,7 @@ const AdminDashboard = () => {
           </>
         )}
 
- {/* Tab Sửa Người Dùng */}
- {activeTab === 'edit' && (
+        {activeTab === 'edit' && (
           <div className="user-management">
             <h1>Sửa Người Dùng</h1>
             <table className="user-table">
@@ -778,8 +809,6 @@ const AdminDashboard = () => {
                 ))}
               </tbody>
             </table>
-
-            {/* Form sửa người dùng */}
             {editUser && (
               <div className="edit-form">
                 <h3>Sửa Người Dùng</h3>
@@ -874,7 +903,6 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Tab Xóa Người Dùng */}
         {activeTab === 'delete' && (
           <div className="user-management">
             <h1>Xóa Người Dùng</h1>
@@ -905,7 +933,6 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Tab Phân tích */}
         {activeTab === 'analytics' && (
           <div className="analytics-section">
             <h1>Phân tích</h1>
@@ -973,7 +1000,6 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Tab Phản Hồi */}
         {activeTab === 'feedback' && (
           <div className="feedback-section">
             <h1>Danh Sách Phản Hồi</h1>
@@ -997,12 +1023,78 @@ const AdminDashboard = () => {
                       <td>{feedback.content}</td>
                       <td>{feedback.email}</td>
                       <td>{feedback.phone || 'Không có'}</td>
-                      <td>{new Date(feedback.timestamp).toLocaleString('vi-VN')}</td>
+                      <td>{formatDate(feedback.timestamp)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
+          </div>
+        )}
+
+        {activeTab === 'balance' && (
+          <div className="balance-section">
+            <h1>Nạp Tiền</h1>
+            <div className="balance-management">
+              <h2>Danh Sách Người Dùng</h2>
+              <table className="user-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Tên đăng nhập</th>
+                    <th>Tên người dùng</th>
+                    <th>Số dư hiện tại</th>
+                    <th>Email</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map(user => (
+                    <tr key={user.mataikhoan}>
+                      <td>{user.mataikhoan}</td>
+                      <td>{user.tendangnhap}</td>
+                      <td>{user.nguoidung_data.tennguoidung}</td>
+                      <td>{formatCurrency(user.nguoidung_data.sodu || 0)}</td>
+                      <td>{user.nguoidung_data.email}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="add-balance-form">
+                <h3>Nạp Tiền Cho Người Dùng</h3>
+                <form onSubmit={handleAddBalance}>
+                  <div className="form-group">
+                    <label>Chọn người dùng <span className="required">*</span></label>
+                    <select
+                      value={selectedUserId}
+                      onChange={(e) => setSelectedUserId(e.target.value)}
+                      required
+                    >
+                      <option value="">Chọn người dùng</option>
+                      {users.map(user => (
+                        <option key={user.mataikhoan} value={user.mataikhoan}>
+                          {user.tendangnhap} ({user.nguoidung_data.tennguoidung})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Số tiền (VNĐ) <span className="required">*</span></label>
+                    <input
+                      type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="Nhập số tiền"
+                      min="1"
+                      required
+                    />
+                  </div>
+                  <button type="submit" disabled={balanceLoading}>
+                    {balanceLoading ? 'Đang xử lý...' : 'Nạp Tiền'}
+                  </button>
+                </form>
+              </div>
+            </div>
           </div>
         )}
       </div>
