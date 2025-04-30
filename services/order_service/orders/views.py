@@ -154,8 +154,29 @@ class CreateOrderView(APIView):
                     defaults={'LoaiTrangThai': 'Đơn hàng'}
                 )
                 
-                # Tính tổng tiền từ các sản phẩm
-                total_amount = sum(item.get('price', 0) * item.get('quantity', 0) for item in data['items'])
+                # Tính tổng tiền từ các sản phẩm - SỬA LỖI Ở ĐÂY
+                total_amount = 0
+                for item in data['items']:
+                    # Kiểm tra các trường có thể chứa giá
+                    price = None
+                    if 'price' in item:
+                        price = item.get('price')
+                    elif 'GiaBan' in item:
+                        price = item.get('GiaBan')
+                    elif 'GiaSanPham' in item:
+                        price = item.get('GiaSanPham')
+                    
+                    quantity = item.get('quantity')
+                    
+                    # Kiểm tra giá trị price và quantity phải hợp lệ
+                    if price is not None and quantity is not None:
+                        item_total = price * quantity
+                        total_amount += item_total
+                        logger.info(f"Sản phẩm: {item.get('name', item.get('TenSanPham', 'N/A'))}, Giá: {price}, SL: {quantity}, Thành tiền: {item_total}")
+                    else:
+                        logger.warning(f"Thiếu thông tin giá hoặc số lượng cho sản phẩm: {item}")
+                
+                logger.info(f"Tổng tiền đơn hàng: {total_amount}")
                 
                 # Tạo đơn hàng
                 don_hang = DonHang.objects.create(
@@ -171,13 +192,22 @@ class CreateOrderView(APIView):
                 # Tạo chi tiết đơn hàng
                 chi_tiet_items = []
                 for item in data['items']:
+                    # Lấy giá từ các trường có thể
+                    price = item.get('price', item.get('GiaBan', item.get('GiaSanPham', 0)))
+                    
+                    # Lấy tên sản phẩm từ các trường có thể
+                    ten_san_pham = item.get('name', item.get('TenSanPham', ''))
+                    
+                    # Lấy URL hình ảnh từ các trường có thể
+                    hinh_anh = item.get('image_url', item.get('HinhAnh_URL', ''))
+                    
                     chi_tiet = ChiTietDonHang.objects.create(
                         MaDonHang=don_hang,
                         MaSanPham=item.get('id'),
                         SoLuong=item.get('quantity', 1),
-                        GiaSanPham=item.get('price', 0),
-                        TenSanPham=item.get('name', ''),
-                        HinhAnh=item.get('image_url', '')
+                        GiaSanPham=price,
+                        TenSanPham=ten_san_pham,
+                        HinhAnh=hinh_anh
                     )
                     chi_tiet_items.append({
                         'product_id': chi_tiet.MaSanPham,
@@ -220,8 +250,7 @@ class CreateOrderView(APIView):
             'message': 'Dữ liệu không hợp lệ',
             'errors': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
-    
-
+        
 @api_view(['GET'])
 def get_user_orders(request, user_id):
     """Lấy danh sách đơn hàng của một người dùng cụ thể"""
