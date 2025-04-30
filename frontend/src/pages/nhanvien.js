@@ -733,6 +733,7 @@ const StaffDashboard = () => {
                             onClick={() => handleEdit("category", item.id)}
                           >
                             <Edit size={16} />
+                            {t("suaDanhMuc")}
                           </button>
                           <button
                             className="btn-icon btn-delete"
@@ -745,6 +746,7 @@ const StaffDashboard = () => {
                             }
                           >
                             <Trash2 size={16} />
+                            {t("xoaDanhMuc")}
                           </button>
                         </td>
                       </tr>
@@ -809,6 +811,7 @@ const StaffDashboard = () => {
                             aria-label="Sửa"
                           >
                             <Edit size={16} />
+                            {t("suaHangSanXuat")}
                           </button>
                           <button
                             className="btn-icon btn-delete"
@@ -822,6 +825,7 @@ const StaffDashboard = () => {
                             aria-label="Xóa"
                           >
                             <Trash2 size={16} />
+                            {t("xoaHangSanXuat")}
                           </button>
                         </td>
                       </tr>
@@ -885,6 +889,7 @@ const StaffDashboard = () => {
                             onClick={() => handleEdit("thongSo", item.id)}
                           >
                             <Edit size={16} />
+                            {t("suaThongSo")}
                           </button>
                           <button
                             className="btn-icon btn-delete"
@@ -893,6 +898,7 @@ const StaffDashboard = () => {
                             }
                           >
                             <Trash2 size={16} />
+                            {t("xoaThongSo")}
                           </button>
                         </td>
                       </tr>
@@ -978,6 +984,7 @@ const StaffDashboard = () => {
                             onClick={() => handleEdit("product", item.id)}
                           >
                             <Edit size={16} />
+                            {t("suaSanPham")}
                           </button>
                           <button
                             className="btn-icon btn-delete"
@@ -986,6 +993,7 @@ const StaffDashboard = () => {
                             }
                           >
                             <Trash2 size={16} />
+                            {t("xoaSanPham")}
                           </button>
                         </td>
                       </tr>
@@ -1100,6 +1108,7 @@ const StaffDashboard = () => {
                             }
                           >
                             <Edit size={16} />
+                            {t("suaTrangThai")}
                           </button>
                           <button
                             className="btn-icon btn-delete"
@@ -1112,6 +1121,7 @@ const StaffDashboard = () => {
                             }
                           >
                             <Trash2 size={16} />
+                            {t("huyDonHang")}
                           </button>
                         </td>
                       </tr>
