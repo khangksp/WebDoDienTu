@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHeadset, faEnvelope, faBuilding, faPaperPlane, faLock, faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import { faHeadset, faEnvelope, faBuilding, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { useLanguage } from "../context/LanguageContext";
 
 function Contact() {
@@ -13,17 +13,9 @@ function Contact() {
     antiSpam: '' // Trường chống spam đơn giản
   });
   
-  // State cho đăng nhập
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loginData, setLoginData] = useState({
-    username: '',
-    password: ''
-  });
-  
   // State cho xác thực
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
   
   // State cho câu hỏi đơn giản chống spam
   const [spamQuestion, setSpamQuestion] = useState({});
@@ -94,28 +86,6 @@ function Contact() {
     }
   };
   
-  const handleLoginChange = (e) => {
-    const { name, value } = e.target;
-    setLoginData(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
-  };
-  
-  const handleLoginSubmit = (e) => {
-    e.preventDefault();
-    
-    // Giả lập đăng nhập thành công (trong thực tế sẽ gọi API)
-    console.log("Đang đăng nhập với:", loginData);
-    
-    // Giả lập đăng nhập thành công
-    setIsLoggedIn(true);
-    setShowLoginModal(false);
-    
-    // Hiển thị thông báo đăng nhập thành công
-    alert(t('dangNhapThanhCong'));
-  };
-  
   const validateForm = () => {
     const newErrors = {};
     
@@ -154,12 +124,6 @@ function Contact() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Kiểm tra đăng nhập
-    if (!isLoggedIn) {
-      setShowLoginModal(true);
-      return;
-    }
     
     // Kiểm tra xác thực form
     if (!validateForm()) {
@@ -322,121 +286,12 @@ function Contact() {
     errorInput: {
       borderColor: '#dc3545'
     },
-    loginStatus: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '10px',
-      borderRadius: '5px',
-      marginBottom: '20px'
-    },
-    loggedInStatus: {
-      backgroundColor: '#d4edda',
-      color: '#155724'
-    },
-    loggedOutStatus: {
-      backgroundColor: '#f8d7da',
-      color: '#721c24'
-    },
-    loginButton: {
-      backgroundColor: '#28a745',
-      borderColor: '#28a745',
-      color: 'white',
-      marginLeft: '10px'
-    },
-    modal: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    },
-    modalContent: {
-      backgroundColor: 'white',
-      padding: '30px',
-      borderRadius: '10px',
-      width: '90%',
-      maxWidth: '500px',
-      boxShadow: '0 5px 15px rgba(0,0,0,0.3)'
-    },
-    modalHeader: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '20px'
-    },
-    closeButton: {
-      background: 'none',
-      border: 'none',
-      fontSize: '1.5rem',
-      cursor: 'pointer'
-    },
     antiSpamQuestion: {
       backgroundColor: '#f8f9fa',
       padding: '15px',
       borderRadius: '5px',
       marginBottom: '15px'
     }
-  };
-
-  // Component Modal Đăng Nhập
-  const LoginModal = () => {
-    if (!showLoginModal) return null;
-    
-    return (
-      <div style={styles.modal}>
-        <div style={styles.modalContent}>
-          <div style={styles.modalHeader}>
-            <h4>{t('dangNhap')}</h4>
-            <button 
-              style={styles.closeButton} 
-              onClick={() => setShowLoginModal(false)}
-            >
-              &times;
-            </button>
-          </div>
-          
-          <form onSubmit={handleLoginSubmit}>
-            <div className="mb-3">
-              <label htmlFor="username" className="form-label">{t('taiKhoan')}</label>
-              <input
-                type="text"
-                className="form-control"
-                id="username"
-                name="username"
-                value={loginData.username}
-                onChange={handleLoginChange}
-                required
-              />
-            </div>
-            
-            <div className="mb-4">
-              <label htmlFor="password" className="form-label">{t('matKhau')}</label>
-              <input
-                type="password"
-                className="form-control"
-                id="password"
-                name="password"
-                value={loginData.password}
-                onChange={handleLoginChange}
-                required
-              />
-            </div>
-            
-            <div className="d-grid">
-              <button type="submit" className="btn btn-primary">
-                {t('dangNhap')}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -449,31 +304,6 @@ function Contact() {
           </h1>
           
           <p className="text-muted mt-3">{t('langNgheHoTro')}</p>
-        </div>
-        
-        {/* Login Status */}
-        <div style={{
-          ...styles.loginStatus,
-          ...(isLoggedIn ? styles.loggedInStatus : styles.loggedOutStatus)
-        }}>
-          {isLoggedIn ? (
-            <>
-              <FontAwesomeIcon icon={faLock} className="me-2" />
-              <span>{t('daDangNhap')}</span>
-            </>
-          ) : (
-            <>
-              <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
-              <span>{t('chuaDangNhap')}</span>
-              <button 
-                className="btn btn-sm" 
-                style={styles.loginButton}
-                onClick={() => setShowLoginModal(true)}
-              >
-                {t('dangNhap')}
-              </button>
-            </>
-          )}
         </div>
         
         {/* Branch Information Cards */}
@@ -759,9 +589,6 @@ function Contact() {
           </div>
         </div>
       </div>
-      
-      {/* Login Modal */}
-      <LoginModal />
     </div>
   );
 }
