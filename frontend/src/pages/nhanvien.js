@@ -59,8 +59,8 @@ const StaffDashboard = () => {
   const [editId, setEditId] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [startDate, setStartDate] = useState(""); // State cho ngày bắt đầu
-  const [endDate, setEndDate] = useState(""); // State cho ngày kết thúc
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -71,7 +71,6 @@ const StaffDashboard = () => {
   const [deleteItemId, setDeleteItemId] = useState(null);
   const [deleteItemName, setDeleteItemName] = useState("");
 
-  // Ánh xạ trạng thái đơn hàng
   const statusMap = {
     1: t("choThanhToan"),
     2: t("daThanhToan"),
@@ -82,7 +81,6 @@ const StaffDashboard = () => {
     7: t("hoanTien"),
   };
 
-  // Tính số lượng đơn hàng theo trạng thái
   const getOrderCountByStatus = (status) => {
     return orders.filter((order) => order.MaTrangThai === status).length;
   };
@@ -410,17 +408,16 @@ const StaffDashboard = () => {
         return [];
     }
 
-    // Lọc theo ngày nếu có ngày bắt đầu hoặc ngày kết thúc
     if (startDate || endDate) {
       filteredItems = filteredItems.filter((item) => {
         const orderDate = new Date(item.NgayDatHang);
-        orderDate.setHours(0, 0, 0, 0); // Đặt giờ về 00:00:00 để so sánh chính xác theo ngày
+        orderDate.setHours(0, 0, 0, 0);
 
         const start = startDate ? new Date(startDate) : null;
         if (start) start.setHours(0, 0, 0, 0);
 
         const end = endDate ? new Date(endDate) : null;
-        if (end) end.setHours(23, 59, 59, 999); // Đặt giờ về cuối ngày để bao gồm toàn bộ ngày kết thúc
+        if (end) end.setHours(23, 59, 59, 999);
 
         if (start && end) {
           return orderDate >= start && orderDate <= end;
@@ -525,11 +522,6 @@ const StaffDashboard = () => {
         url = `${API_BASE_URL}/products/san-pham/${deleteItemId}/`;
         successMessage = t("xoaSanPhamThanhCong");
         errorMessage = t("xoaSanPhamThatBai");
-        break;
-      case "order":
-        url = `${API_BASE_URL}/orders/delete/${deleteItemId}/`;
-        successMessage = t("xoaDonHangThanhCong");
-        errorMessage = t("xoaDonHangThatBai");
         break;
       default:
         break;
@@ -641,7 +633,7 @@ const StaffDashboard = () => {
   };
 
   const openUpdateStatusModal = (orderId, currentStatus) => {
-    if (currentStatus === 6 || currentStatus === 7) {
+    if (currentStatus === 5 || currentStatus === 6 || currentStatus === 7) {
       setErrorMessage(t("khongTheCapNhatTrangThaiNay"));
       return;
     }
@@ -1104,24 +1096,13 @@ const StaffDashboard = () => {
                               )
                             }
                             disabled={
-                              item.MaTrangThai === 6 || item.MaTrangThai === 7
+                              item.MaTrangThai === 5 ||
+                              item.MaTrangThai === 6 ||
+                              item.MaTrangThai === 7
                             }
                           >
                             <Edit size={16} />
                             {t("suaTrangThai")}
-                          </button>
-                          <button
-                            className="btn-icon btn-delete"
-                            onClick={() =>
-                              confirmDelete(
-                                "order",
-                                item.MaDonHang,
-                                `Đơn hàng #${item.MaDonHang}`
-                              )
-                            }
-                          >
-                            <Trash2 size={16} />
-                            {t("huyDonHang")}
                           </button>
                         </td>
                       </tr>

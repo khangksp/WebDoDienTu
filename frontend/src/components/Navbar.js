@@ -1096,15 +1096,15 @@ function Navbar() {
                     </a>
                   </div>
                   <div className="alternative-login mt-4">
-                    <p className="text-center">{t("hoacTiepTucBang")}</p>
-                    <div className="social-buttons d-flex justify-content-center">
+                    {/* <p className="text-center">{t("hoacTiepTucBang")}</p> */}
+                    {/* <div className="social-buttons d-flex justify-content-center">
                       <button className="btn btn-outline-secondary me-2">
                         <FontAwesomeIcon icon={faFacebookF} />
                       </button>
                       <button className="btn btn-outline-secondary">
                         <FontAwesomeIcon icon={faGoogle} />
                       </button>
-                    </div>
+                    </div> */}
                   </div>
                 </form>
               )}

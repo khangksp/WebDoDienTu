@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, LogOut, UserPlus, Edit, Trash2, PieChart, MessageSquare, RefreshCw, Wallet } from 'lucide-react';
+import { BarChart3, LogOut, UserPlus, Edit, Trash2, PieChart, MessageSquare, RefreshCw, Wallet, Download } from 'lucide-react';
 import axios from 'axios';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import * as XLSX from 'xlsx';
 import './style/dashboard.css';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
 
-// Đăng ký các thành phần cần thiết cho Chart.js
+// Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const AdminDashboard = () => {
@@ -33,8 +34,8 @@ const AdminDashboard = () => {
   const [endDate, setEndDate] = useState('');
   const [analyticsError, setAnalyticsError] = useState('');
   const [analyticsSubTab, setAnalyticsSubTab] = useState('revenue');
-  
-  // States cho phần Feedback
+
+  // States for Feedback
   const [feedbacks, setFeedbacks] = useState([]);
   const [feedbackCount, setFeedbackCount] = useState(0);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
@@ -43,7 +44,7 @@ const AdminDashboard = () => {
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [feedbackStatus, setFeedbackStatus] = useState({});
 
-  // States cho phần Nạp Tiền
+  // States for Balance
   const [selectedUserId, setSelectedUserId] = useState('');
   const [amount, setAmount] = useState('');
   const [balanceLoading, setBalanceLoading] = useState(false);
@@ -315,7 +316,7 @@ const AdminDashboard = () => {
         setSuccess(`Nạp ${Number(amount).toLocaleString('vi-VN')} VNĐ cho người dùng thành công`);
         setAmount('');
         setSelectedUserId('');
-        fetchUsers(); // Cập nhật danh sách người dùng để hiển thị số dư mới
+        fetchUsers();
         setError('');
       }
     } catch (err) {
@@ -424,13 +425,69 @@ const AdminDashboard = () => {
       return acc;
     }, {});
 
+    // Prepare data for Excel export
+    const excelData = dateRange.map(date => ({
+      'Ngày': date,
+      'Doanh thu (VNĐ)': revenueByDate[date] || 0,
+      'Số lượng khách hàng': customersByDate[date] || 0,
+      'Số lượng đơn bị hủy': cancelledOrdersByDate[date] || 0,
+      'Tổng tiền hoàn (VNĐ)': refundedAmountByDate[date] || 0
+    }));
+
     return {
       labels: dateRange,
       revenueData: dateRange.map(date => revenueByDate[date] || 0),
       customerData: dateRange.map(date => customersByDate[date] || 0),
       cancelledData: dateRange.map(date => cancelledOrdersByDate[date] || 0),
       refundedData: dateRange.map(date => refundedAmountByDate[date] || 0),
+      excelData
     };
+  };
+
+  const exportToExcel = () => {
+    try {
+      const { excelData, labels } = processAnalyticsData();
+      let exportData = [];
+      let fileName = 'Analytics_Export.xlsx';
+
+      switch (analyticsSubTab) {
+        case 'revenue':
+          exportData = excelData.map(item => ({
+            'Ngày': item['Ngày'],
+            'Doanh thu (VNĐ)': item['Doanh thu (VNĐ)']
+          }));
+          fileName = 'Revenue_Analytics.xlsx';
+          break;
+        case 'customers':
+          exportData = excelData.map(item => ({
+            'Ngày': item['Ngày'],
+            'Số lượng khách hàng': item['Số lượng khách hàng']
+          }));
+          fileName = 'Customers_Analytics.xlsx';
+          break;
+        case 'cancel-refunded':
+          exportData = excelData.map(item => ({
+            'Ngày': item['Ngày'],
+            'Số lượng đơn bị hủy': item['Số lượng đơn bị hủy'],
+            'Tổng tiền hoàn (VNĐ)': item['Tổng tiền hoàn (VNĐ)']
+          }));
+          fileName = 'Cancel_Refunded_Analytics.xlsx';
+          break;
+        default:
+          exportData = excelData;
+          break;
+      }
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Analytics');
+      XLSX.writeFile(wb, fileName);
+      setSuccess('Xuất file Excel thành công!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError('Xuất file Excel thất bại: ' + err.message);
+      setTimeout(() => setError(''), 3000);
+    }
   };
 
   const analyticsData = processAnalyticsData();
@@ -974,6 +1031,9 @@ const AdminDashboard = () => {
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
+              <button className="btn btn-export" onClick={exportToExcel}>
+                <Download size={16} /> Xuất Excel
+              </button>
             </div>
             <div className="charts-container">
               {analyticsSubTab === 'revenue' && (
