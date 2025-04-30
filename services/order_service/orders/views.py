@@ -202,20 +202,11 @@ class CreateOrderView(APIView):
                             logger.error(f"Lỗi thanh toán ví điện tử: {ewallet_response.text}")
                             try:
                                 error_details = ewallet_response.json()
-                                message = error_details.get('message', '')
                             except ValueError:
                                 error_details = {'message': 'Không thể phân tích phản hồi từ API trừ tiền'}
-                                message = error_details['message']
-
-                            if "số dư không đủ" in message.lower():
-                                return Response({
-                                    'status': 'error',
-                                    'message': 'Số dư trong ví không đủ để thanh toán'
-                                }, status=status.HTTP_402_PAYMENT_REQUIRED)
-
                             return Response({
                                 'status': 'error',
-                                'message': message or 'Thanh toán bằng ví điện tử thất bại',
+                                'message': error_details.get('message', 'Thanh toán bằng ví điện tử thất bại'),
                                 'error_details': error_details
                             }, status=status.HTTP_400_BAD_REQUEST)
 
@@ -289,7 +280,6 @@ class CreateOrderView(APIView):
             'message': 'Dữ liệu không hợp lệ',
             'errors': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
-
 @api_view(['GET'])
 def get_user_orders(request, user_id):
     """Lấy danh sách đơn hàng của một người dùng cụ thể"""
