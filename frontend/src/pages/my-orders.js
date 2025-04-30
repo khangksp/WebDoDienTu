@@ -13,7 +13,6 @@ import {
   faCheckCircle,
   faMoneyBillWave,
   faUndo,
-  faExchangeAlt,
   faTimes,
   faBan
 } from "@fortawesome/free-solid-svg-icons";
@@ -35,6 +34,7 @@ function MyOrders() {
   });
   const [showModal, setShowModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState("");
 
   const statusMap = {
     1: { label: t("choThanhToan"), className: "status-pending" },
@@ -238,6 +238,12 @@ function MyOrders() {
         return;
       }
 
+      const order = orders.find((o) => o.MaDonHang === orderId);
+      if (!order || !order.TongTien) {
+        throw new Error(t("khongTimThayDonHangHoacTongTien"));
+      }
+
+      // Cập nhật trạng thái đơn hàng sang Hoàn tiền
       await axios.put(
         `${API_BASE_URL}/orders/update-status/${orderId}/`,
         { MaTrangThai: 7 },
@@ -246,6 +252,16 @@ function MyOrders() {
         }
       );
 
+      // Hoàn tiền vào ví
+      await axios.post(
+        `${API_BASE_URL}/auth/balance/add/`,
+        { sotien: order.TongTien.toString() },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Cập nhật state orders
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           order.MaDonHang === orderId
@@ -254,6 +270,7 @@ function MyOrders() {
         )
       );
 
+      // Cập nhật orderStats
       setOrderStats((prevStats) => {
         const newStatuses = { ...prevStats.statuses };
         const deliveredLabel = statusMap[5].label;
@@ -281,37 +298,6 @@ function MyOrders() {
     }
   };
 
-  const handleReturn = async (orderId) => {
-    if (!orderId) return;
-
-    try {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        setError(t("chuaDangNhap"));
-        logout();
-        navigate("/");
-        return;
-      }
-
-      await axios.post(
-        `${API_BASE_URL}/orders/${orderId}/return/`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      alert(t("yeuCauDoiTraThanhCong"));
-    } catch (err) {
-      console.error("Error requesting return:", err);
-      setError(
-        t("loiKhiYeuCauDoiTra") +
-          ": " +
-          (err.response?.data?.message || t("loiKhongXacDinh"))
-      );
-    }
-  };
-
   const getStatusClass = (statusLabel) => {
     const statusEntry = Object.entries(statusMap).find(
       ([_, value]) => value.label === statusLabel
@@ -324,6 +310,11 @@ function MyOrders() {
     setSelectedOrder(null);
   };
 
+  // Lọc đơn hàng theo trạng thái
+  const filteredOrders = selectedStatus
+    ? orders.filter((order) => order.MaTrangThai === parseInt(selectedStatus))
+    : orders;
+
   return (
     <div className="container my-orders-container">
       <div className="orders-header">
@@ -331,6 +322,25 @@ function MyOrders() {
           <FontAwesomeIcon icon={faShoppingBag} />
           {t("donHangCuaToi")}
         </h2>
+      </div>
+
+      <div className="order-filter mb-4">
+        <label htmlFor="statusFilter" className="me-2">
+          {t("locTheoTrangThai")}:
+        </label>
+        <select
+          id="statusFilter"
+          className="form-select w-auto d-inline-block"
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+        >
+          <option value="">{t("tatCa")}</option>
+          {Object.entries(statusMap).map(([statusId, { label }]) => (
+            <option key={statusId} value={statusId}>
+              {label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="order-stats">
@@ -376,14 +386,14 @@ function MyOrders() {
         </div>
       ) : error ? (
         <p className="error-message">{error}</p>
-      ) : orders.length === 0 ? (
+      ) : filteredOrders.length === 0 ? (
         <div className="no-orders">
           <FontAwesomeIcon icon={faBoxOpen} size="3x" className="mb-3" />
           <p>{t("khongCoDonHang")}</p>
         </div>
       ) : (
         <div className="row">
-          {orders.map((order) => (
+          {filteredOrders.map((order) => (
             <div className="col-12" key={order.MaDonHang}>
               <div className="order-card">
                 <div className="order-header">
@@ -499,27 +509,14 @@ function MyOrders() {
                       </button>
                     )}
                     {order.MaTrangThai === 5 && (
-                      <>
-                        <button
-                          className="btn-refund"
-                          onClick={() => handleRefund(order.MaDonHang)}
-                          disabled={!order.MaDonHang}
-                        >
-                          <FontAwesomeIcon icon={faUndo} className="me-2" />
-                          {t("hoanTien")}
-                        </button>
-                        <button
-                          className="btn-return"
-                          onClick={() => handleReturn(order.MaDonHang)}
-                          disabled={!order.MaDonHang}
-                        >
-                          <FontAwesomeIcon
-                            icon={faExchangeAlt}
-                            className="me-2"
-                          />
-                          {t("doiTra")}
-                        </button>
-                      </>
+                      <button
+                        className="btn-refund"
+                        onClick={() => handleRefund(order.MaDonHang)}
+                        disabled={!order.MaDonHang}
+                      >
+                        <FontAwesomeIcon icon={faUndo} className="me-2" />
+                        {t("hoanTien")}
+                      </button>
                     )}
                   </div>
                 </div>
