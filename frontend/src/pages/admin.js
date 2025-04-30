@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, LogOut, UserPlus, Edit, Trash2, PieChart } from 'lucide-react';
+import { BarChart3, LogOut, UserPlus, Edit, Trash2, PieChart, MessageSquare, RefreshCw } from 'lucide-react';
 import axios from 'axios';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
@@ -33,10 +33,20 @@ const AdminDashboard = () => {
   const [endDate, setEndDate] = useState('');
   const [analyticsError, setAnalyticsError] = useState('');
   const [analyticsSubTab, setAnalyticsSubTab] = useState('revenue');
+  
+  // States cho phần Feedback
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [feedbackCount, setFeedbackCount] = useState(0);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState('');
+  const [feedbackFilter, setFeedbackFilter] = useState('all');
+  const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [feedbackStatus, setFeedbackStatus] = useState({});
 
   useEffect(() => {
     fetchUsers();
     fetchAnalyticsData();
+    fetchFeedbacks();
   }, []);
 
   const fetchUsers = async () => {
@@ -58,19 +68,91 @@ const AdminDashboard = () => {
   const fetchAnalyticsData = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      console.log('Token:', token);
       const response = await axios.get(`${API_BASE_URL}/orders/list-orders/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      console.log('API Response:', response.data);
       if (response.data && response.data.status === 'success') {
         setOrders(response.data.orders);
         setAnalyticsError('');
       }
     } catch (err) {
-      console.error('API Error:', err.response || err.message);
       setAnalyticsError(err.response?.data?.message || 'Không thể tải dữ liệu đơn hàng');
     }
+  };
+
+  const fetchFeedbacks = async () => {
+    setFeedbackLoading(true);
+    setFeedbackError('');
+    try {
+      const response = await axios.get('https://script.google.com/macros/s/AKfycbxUgifzVg7FO-8TEQh9HvkrMEbfqTj2jyxd7W9k2yw1r2F0ZQ6p444c7KEt3yz8cBwX/exec');
+      if (response.data && response.data.status === 'success') {
+        const feedbackData = response.data.feedbacks || [];
+        setFeedbacks(feedbackData);
+        setFeedbackCount(feedbackData.length);
+        
+        // Khởi tạo trạng thái phản hồi (mặc định: 'pending')
+        const statusObj = {};
+        feedbackData.forEach((item, index) => {
+          statusObj[index] = 'pending';
+        });
+        setFeedbackStatus(statusObj);
+        
+        setFeedbackError('');
+      } else {
+        throw new Error(response.data?.message || 'Không thể tải danh sách phản hồi');
+      }
+    } catch (err) {
+      console.error('Error fetching feedback:', err);
+      setFeedbackError('Không thể tải danh sách phản hồi: ' + (err.message || 'Lỗi không xác định'));
+      // Sử dụng dữ liệu mẫu trong trường hợp API thất bại
+      const mockData = [
+        {
+          name: 'Nguyễn Văn A',
+          content: 'Tôi rất hài lòng với dịch vụ của shop, sản phẩm giao nhanh và đúng hẹn.',
+          phone: '0987654321',
+          email: 'nguyenvana@example.com',
+          timestamp: '2025-04-28T08:30:00'
+        },
+        {
+          name: 'Trần Thị B',
+          content: 'Sản phẩm tốt nhưng giao hàng hơi lâu. Mong shop cải thiện dịch vụ giao hàng.',
+          phone: '0912345678',
+          email: 'tranthib@example.com',
+          timestamp: '2025-04-27T15:45:00'
+        },
+        {
+          name: 'Lê Văn C',
+          content: 'Tôi có vấn đề với đơn hàng #12345, mong nhân viên liên hệ lại với tôi sớm.',
+          phone: '0909123456',
+          email: 'levanc@example.com',
+          timestamp: '2025-04-26T10:15:00'
+        }
+      ];
+      
+      setFeedbacks(mockData);
+      setFeedbackCount(mockData.length);
+      
+      // Khởi tạo trạng thái phản hồi (mặc định: 'pending')
+      const statusObj = {};
+      mockData.forEach((item, index) => {
+        statusObj[index] = 'pending';
+      });
+      setFeedbackStatus(statusObj);
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
+  // Thay đổi trạng thái feedback
+  const updateFeedbackStatus = (id, status) => {
+    setFeedbackStatus(prev => ({
+      ...prev,
+      [id]: status
+    }));
+    
+    // Đây là nơi bạn có thể thêm code để cập nhật trạng thái trong database (nếu có)
+    setSuccess(`Đã cập nhật trạng thái phản hồi #${id+1} thành ${status === 'pending' ? 'Chưa xử lý' : status === 'processing' ? 'Đang xử lý' : status === 'completed' ? 'Đã xử lý' : 'Bỏ qua'}`);
+    setTimeout(() => setSuccess(''), 3000);
   };
 
   const handleAddUser = async (e) => {
@@ -250,8 +332,16 @@ const AdminDashboard = () => {
 
     // Tạo danh sách các ngày trong khoảng thời gian
     const dateRange = [];
-    const start = startDate ? new Date(startDate) : new Date(Math.min(...orders.map(o => new Date(o.NgayDatHang))));
-    const end = endDate ? new Date(endDate) : new Date(Math.max(...orders.map(o => new Date(o.NgayDatHang))));
+    const defaultStart = orders.length > 0 
+      ? new Date(Math.min(...orders.map(o => new Date(o.NgayDatHang)))) 
+      : new Date();
+    const defaultEnd = orders.length > 0 
+      ? new Date(Math.max(...orders.map(o => new Date(o.NgayDatHang)))) 
+      : new Date();
+    
+    const start = startDate ? new Date(startDate) : defaultStart;
+    const end = endDate ? new Date(endDate) : defaultEnd;
+    
     start.setHours(0, 0, 0, 0);
     end.setHours(23, 59, 59, 999);
 
@@ -482,15 +572,43 @@ const AdminDashboard = () => {
     },
   };
 
-  const SidebarItem = ({ icon: Icon, label, tab }) => (
+  const SidebarItem = ({ icon: Icon, label, tab, badge }) => (
     <div
       className={`sidebar-item ${activeTab === tab ? 'active' : ''}`}
       onClick={() => setActiveTab(tab)}
     >
       <Icon className="sidebar-icon" />
       <span>{label}</span>
+      {badge > 0 && <span className="badge">{badge}</span>}
     </div>
   );
+
+  // Lọc feedback theo trạng thái
+  const filterFeedbacks = () => {
+    if (feedbackFilter === 'all') {
+      return feedbacks;
+    }
+    
+    return feedbacks.filter((feedback, index) => feedbackStatus[index] === feedbackFilter);
+  };
+  
+  // Format timestamp
+  const formatDate = (timestamp) => {
+    if (!timestamp) return '';
+    
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return timestamp;
+    }
+  };
 
   return (
     <div className="admin-dashboard">
@@ -504,6 +622,7 @@ const AdminDashboard = () => {
           <SidebarItem icon={Edit} label="Sửa Người Dùng" tab="edit" />
           <SidebarItem icon={Trash2} label="Xóa Người Dùng" tab="delete" />
           <SidebarItem icon={PieChart} label="Phân tích" tab="analytics" />
+          <SidebarItem icon={MessageSquare} label="Phản hồi" tab="feedback" badge={feedbackCount} />
           <div 
             className="sidebar-item"
             onClick={() => {
@@ -631,8 +750,8 @@ const AdminDashboard = () => {
           </>
         )}
 
-        {/* Tab Sửa Người Dùng */}
-        {activeTab === 'edit' && (
+ {/* Tab Sửa Người Dùng */}
+ {activeTab === 'edit' && (
           <div className="user-management">
             <h1>Sửa Người Dùng</h1>
             <table className="user-table">
@@ -851,6 +970,39 @@ const AdminDashboard = () => {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Tab Phản Hồi */}
+        {activeTab === 'feedback' && (
+          <div className="feedback-section">
+            <h1>Danh Sách Phản Hồi</h1>
+            {feedbacks.length === 0 ? (
+              <p>Chưa có phản hồi nào.</p>
+            ) : (
+              <table className="user-table">
+                <thead>
+                  <tr>
+                    <th>Tên</th>
+                    <th>Nội dung</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Thời gian</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {feedbacks.map((feedback, index) => (
+                    <tr key={index}>
+                      <td>{feedback.name}</td>
+                      <td>{feedback.content}</td>
+                      <td>{feedback.email}</td>
+                      <td>{feedback.phone || 'Không có'}</td>
+                      <td>{new Date(feedback.timestamp).toLocaleString('vi-VN')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
       </div>

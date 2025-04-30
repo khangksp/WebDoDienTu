@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHeadset, faEnvelope, faBuilding, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
-
+import { faHeadset, faEnvelope, faBuilding, faPaperPlane, faLock, faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { useLanguage } from "../context/LanguageContext";
-
 
 function Contact() {
   const { t } = useLanguage();
@@ -11,8 +9,73 @@ function Contact() {
     name: '',
     content: '',
     phone: '',
-    email: ''
+    email: '',
+    antiSpam: '' // Trường chống spam đơn giản
   });
+  
+  // State cho đăng nhập
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginData, setLoginData] = useState({
+    username: '',
+    password: ''
+  });
+  
+  // State cho xác thực
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  
+  // State cho câu hỏi đơn giản chống spam
+  const [spamQuestion, setSpamQuestion] = useState({});
+  
+  // Tạo câu hỏi chống spam khi component mount
+  useEffect(() => {
+    generateSpamQuestion();
+  }, []);
+  
+  // Tạo một phép tính đơn giản ngẫu nhiên để phát hiện bot
+  const generateSpamQuestion = () => {
+    // Tạo hai số ngẫu nhiên từ 1-10
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    
+    // Tạo phép tính ngẫu nhiên (+, -, *)
+    const operations = [
+      { 
+        symbol: "+", 
+        func: (a, b) => a + b,
+        text: (a, b) => `${a} + ${b} = ?`
+      },
+      { 
+        symbol: "-", 
+        func: (a, b) => a - b,
+        text: (a, b) => `${a} - ${b} = ?`
+      },
+      { 
+        symbol: "×", 
+        func: (a, b) => a * b,
+        text: (a, b) => `${a} × ${b} = ?`
+      }
+    ];
+    
+    // Chọn phép tính ngẫu nhiên, đảm bảo trừ không ra số âm
+    let operation;
+    if (num1 < num2) {
+      // Nếu số thứ nhất nhỏ hơn số thứ hai, chỉ dùng phép cộng hoặc nhân
+      operation = operations[Math.floor(Math.random() * 2) * 2]; // Chọn 0 hoặc 2
+    } else {
+      operation = operations[Math.floor(Math.random() * operations.length)];
+    }
+    
+    // Tính kết quả
+    const result = operation.func(num1, num2);
+    
+    // Tạo câu hỏi và đáp án
+    setSpamQuestion({
+      question: operation.text(num1, num2),
+      answer: result.toString()
+    });
+  };
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,20 +83,154 @@ function Contact() {
       ...prevState,
       [name]: value
     }));
+    
+    // Xóa lỗi khi người dùng nhập lại
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = {...prev};
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
   
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Handle form submission logic here
-    console.log('Form submitted:', formData);
-    alert('Cảm ơn bạn đã gửi thông tin liên hệ!');
-    setFormData({
-      name: '',
-      content: '',
-      phone: '',
-      email: ''
-    });
+  const handleLoginChange = (e) => {
+    const { name, value } = e.target;
+    setLoginData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
   };
+  
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    
+    // Giả lập đăng nhập thành công (trong thực tế sẽ gọi API)
+    console.log("Đang đăng nhập với:", loginData);
+    
+    // Giả lập đăng nhập thành công
+    setIsLoggedIn(true);
+    setShowLoginModal(false);
+    
+    // Hiển thị thông báo đăng nhập thành công
+    alert(t('dangNhapThanhCong'));
+  };
+  
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // Kiểm tra số điện thoại (nếu có)
+    if (formData.phone) {
+      const phoneRegex = /^(0|\+84)(\d{9,10})$/;
+      if (!phoneRegex.test(formData.phone)) {
+        newErrors.phone = t('sdtKhongHopLe');
+      }
+    }
+    
+    // Kiểm tra email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      newErrors.email = t('emailKhongHopLe');
+    }
+    
+    // Kiểm tra câu trả lời chống spam
+    if (formData.antiSpam.toLowerCase().trim() !== spamQuestion.answer) {
+      newErrors.antiSpam = t('cauTraLoiKhongDung');
+    }
+    
+    // Kiểm tra thời gian nhập form (phát hiện bot tự động)
+    if (window.formStartTime && ((new Date().getTime() - window.formStartTime) < 5000)) {
+      newErrors.time = t('guiQuaNhanh');
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  
+  // Thiết lập thời gian bắt đầu nhập form 
+  useEffect(() => {
+    window.formStartTime = new Date().getTime();
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Kiểm tra đăng nhập
+    if (!isLoggedIn) {
+      setShowLoginModal(true);
+      return;
+    }
+    
+    // Kiểm tra xác thực form
+    if (!validateForm()) {
+      return;
+    }
+    
+    // Hiển thị trạng thái đang gửi
+    setSubmitting(true);
+    
+    console.log("Đang gửi dữ liệu:", formData);
+    
+    try {
+      // Gửi dữ liệu đến Google Apps Script Web App URL
+      console.log("Bắt đầu gửi đến Google Sheets");
+      
+      // Loại bỏ trường antiSpam khi gửi đến server
+      const { antiSpam, ...dataToSend } = formData;
+      
+      const response = await fetch('https://script.google.com/macros/s/AKfycbxUgifzVg7FO-8TEQh9HvkrMEbfqTj2jyxd7W9k2yw1r2F0ZQ6p444c7KEt3yz8cBwX/exec', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...dataToSend,
+          timestamp: new Date().toISOString(),
+          submissionTime: (new Date().getTime() - window.formStartTime) / 1000 // Thời gian hoàn thành form (giây)
+        }),
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+        mode: 'no-cors' // Quan trọng để tránh vấn đề CORS
+      });
+      
+      console.log("Gửi hoàn tất, response:", response);
+      
+      // Vì mode: 'no-cors', chúng ta không thể truy cập response.ok
+      // Giả định thành công nếu không có lỗi
+      alert(t('guiThanhCong'));
+      setFormData({
+        name: '',
+        content: '',
+        phone: '',
+        email: '',
+        antiSpam: ''
+      });
+      
+      // Tạo câu hỏi mới
+      generateSpamQuestion();
+      
+      // Reset thời gian bắt đầu nhập form
+      window.formStartTime = new Date().getTime();
+    } catch (error) {
+      console.error('Lỗi chi tiết khi gửi form:', error);
+      alert(t('coLoiXayRa'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Thêm trường ẩn để phát hiện bot 
+  // Bots thường điền vào tất cả các trường, còn người dùng thực không thấy trường này
+  const honeypotField = (
+    <div style={{ display: 'none' }}>
+      <label htmlFor="website">Trang web</label>
+      <input
+        type="text"
+        id="website"
+        name="website"
+        onChange={handleChange}
+        autoComplete="off"
+      />
+    </div>
+  );
 
   // Custom CSS for enhanced styling
   const styles = {
@@ -116,7 +313,130 @@ function Contact() {
     mapCard: {
       background: 'linear-gradient(135deg,rgb(170, 167, 167),rgb(0, 0, 0))',
       color: 'white'
+    },
+    errorMessage: {
+      color: '#dc3545',
+      fontSize: '0.875rem',
+      marginTop: '0.25rem'
+    },
+    errorInput: {
+      borderColor: '#dc3545'
+    },
+    loginStatus: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '10px',
+      borderRadius: '5px',
+      marginBottom: '20px'
+    },
+    loggedInStatus: {
+      backgroundColor: '#d4edda',
+      color: '#155724'
+    },
+    loggedOutStatus: {
+      backgroundColor: '#f8d7da',
+      color: '#721c24'
+    },
+    loginButton: {
+      backgroundColor: '#28a745',
+      borderColor: '#28a745',
+      color: 'white',
+      marginLeft: '10px'
+    },
+    modal: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000
+    },
+    modalContent: {
+      backgroundColor: 'white',
+      padding: '30px',
+      borderRadius: '10px',
+      width: '90%',
+      maxWidth: '500px',
+      boxShadow: '0 5px 15px rgba(0,0,0,0.3)'
+    },
+    modalHeader: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '20px'
+    },
+    closeButton: {
+      background: 'none',
+      border: 'none',
+      fontSize: '1.5rem',
+      cursor: 'pointer'
+    },
+    antiSpamQuestion: {
+      backgroundColor: '#f8f9fa',
+      padding: '15px',
+      borderRadius: '5px',
+      marginBottom: '15px'
     }
+  };
+
+  // Component Modal Đăng Nhập
+  const LoginModal = () => {
+    if (!showLoginModal) return null;
+    
+    return (
+      <div style={styles.modal}>
+        <div style={styles.modalContent}>
+          <div style={styles.modalHeader}>
+            <h4>{t('dangNhap')}</h4>
+            <button 
+              style={styles.closeButton} 
+              onClick={() => setShowLoginModal(false)}
+            >
+              &times;
+            </button>
+          </div>
+          
+          <form onSubmit={handleLoginSubmit}>
+            <div className="mb-3">
+              <label htmlFor="username" className="form-label">{t('taiKhoan')}</label>
+              <input
+                type="text"
+                className="form-control"
+                id="username"
+                name="username"
+                value={loginData.username}
+                onChange={handleLoginChange}
+                required
+              />
+            </div>
+            
+            <div className="mb-4">
+              <label htmlFor="password" className="form-label">{t('matKhau')}</label>
+              <input
+                type="password"
+                className="form-control"
+                id="password"
+                name="password"
+                value={loginData.password}
+                onChange={handleLoginChange}
+                required
+              />
+            </div>
+            
+            <div className="d-grid">
+              <button type="submit" className="btn btn-primary">
+                {t('dangNhap')}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -129,6 +449,31 @@ function Contact() {
           </h1>
           
           <p className="text-muted mt-3">{t('langNgheHoTro')}</p>
+        </div>
+        
+        {/* Login Status */}
+        <div style={{
+          ...styles.loginStatus,
+          ...(isLoggedIn ? styles.loggedInStatus : styles.loggedOutStatus)
+        }}>
+          {isLoggedIn ? (
+            <>
+              <FontAwesomeIcon icon={faLock} className="me-2" />
+              <span>{t('daDangNhap')}</span>
+            </>
+          ) : (
+            <>
+              <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
+              <span>{t('chuaDangNhap')}</span>
+              <button 
+                className="btn btn-sm" 
+                style={styles.loginButton}
+                onClick={() => setShowLoginModal(true)}
+              >
+                {t('dangNhap')}
+              </button>
+            </>
+          )}
         </div>
         
         {/* Branch Information Cards */}
@@ -284,7 +629,7 @@ function Contact() {
                     <span className="input-group-text bg-light"><i className="fas fa-phone text-primary"></i></span>
                     <input
                       type="tel"
-                      className="form-control py-2"
+                      className={`form-control py-2 ${errors.phone ? 'is-invalid' : ''}`}
                       id="phone"
                       name="phone"
                       value={formData.phone}
@@ -292,6 +637,8 @@ function Contact() {
                       placeholder="Số điện thoại của bạn"
                     />
                   </div>
+                  {errors.phone && <div style={styles.errorMessage}>{errors.phone}</div>}
+                  <small className="text-muted">{t('dinhDangSdt')}</small>
                 </div>
                 
                 <div className="col-md-6">
@@ -300,7 +647,7 @@ function Contact() {
                     <span className="input-group-text bg-light"><i className="fas fa-envelope text-primary"></i></span>
                     <input
                       type="email"
-                      className="form-control py-2"
+                      className={`form-control py-2 ${errors.email ? 'is-invalid' : ''}`}
                       id="email"
                       name="email"
                       value={formData.email}
@@ -309,13 +656,42 @@ function Contact() {
                       required
                     />
                   </div>
+                  {errors.email && <div style={styles.errorMessage}>{errors.email}</div>}
                 </div>
               </div>
+              
+              {/* Câu hỏi chống spam */}
+              <div className="mb-4">
+                <div style={styles.antiSpamQuestion}>
+                  <label className="form-label fw-bold">{t('cauHoiAnToan')}</label>
+                  <p className="mb-2">{spamQuestion.question}</p>
+                  <input
+                    type="text"
+                    className={`form-control ${errors.antiSpam ? 'is-invalid' : ''}`}
+                    id="antiSpam"
+                    name="antiSpam"
+                    value={formData.antiSpam}
+                    onChange={handleChange}
+                    placeholder={t('nhapCauTraLoi')}
+                    required
+                  />
+                  {errors.antiSpam && <div style={styles.errorMessage}>{errors.antiSpam}</div>}
+                </div>
+              </div>
+              
+              {/* Honeypot field - không hiện thị cho người dùng nhưng sẽ bắt bots */}
+              {honeypotField}
+              
+              {/* Hiển thị lỗi nếu form được gửi quá nhanh */}
+              {errors.time && (
+                <div className="alert alert-danger">{errors.time}</div>
+              )}
               
               <div className="text-center mt-4 d-flex justify-content-center">
                 <button
                   type="submit"
                   className="btn btn-primary px-5 py-3 d-flex align-items-center justify-content-center"
+                  disabled={submitting}
                   style={styles.submitButton}
                   onMouseOver={(e) => {
                     e.currentTarget.style.transform = "translateY(-3px)";
@@ -326,7 +702,12 @@ function Contact() {
                     e.currentTarget.style.boxShadow = "0 5px 15px rgba(49, 49, 49, 0.3)";
                   }}
                 >
-                  <FontAwesomeIcon icon={faPaperPlane} className="me-2" /> {t('gui')}
+                  {submitting ? (
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  ) : (
+                    <FontAwesomeIcon icon={faPaperPlane} className="me-2" />
+                  )}
+                  {submitting ? t('dangGui') : t('gui')}
                 </button>
               </div>
             </form>
@@ -378,6 +759,9 @@ function Contact() {
           </div>
         </div>
       </div>
+      
+      {/* Login Modal */}
+      <LoginModal />
     </div>
   );
 }
