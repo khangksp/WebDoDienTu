@@ -20,12 +20,40 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Configuration
-API_GATEWAY_URL = os.environ.get('API_GATEWAY_URL', 'http://localhost:8000')
-PRODUCT_SERVICE_URL = 'http://product_service:8000' # Direct service URL
-MAX_RETRIES = 30 # Number of retries for each request
+API_GATEWAY_URL = os.environ.get('API_GATEWAY_URL', 'http://api_gateway:8000')
+PRODUCT_SERVICE_URL = 'http://product_service:8000'  # Direct service URL
+AUTH_SERVICE_URL = 'http://auth_service:8000'  # Auth service URL
+MAX_RETRIES = 30  # Number of retries for each request
 RETRY_DELAY = 5  # seconds
 USE_DIRECT_SERVICE = True  # Set to True to bypass API Gateway
 
+# ======================= AUTH DATA =======================
+users = [
+    {
+        "tendangnhap": "admin",
+        "password": "admin123",
+        "loaiquyen": "admin",
+        "nguoidung": {
+            "tennguoidung": "Quản trị viên",
+            "diachi": "Hà Nội, Việt Nam",
+            "email": "admin@example.com",
+            "sodienthoai": "0987654321"
+        }
+    },
+    {
+        "tendangnhap": "nhanvien1",
+        "password": "nhanvien123",
+        "loaiquyen": "nhanvien",
+        "nguoidung": {
+            "tennguoidung": "Nhân viên bán hàng",
+            "diachi": "Hồ Chí Minh, Việt Nam",
+            "email": "nhanvien@example.com",
+            "sodienthoai": "0912345678"
+        }
+    }
+]
+
+# ======================= PRODUCT DATA =======================
 # Sample data
 categories = [
     {"TenDanhMuc": "Điện thoại", "MoTa": "Các loại điện thoại thông minh"},
@@ -46,7 +74,7 @@ manufacturers = [
     {"TenHangSanXuat": "Sony"},
     {"TenHangSanXuat": "Huawei"},
     {"TenHangSanXuat": "Oppo"},
-    {"TenHangSanXuat": "Oppo"}
+    {"TenHangSanXuat": "MSI"}
 ]
 
 specifications = [
@@ -127,16 +155,16 @@ products = [
         "GiaBan": 19900000,
         "SoLuongTon": 20,
         "DanhMuc": 2,  # Laptop
-        "HangSanXuat": 11, 
+        "HangSanXuat": 11,  # MSI
         "HinhAnh_url": "/app/frontend/public/assets/text_ng_n_35__8_10_4.png",
         "ChiTietThongSo": [
-            {"ThongSo": 1, "GiaTriThongSo": "Apple M3 Max 16 nhân CPU, 40 nhân GPU"},
-            {"ThongSo": 2, "GiaTriThongSo": "64GB"},
-            {"ThongSo": 3, "GiaTriThongSo": "1TB SSD"},
-            {"ThongSo": 4, "GiaTriThongSo": "16.2 inch, Liquid Retina XDR, 3456 x 2234 pixel"},
-            {"ThongSo": 7, "GiaTriThongSo": "22 giờ sử dụng"},
-            {"ThongSo": 8, "GiaTriThongSo": "macOS Sonoma"},
-            {"ThongSo": 9, "GiaTriThongSo": "Apple M3 Max 40 nhân GPU"}
+            {"ThongSo": 1, "GiaTriThongSo": "Intel Core i5-12450H"},
+            {"ThongSo": 2, "GiaTriThongSo": "16GB"},
+            {"ThongSo": 3, "GiaTriThongSo": "512GB SSD"},
+            {"ThongSo": 4, "GiaTriThongSo": "15.6 inch, IPS, Full HD"},
+            {"ThongSo": 7, "GiaTriThongSo": "51Wh"},
+            {"ThongSo": 8, "GiaTriThongSo": "Windows 11"},
+            {"ThongSo": 9, "GiaTriThongSo": "NVIDIA GeForce RTX 3050 4GB"}
         ]
     }
 ]
@@ -158,7 +186,7 @@ def check_service(service_name, url, path=""):
     
     for attempt in range(MAX_RETRIES):
         try:
-            response = requests.get(check_url, timeout=10)
+            response = requests.get(check_url, timeout=10, headers={'Host': 'localhost'})
             logger.info(f"Response from {service_name}: {response.status_code}")
             
             if response.status_code < 500:  # Accept any non-server error response
@@ -178,7 +206,8 @@ def wait_for_services():
     """Wait for all required services to be available"""
     services_to_check = [
         ("API Gateway", API_GATEWAY_URL, "/health"),
-        ("Product Service", PRODUCT_SERVICE_URL, "/api/products/")
+        ("Product Service", PRODUCT_SERVICE_URL, "/api/products/"),
+        ("Auth Service", AUTH_SERVICE_URL, "/api/auth/users/")
     ]
     
     all_available = True
@@ -241,7 +270,10 @@ def download_and_process_image(image_source, category_id):
 def make_api_request(method, endpoint, base_url=None, **kwargs):
     """Make API request with retries and detailed logging"""
     if base_url is None:
-        base_url = PRODUCT_SERVICE_URL if USE_DIRECT_SERVICE else API_GATEWAY_URL
+        if endpoint.startswith('/api/auth/'):
+            base_url = AUTH_SERVICE_URL if USE_DIRECT_SERVICE else API_GATEWAY_URL
+        else:
+            base_url = PRODUCT_SERVICE_URL if USE_DIRECT_SERVICE else API_GATEWAY_URL
     
     url = f"{base_url}{endpoint}"
     logger.info(f"Making {method} request to {url}")
@@ -264,7 +296,8 @@ def make_api_request(method, endpoint, base_url=None, **kwargs):
         try:
             response = requests.request(method, url, **kwargs)
             logger.info(f"Response status: {response.status_code}")
-            logger.info(f"Response content: {response.text[:500]}...")  # First 500 chars
+            if response.text:
+                logger.info(f"Response content: {response.text[:500]}...")  # First 500 chars
             
             if response.status_code in (200, 201):
                 return response
@@ -285,6 +318,41 @@ def make_api_request(method, endpoint, base_url=None, **kwargs):
     return None
 
 
+# ======================= AUTH FUNCTIONS =======================
+def seed_users():
+    """Create admin and employee users"""
+    logger.info("Creating users...")
+    created_users = []
+    
+    for user in users:
+        logger.info(f"Creating user: {user['tendangnhap']} with role {user['loaiquyen']}")
+        
+        # Check if user already exists by trying to login
+        login_data = {
+            "tendangnhap": user["tendangnhap"],
+            "password": user["password"]
+        }
+        
+        login_response = make_api_request('POST', '/api/auth/login/', json=login_data)
+        
+        if login_response and login_response.status_code == 200:
+            logger.info(f"User {user['tendangnhap']} already exists. Skipping creation.")
+            created_users.append(user['tendangnhap'])
+            continue
+        
+        # Register new user
+        response = make_api_request('POST', '/api/auth/register/', json=user)
+        
+        if response and response.status_code == 201:
+            logger.info(f"Successfully created user: {user['tendangnhap']} with role {user['loaiquyen']}")
+            created_users.append(user['tendangnhap'])
+        else:
+            logger.error(f"Failed to create user: {user['tendangnhap']}")
+    
+    return created_users
+
+
+# ======================= PRODUCT FUNCTIONS =======================
 def seed_categories():
     """Seed categories with detailed error handling"""
     logger.info("Creating categories...")
@@ -381,23 +449,16 @@ def seed_specifications():
     return spec_mapping
 
 
-def seed_products(use_placeholder=False):  # Mặc định là False để sử dụng file local
+def seed_products(use_placeholder=False):
+    """Seed products with detailed error handling"""
     logger.info("Creating products...")
     product_count = 0
     
     for product in products:
         try:
-            # Download image or process local file
+            # Download image or use placeholder
             image_file = None
-            if not use_placeholder:
-                # Sử dụng hình ảnh từ file local
-                image_file = download_and_process_image(product['HinhAnh_url'], product['DanhMuc'])
-                if not image_file:
-                    logger.warning(f"Could not process local image, trying placeholder...")
-                    use_placeholder = True  # Fallback to placeholder if local file fails
-            
             if use_placeholder:
-                # Use placeholder as fallback
                 placeholder_url = image_placeholders.get(product['DanhMuc'], "https://via.placeholder.com/600x600.png?text=Product")
                 logger.info(f"Using placeholder image for {product['TenSanPham']}: {placeholder_url}")
                 try:
@@ -405,7 +466,8 @@ def seed_products(use_placeholder=False):  # Mặc định là False để sử 
                     image_file = BytesIO(response.read())
                 except Exception as e:
                     logger.error(f"Error with placeholder image: {e}")
-                    image_file = None
+            else:
+                image_file = download_and_process_image(product['HinhAnh_url'], product['DanhMuc'])
             
             # Create form data for multipart request
             form_data = {
@@ -470,6 +532,7 @@ def test_api_endpoints():
         ('/api/products/hang-san-xuat/', 'GET'),
         ('/api/products/thong-so/', 'GET'),
         ('/api/products/san-pham/', 'GET'),
+        ('/api/auth/users/', 'GET'),
     ]
     
     # Try both direct and via API Gateway
@@ -477,9 +540,13 @@ def test_api_endpoints():
         logger.info(f"Testing with base URL: {base}")
         
         for endpoint, method in endpoints:
+            # Skip auth endpoints when testing product service directly
+            if base == PRODUCT_SERVICE_URL and endpoint.startswith('/api/auth/'):
+                continue
+                
             url = f"{base}{endpoint}"
             try:
-                response = requests.request(method, url, timeout=5)
+                response = requests.request(method, url, timeout=5, headers={'Host': 'localhost'})
                 logger.info(f"{method} {url} - Status: {response.status_code}")
                 if len(response.text) < 1000:
                     logger.info(f"Response: {response.text}")
@@ -492,7 +559,7 @@ def test_api_endpoints():
 def check_django_urls():
     """Try to access the Django admin to verify Django is running properly"""
     try:
-        response = requests.get(f"{PRODUCT_SERVICE_URL}/admin/login/", timeout=5)
+        response = requests.get(f"{PRODUCT_SERVICE_URL}/admin/login/", timeout=5, headers={'Host': 'localhost'})
         logger.info(f"Django admin response: {response.status_code}")
         if response.status_code == 200:
             logger.info("Django admin is accessible, which confirms Django is running")
@@ -504,16 +571,26 @@ def check_django_urls():
 
 def seed_data():
     """Seed the database with initial data with comprehensive error handling"""
+    logger.info("========== TESTING API ENDPOINTS ==========")
     # First test the API endpoints
     test_api_endpoints()
     
     # Check Django is running
     check_django_urls()
     
+    logger.info("========== CREATING USERS ==========")
+    # Seed users first
+    created_users = seed_users()
+    if created_users:
+        logger.info(f"Successfully created users: {', '.join(created_users)}")
+    else:
+        logger.warning("No new users were created.")
+    
+    logger.info("========== CREATING PRODUCT DATA ==========")
     # Seed categories
     category_mapping = seed_categories()
     if not category_mapping:
-        logger.error("Failed to create any categories. Aborting.")
+        logger.error("Failed to create any categories. Aborting product creation.")
         return False
     
     # Add a delay between operations
@@ -523,7 +600,7 @@ def seed_data():
     # Seed manufacturers
     manufacturer_mapping = seed_manufacturers()
     if not manufacturer_mapping:
-        logger.error("Failed to create any manufacturers. Aborting.")
+        logger.error("Failed to create any manufacturers. Aborting product creation.")
         return False
     
     # Add a delay between operations
@@ -533,7 +610,7 @@ def seed_data():
     # Seed specifications
     spec_mapping = seed_specifications()
     if not spec_mapping:
-        logger.error("Failed to create any specifications. Aborting.")
+        logger.error("Failed to create any specifications. Aborting product creation.")
         return False
     
     # Add a delay between operations
@@ -541,7 +618,7 @@ def seed_data():
     time.sleep(5)
     
     # Seed products
-    product_count = seed_products(use_placeholder=False) # Set to False to use real images
+    product_count = seed_products(use_placeholder=False)  # Use actual image files
     logger.info(f"Created {product_count} products")
     
     return True
@@ -551,6 +628,7 @@ if __name__ == '__main__':
     logger.info("Starting seed.py script...")
     logger.info(f"API Gateway URL: {API_GATEWAY_URL}")
     logger.info(f"Product Service URL: {PRODUCT_SERVICE_URL}")
+    logger.info(f"Auth Service URL: {AUTH_SERVICE_URL}")
     logger.info(f"Direct service mode: {USE_DIRECT_SERVICE}")
     
     if wait_for_services():
