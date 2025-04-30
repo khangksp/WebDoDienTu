@@ -702,6 +702,7 @@ function Navbar() {
                   { path: "/about", label: t("gioiThieu") },
                   { path: "/products", label: t("sanPham") },
                   { path: "/contact", label: t("lienHe") },
+                  ...(isAuthenticated ? [{ path: "/my-orders", label: t("donHangCuaToi") }] : []),
                 ].map((item) => (
                   <Link
                     key={item.path}

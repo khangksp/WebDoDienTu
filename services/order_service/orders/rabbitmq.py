@@ -4,7 +4,7 @@ import json
 import threading
 import logging
 from django.conf import settings
-
+import time
 # Import RabbitMQ utility
 from .utils import get_rabbitmq_client
 from .models import DonHang as Order, ChiTietDonHang as OrderItem
@@ -90,24 +90,33 @@ def start_consumer():
         logger.error(f"Error starting RabbitMQ consumer: {str(e)}")
         # Don't raise exception to prevent app from crashing on startup
 
-def publish_order_event(event_type, order_data):
-    """
-    Publish order event to RabbitMQ
-    
-    Args:
-        event_type (str): Type of event (created, updated, cancelled)
-        order_data (dict): Order data to publish
-    """
+import time
+
+def publish_order_event(event_type, order_data, max_retries=3, retry_delay=2):
+    logger.debug(f"Preparing to publish {event_type} event: {order_data}")
     try:
         client = get_rabbitmq_client()
+        logger.debug("Got RabbitMQ client")
         routing_key = f"order.{event_type}"
-        
-        return client.publish(routing_key, order_data)
+        for attempt in range(max_retries):
+            try:
+                logger.debug(f"Attempt {attempt + 1} to publish to {routing_key}")
+                success = client.publish(routing_key, order_data)
+                if success:
+                    logger.info(f"Successfully published {routing_key} event: {order_data}")
+                    client.close()
+                    return True
+                logger.warning(f"Attempt {attempt + 1} failed to publish {routing_key}")
+            except Exception as e:
+                logger.error(f"Attempt {attempt + 1} error: {str(e)}", exc_info=True)
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+        logger.error(f"Failed to publish {routing_key} after {max_retries} attempts")
+        client.close()
+        return False
     except Exception as e:
-        logger.error(f"Error publishing order event: {str(e)}")
-        return None
-
-# Function to start consumer in a separate thread
+        logger.error(f"Error initializing client for {routing_key}: {str(e)}", exc_info=True)
+        return False
 def start_consumer_thread():
     try:
         consumer_thread = threading.Thread(target=start_consumer)

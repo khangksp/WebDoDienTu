@@ -18,6 +18,7 @@ import About from "./pages/About";
 import Admin from './pages/admin';
 import Nhanvien from './pages/nhanvien';
 import OrderConfirmation from './context/OrderConfirmation';
+import MyOrders from "./pages/my-orders";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -70,6 +71,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/order-confirmation" element={<OrderConfirmation />} />
+                <Route path="/my-orders" element={<MyOrders/>} />
                 <Route
                   path="/admin"
                   element={

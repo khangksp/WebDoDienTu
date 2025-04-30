@@ -11,7 +11,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 
-import { useLanguage } from "../context/LanguageContext";
+import { useLanguage } from "./LanguageContext";
 
 function OrderConfirmation() {
   const { t } = useLanguage();

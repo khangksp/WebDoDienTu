@@ -14,71 +14,56 @@ class RabbitMQClient:
         self.channel = None
         self.connect()
     
-    def connect(self):
-        """
-        Connect to RabbitMQ server
-        """
-        try:
-            credentials = pika.PlainCredentials(
-                settings.RABBITMQ_USER,
-                settings.RABBITMQ_PASS
-            )
-            
-            parameters = pika.ConnectionParameters(
-                host=settings.RABBITMQ_HOST,
-                port=settings.RABBITMQ_PORT,
-                credentials=credentials,
-                heartbeat=600,
-                blocked_connection_timeout=300
-            )
-            
-            self.connection = pika.BlockingConnection(parameters)
-            self.channel = self.connection.channel()
-            
-            # Declare exchanges
-            self.channel.exchange_declare(
-                exchange='microservice_events',
-                exchange_type='topic',
-                durable=True
-            )
-            
-            logger.info("Connected to RabbitMQ successfully")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to connect to RabbitMQ: {str(e)}")
-            return False
+    def connect(self, max_retries=3, retry_delay=2):
+        for attempt in range(max_retries):
+            try:
+                credentials = pika.PlainCredentials(
+                    settings.RABBITMQ_USER,
+                    settings.RABBITMQ_PASS
+                )
+                parameters = pika.ConnectionParameters(
+                    host=settings.RABBITMQ_HOST,
+                    port=settings.RABBITMQ_PORT,
+                    credentials=credentials,
+                    heartbeat=600,
+                    blocked_connection_timeout=300
+                )
+                self.connection = pika.BlockingConnection(parameters)
+                self.channel = self.connection.channel()
+                self.channel.exchange_declare(
+                    exchange='microservice_events',
+                    exchange_type='topic',
+                    durable=True
+                )
+                logger.info("Connected to RabbitMQ successfully")
+                return True
+            except Exception as e:
+                logger.error(f"Attempt {attempt + 1} failed to connect to RabbitMQ: {str(e)}")
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+        logger.error(f"Failed to connect to RabbitMQ after {max_retries} attempts")
+        return False
     
     def publish(self, routing_key, message):
-        """
-        Publish a message to the exchange
-        
-        Args:
-            routing_key (str): Routing key for the message
-            message (dict): Message to publish
-        
-        Returns:
-            bool: True if successful, False otherwise
-        """
         try:
-            if not self.connection or self.connection.is_closed:
-                self.connect()
-            
+            if not self.connection or self.connection.is_closed or not self.channel or self.channel.is_closed:
+                if not self.connect():
+                    logger.error("Cannot publish: Failed to reconnect to RabbitMQ")
+                    return False
             self.channel.basic_publish(
                 exchange='microservice_events',
                 routing_key=routing_key,
                 body=json.dumps(message),
                 properties=pika.BasicProperties(
-                    delivery_mode=2,  # Make message persistent
+                    delivery_mode=2,
                     content_type='application/json'
                 )
             )
-            
             logger.info(f"Published message to {routing_key}: {message}")
             return True
         except Exception as e:
-            logger.error(f"Failed to publish message: {str(e)}")
+            logger.error(f"Failed to publish message to {routing_key}: {str(e)}", exc_info=True)
             return False
-    
     def consume(self, queue_name, routing_keys, callback):
         """
         Consume messages from a queue

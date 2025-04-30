@@ -3,10 +3,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from .rabbitmq import publish_order_event
 from .models import DonHang, ChiTietDonHang, TrangThai
 from .serializers import DonHangSerializer, ChiTietDonHangSerializer, CreateOrderSerializer
-
+from django.db.models import Sum, Count  # Add these imports
 import json
 import logging
 
@@ -45,7 +45,60 @@ def list_orders(request):
             'status': 'error',
             'message': f'Lỗi khi lấy danh sách đơn hàng: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_order_info(request, user_id):
+    """
+    API lấy thông tin tổng quan về các đơn hàng của một người dùng
+    
+    Parameters:
+    - user_id: ID của người dùng
+    
+    Returns:
+    - Tổng số đơn hàng
+    - Tổng số tiền đã đặt hàng
+    - Chi tiết các đơn hàng
+    """
+    try:
+        # Lọc các đơn hàng của người dùng
+        orders = DonHang.objects.filter(MaNguoiDung=user_id).order_by('-NgayDatHang')
+        
+        # Tính tổng số đơn hàng
+        total_orders = orders.count()
+        
+        # Tính tổng số tiền từ tất cả các đơn hàng
+        total_amount = orders.aggregate(total=Sum('TongTien'))['total'] or 0.0
+        
+        # Serialize các đơn hàng
+        orders_serializer = DonHangSerializer(orders, many=True)
+        
+        # Phân nhóm đơn hàng theo trạng thái
+        order_status_summary = orders.values('MaTrangThai__TenTrangThai').annotate(
+            count=Count('MaDonHang'),
+            total_amount=Sum('TongTien')
+        )
+        
+        # Chuyển đổi các giá trị total_amount trong order_status_summary thành float
+        order_status_summary_list = []
+        for summary in order_status_summary:
+            summary_dict = dict(summary)
+            summary_dict['total_amount'] = float(summary_dict['total_amount']) if summary_dict['total_amount'] is not None else 0.0
+            order_status_summary_list.append(summary_dict)
+        
+        return Response({
+            'status': 'success',
+            'total_orders': total_orders,
+            'total_amount': float(total_amount),
+            'orders': orders_serializer.data,
+            'order_status_summary': order_status_summary_list
+        }, status=status.HTTP_200_OK)
+    
+    except Exception as e:
+        logger.error(f"Lỗi khi lấy thông tin đơn hàng theo user ID: {str(e)}", exc_info=True)
+        return Response({
+            'status': 'error',
+            'message': f'Lỗi khi lấy thông tin đơn hàng: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 class DonHangViewSet(viewsets.ModelViewSet):
     queryset = DonHang.objects.all()
     serializer_class = DonHangSerializer
@@ -57,7 +110,6 @@ class DonHangViewSet(viewsets.ModelViewSet):
         if user_id:
             queryset = queryset.filter(MaNguoiDung=user_id)
         return queryset
-
 
 class CreateOrderView(APIView):
     """API View để tạo đơn hàng mới từ giỏ hàng"""
@@ -77,7 +129,6 @@ class CreateOrderView(APIView):
             data['user_id'] = token_user_id
             logger.info(f"Sử dụng user_id từ token: {token_user_id}")
         elif not data.get('user_id') or data.get('user_id') is None:
-            # Sử dụng ID mặc định = 1 nếu không có
             data['user_id'] = 1
             logger.info("Không tìm thấy user_id, sử dụng giá trị mặc định: 1")
         
@@ -99,7 +150,7 @@ class CreateOrderView(APIView):
             try:
                 # Lấy hoặc tạo trạng thái "Chờ thanh toán"
                 trang_thai, created = TrangThai.objects.get_or_create(
-                    TenTrangThai="Chờ thanh toán",
+                    TenTrangThai="Đang xử lý",
                     defaults={'LoaiTrangThai': 'Đơn hàng'}
                 )
                 
@@ -118,8 +169,9 @@ class CreateOrderView(APIView):
                 )
                 
                 # Tạo chi tiết đơn hàng
+                chi_tiet_items = []
                 for item in data['items']:
-                    ChiTietDonHang.objects.create(
+                    chi_tiet = ChiTietDonHang.objects.create(
                         MaDonHang=don_hang,
                         MaSanPham=item.get('id'),
                         SoLuong=item.get('quantity', 1),
@@ -127,6 +179,25 @@ class CreateOrderView(APIView):
                         TenSanPham=item.get('name', ''),
                         HinhAnh=item.get('image_url', '')
                     )
+                    chi_tiet_items.append({
+                        'product_id': chi_tiet.MaSanPham,
+                        'quantity': chi_tiet.SoLuong
+                    })
+                
+                # Gửi sự kiện order.created lên RabbitMQ
+                order_data = {
+                    'order_id': don_hang.MaDonHang,
+                    'user_id': don_hang.MaNguoiDung,
+                    'status': don_hang.MaTrangThai.TenTrangThai,
+                    'total_amount': float(don_hang.TongTien),
+                    'payment_method': don_hang.PhuongThucThanhToan,
+                    'recipient_name': don_hang.TenNguoiNhan,
+                    'phone_number': don_hang.SoDienThoai,
+                    'address': don_hang.DiaChi,
+                    'items': chi_tiet_items
+                }
+                publish_order_event('created', order_data)
+                logger.info(f"Đã gửi sự kiện order.created cho đơn hàng #{don_hang.MaDonHang}")
                 
                 # Trả về kết quả
                 return Response({
@@ -149,7 +220,7 @@ class CreateOrderView(APIView):
             'message': 'Dữ liệu không hợp lệ',
             'errors': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
-
+    
 
 @api_view(['GET'])
 def get_user_orders(request, user_id):
@@ -179,3 +250,80 @@ def get_order_details(request, order_id):
             'status': 'error',
             'message': 'Đơn hàng không tồn tại'
         }, status=status.HTTP_404_NOT_FOUND)
+    
+@api_view(['PUT'])
+@permission_classes([AllowAny])
+def update_order_status(request, order_id):
+    """
+    API để cập nhật trạng thái của một đơn hàng
+    
+    Parameters:
+    - order_id: ID của đơn hàng
+    - Body: { "MaTrangThai": <integer> } (ví dụ: { "MaTrangThai": 2 })
+    
+    Returns:
+    - Thông tin đơn hàng đã cập nhật
+    """
+    try:
+        # Lấy đơn hàng
+        order = DonHang.objects.get(MaDonHang=order_id)
+        
+        # Lấy trạng thái từ body request
+        new_status_id = request.data.get('MaTrangThai')
+        if not new_status_id:
+            return Response({
+                'status': 'error',
+                'message': 'Vui lòng cung cấp MaTrangThai'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Kiểm tra trạng thái có tồn tại
+        try:
+            new_status = TrangThai.objects.get(MaTrangThai=new_status_id)
+        except TrangThai.DoesNotExist:
+            return Response({
+                'status': 'error',
+                'message': f'Trạng thái với MaTrangThai={new_status_id} không tồn tại'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Cập nhật trạng thái đơn hàng
+        old_status = order.MaTrangThai.TenTrangThai
+        order.MaTrangThai = new_status
+        order.save()
+        
+        # Gửi sự kiện order.status_updated lên RabbitMQ
+        order_data = {
+            'order_id': order.MaDonHang,
+            'user_id': order.MaNguoiDung,
+            'old_status': old_status,
+            'new_status': new_status.TenTrangThai,
+            'total_amount': float(order.TongTien),
+            'payment_method': order.PhuongThucThanhToan,
+            'recipient_name': order.TenNguoiNhan,
+            'phone_number': order.SoDienThoai,
+            'address': order.DiaChi,
+        }
+        publish_order_event('status_updated', order_data)
+        logger.info(f"Đã gửi sự kiện order.status_updated cho đơn hàng #{order.MaDonHang}")
+        
+        # Serialize đơn hàng để trả về
+        serializer = DonHangSerializer(order)
+        
+        return Response({
+            'status': 'success',
+            'message': f'Cập nhật trạng thái đơn hàng #{order_id} thành {new_status.TenTrangThai}',
+            'order': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+    except DonHang.DoesNotExist:
+        logger.error(f"Đơn hàng #{order_id} không tồn tại")
+        return Response({
+            'status': 'error',
+            'message': f'Đơn hàng #{order_id} không tồn tại'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    except Exception as e:
+        logger.error(f"Lỗi khi cập nhật trạng thái đơn hàng #{order_id}: {str(e)}", exc_info=True)
+        return Response({
+            'status': 'error',
+            'message': f'Lỗi khi cập nhật trạng thái đơn hàng: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
