@@ -14,6 +14,7 @@ import {
   AlertCircle,
   RefreshCw,
   ShoppingBag,
+  Calendar,
 } from "lucide-react";
 import axios from "axios";
 import "./style/nhanvien.css";
@@ -58,6 +59,8 @@ const StaffDashboard = () => {
   const [editId, setEditId] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState(""); // State cho ngày bắt đầu
+  const [endDate, setEndDate] = useState(""); // State cho ngày kết thúc
 
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -70,13 +73,18 @@ const StaffDashboard = () => {
 
   // Ánh xạ trạng thái đơn hàng
   const statusMap = {
-    1: t("choThanhToan"), // Chờ thanh toán
-    2: t("daThanhToan"), // Đã thanh toán
-    3: t("dangXuLy"), // Đang xử lý
-    4: t("dangVanChuyen"), // Đang vận chuyển
-    5: t("daGiaoHang"), // Đã giao hàng
-    6: t("daHuy"), // Đã hủy
-    7: t("hoanTien"), // Hoàn tiền
+    1: t("choThanhToan"),
+    2: t("daThanhToan"),
+    3: t("dangXuLy"),
+    4: t("dangVanChuyen"),
+    5: t("daGiaoHang"),
+    6: t("daHuy"),
+    7: t("hoanTien"),
+  };
+
+  // Tính số lượng đơn hàng theo trạng thái
+  const getOrderCountByStatus = (status) => {
+    return orders.filter((order) => order.MaTrangThai === status).length;
   };
 
   useEffect(() => {
@@ -122,7 +130,13 @@ const StaffDashboard = () => {
           setHangSanXuats(hangSanXuatsForProductRes.data);
           setThongSos(thongSosForProductRes.data);
           break;
-        case "order":
+        case "order-choThanhToan":
+        case "order-daThanhToan":
+        case "order-dangXuLy":
+        case "order-dangVanChuyen":
+        case "order-daGiaoHang":
+        case "order-daHuy":
+        case "order-hoanTien":
           const ordersRes = await axios.get(
             `${API_BASE_URL}/orders/list-orders/`
           );
@@ -171,22 +185,64 @@ const StaffDashboard = () => {
     setEditId(null);
   };
 
-  const SidebarItem = ({ icon: Icon, label, section }) => (
-    <div
-      className={`sidebar-item ${activeSection === section ? "active" : ""}`}
-      onClick={() => {
-        setActiveSection(section);
-        setViewMode("grid");
-        resetForm();
-        setErrorMessage("");
-        setSuccessMessage("");
-        setSearchTerm("");
-      }}
-    >
-      <Icon className="sidebar-icon" />
-      <span>{label}</span>
-    </div>
-  );
+  const getBadgeClass = (section, badge) => {
+    const highPriorityStatuses = [
+      "order-choThanhToan",
+      "order-daHuy",
+      "order-hoanTien",
+    ];
+    return badge > 0
+      ? highPriorityStatuses.includes(section)
+        ? "high-priority"
+        : ""
+      : "";
+  };
+
+  const SidebarItem = ({ icon: Icon, label, section, badge }) => {
+    const badgeClass = getBadgeClass(section, badge);
+
+    return (
+      <div
+        className={`sidebar-item order-status ${
+          activeSection === section ? "active" : ""
+        }`}
+        onClick={() => {
+          setActiveSection(section);
+          setViewMode("grid");
+          resetForm();
+          setErrorMessage("");
+          setSuccessMessage("");
+          setSearchTerm("");
+          setStartDate("");
+          setEndDate("");
+        }}
+      >
+        <Icon className="sidebar-icon" />
+        <span>{label}</span>
+        {badge > 0 && (
+          <span
+            style={{
+              backgroundColor: "#e63946",
+              color: "white",
+              fontSize: "12px",
+              fontWeight: "bold",
+              padding: "2px 6px",
+              borderRadius: "12px",
+              marginLeft: "auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minWidth: "20px",
+              height: "20px",
+            }}
+            className={badgeClass}
+          >
+            {badge}
+          </span>
+        )}
+      </div>
+    );
+  };
 
   const handleInputChange = (type, field) => (e) => {
     setErrorMessage("");
@@ -209,7 +265,27 @@ const StaffDashboard = () => {
     setSearchTerm(e.target.value);
   };
 
+  const handleDateChange = (field) => (e) => {
+    const value = e.target.value;
+    if (field === "startDate") {
+      setStartDate(value);
+      if (endDate && new Date(value) > new Date(endDate)) {
+        setErrorMessage(t("ngayBatDauPhaiNhoHonNgayKetThuc"));
+      } else {
+        setErrorMessage("");
+      }
+    } else if (field === "endDate") {
+      setEndDate(value);
+      if (startDate && new Date(value) < new Date(startDate)) {
+        setErrorMessage(t("ngayKetThucPhaiLonHonNgayBatDau"));
+      } else {
+        setErrorMessage("");
+      }
+    }
+  };
+
   const filteredData = () => {
+    let filteredItems = [];
     switch (activeSection) {
       case "category":
         return categories.filter(
@@ -235,18 +311,129 @@ const StaffDashboard = () => {
             (item.TenDanhMuc &&
               item.TenDanhMuc.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (item.TenHangSanXuat &&
-              item.TenHangSanXuat.toLowerCase().includes(searchTerm.toLowerCase()))
+              item.TenHangSanXuat.toLowerCase().includes(
+                searchTerm.toLowerCase()
+              ))
         );
-      case "order":
-        return orders.filter(
+      case "order-choThanhToan":
+        filteredItems = orders.filter(
           (item) =>
-            item.TenNguoiNhan.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.SoDienThoai.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.DiaChi.toLowerCase().includes(searchTerm.toLowerCase())
+            item.MaTrangThai === 1 &&
+            (item.TenNguoiNhan.toLowerCase().includes(
+              searchTerm.toLowerCase()
+            ) ||
+              item.SoDienThoai.toLowerCase().includes(
+                searchTerm.toLowerCase()
+              ) ||
+              item.DiaChi.toLowerCase().includes(searchTerm.toLowerCase()))
         );
+        break;
+      case "order-daThanhToan":
+        filteredItems = orders.filter(
+          (item) =>
+            item.MaTrangThai === 2 &&
+            (item.TenNguoiNhan.toLowerCase().includes(
+              searchTerm.toLowerCase()
+            ) ||
+              item.SoDienThoai.toLowerCase().includes(
+                searchTerm.toLowerCase()
+              ) ||
+              item.DiaChi.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+        break;
+      case "order-dangXuLy":
+        filteredItems = orders.filter(
+          (item) =>
+            item.MaTrangThai === 3 &&
+            (item.TenNguoiNhan.toLowerCase().includes(
+              searchTerm.toLowerCase()
+            ) ||
+              item.SoDienThoai.toLowerCase().includes(
+                searchTerm.toLowerCase()
+              ) ||
+              item.DiaChi.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+        break;
+      case "order-dangVanChuyen":
+        filteredItems = orders.filter(
+          (item) =>
+            item.MaTrangThai === 4 &&
+            (item.TenNguoiNhan.toLowerCase().includes(
+              searchTerm.toLowerCase()
+            ) ||
+              item.SoDienThoai.toLowerCase().includes(
+                searchTerm.toLowerCase()
+              ) ||
+              item.DiaChi.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+        break;
+      case "order-daGiaoHang":
+        filteredItems = orders.filter(
+          (item) =>
+            item.MaTrangThai === 5 &&
+            (item.TenNguoiNhan.toLowerCase().includes(
+              searchTerm.toLowerCase()
+            ) ||
+              item.SoDienThoai.toLowerCase().includes(
+                searchTerm.toLowerCase()
+              ) ||
+              item.DiaChi.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+        break;
+      case "order-daHuy":
+        filteredItems = orders.filter(
+          (item) =>
+            item.MaTrangThai === 6 &&
+            (item.TenNguoiNhan.toLowerCase().includes(
+              searchTerm.toLowerCase()
+            ) ||
+              item.SoDienThoai.toLowerCase().includes(
+                searchTerm.toLowerCase()
+              ) ||
+              item.DiaChi.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+        break;
+      case "order-hoanTien":
+        filteredItems = orders.filter(
+          (item) =>
+            item.MaTrangThai === 7 &&
+            (item.TenNguoiNhan.toLowerCase().includes(
+              searchTerm.toLowerCase()
+            ) ||
+              item.SoDienThoai.toLowerCase().includes(
+                searchTerm.toLowerCase()
+              ) ||
+              item.DiaChi.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+        break;
       default:
         return [];
     }
+
+    // Lọc theo ngày nếu có ngày bắt đầu hoặc ngày kết thúc
+    if (startDate || endDate) {
+      filteredItems = filteredItems.filter((item) => {
+        const orderDate = new Date(item.NgayDatHang);
+        orderDate.setHours(0, 0, 0, 0); // Đặt giờ về 00:00:00 để so sánh chính xác theo ngày
+
+        const start = startDate ? new Date(startDate) : null;
+        if (start) start.setHours(0, 0, 0, 0);
+
+        const end = endDate ? new Date(endDate) : null;
+        if (end) end.setHours(23, 59, 59, 999); // Đặt giờ về cuối ngày để bao gồm toàn bộ ngày kết thúc
+
+        if (start && end) {
+          return orderDate >= start && orderDate <= end;
+        } else if (start) {
+          return orderDate >= start;
+        } else if (end) {
+          return orderDate <= end;
+        }
+        return true;
+      });
+    }
+
+    return filteredItems;
   };
 
   const handleEdit = (type, id) => {
@@ -454,8 +641,12 @@ const StaffDashboard = () => {
   };
 
   const openUpdateStatusModal = (orderId, currentStatus) => {
+    if (currentStatus === 6 || currentStatus === 7) {
+      setErrorMessage(t("khongTheCapNhatTrangThaiNay"));
+      return;
+    }
     setSelectedOrderId(orderId);
-    setNewStatus(currentStatus.toString());
+    setNewStatus((currentStatus + 1).toString());
     setShowUpdateStatusModal(true);
   };
 
@@ -812,19 +1003,45 @@ const StaffDashboard = () => {
           </div>
         );
 
-      case "order":
+      case "order-choThanhToan":
+      case "order-daThanhToan":
+      case "order-dangXuLy":
+      case "order-dangVanChuyen":
+      case "order-daGiaoHang":
+      case "order-daHuy":
+      case "order-hoanTien":
         return (
           <div className="grid-container">
-            <div className="grid-header">
-              <div className="grid-search">
+            <div className="grid-header" style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+              <div className="grid-search" style={{ flex: "1", maxWidth: "300px" }}>
                 <input
                   type="text"
-                  placeholder={t("timKiemDonHang")}
+                  placeholder={t("timKiemTheoTenKhachHang")}
                   value={searchTerm}
                   onChange={handleSearchChange}
                   className="search-input"
                 />
                 <Search className="search-icon" />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "14px", color: "#4b5563" }}>{t("tuNgay")}:</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={handleDateChange("startDate")}
+                  className="search-input"
+                  style={{ width: "150px", padding: "8px" }}
+                />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "14px", color: "#4b5563" }}>{t("denNgay")}:</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={handleDateChange("endDate")}
+                  className="search-input"
+                  style={{ width: "150px", padding: "8px" }}
+                />
               </div>
             </div>
             <div className="grid-table-wrapper">
@@ -865,7 +1082,9 @@ const StaffDashboard = () => {
                           </span>
                         </td>
                         <td>
-                          {new Date(item.NgayDatHang).toLocaleDateString("vi-VN")}
+                          {new Date(item.NgayDatHang).toLocaleDateString(
+                            "vi-VN"
+                          )}
                         </td>
                         <td className="action-buttons">
                           <button
@@ -875,6 +1094,9 @@ const StaffDashboard = () => {
                                 item.MaDonHang,
                                 item.MaTrangThai
                               )
+                            }
+                            disabled={
+                              item.MaTrangThai === 6 || item.MaTrangThai === 7
                             }
                           >
                             <Edit size={16} />
@@ -1327,6 +1549,9 @@ const StaffDashboard = () => {
   const renderUpdateStatusModal = () => {
     if (!showUpdateStatusModal) return null;
 
+    const currentStatus = parseInt(newStatus) - 1;
+    const nextStatus = parseInt(newStatus);
+
     return (
       <div className="modal-overlay">
         <div className="modal-container">
@@ -1342,19 +1567,12 @@ const StaffDashboard = () => {
           </div>
           <div className="modal-body">
             <div className="form-group">
+              <label>{t("trangThaiHienTai")}</label>
+              <input type="text" value={statusMap[currentStatus]} disabled />
+            </div>
+            <div className="form-group">
               <label>{t("trangThaiMoi")}</label>
-              <select
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value)}
-              >
-                <option value="1">{t("choThanhToan")}</option>
-                <option value="2">{t("daThanhToan")}</option>
-                <option value="3">{t("dangXuLy")}</option>
-                <option value="4">{t("dangVanChuyen")}</option>
-                <option value="5">{t("daGiaoHang")}</option>
-                <option value="6">{t("daHuy")}</option>
-                <option value="7">{t("hoanTien")}</option>
-              </select>
+              <input type="text" value={statusMap[nextStatus]} disabled />
             </div>
           </div>
           <div className="modal-footer">
@@ -1439,11 +1657,7 @@ const StaffDashboard = () => {
             <span>{t("xuLySanPham")}</span>
           </div>
           <div className="sidebar-subitem">
-            <SidebarItem
-              icon={Folder}
-              label={t("danhMuc")}
-              section="category"
-            />
+            <SidebarItem icon={Folder} label={t("danhMuc")} section="category" />
             <SidebarItem
               icon={Factory}
               label={t("hangSanXuat")}
@@ -1468,8 +1682,45 @@ const StaffDashboard = () => {
           <div className="sidebar-subitem">
             <SidebarItem
               icon={ShoppingBag}
-              label={t("donHang")}
-              section="order"
+              label={t("choThanhToan")}
+              section="order-choThanhToan"
+              badge={getOrderCountByStatus(1)}
+            />
+            <SidebarItem
+              icon={ShoppingBag}
+              label={t("daThanhToan")}
+              section="order-daThanhToan"
+              badge={getOrderCountByStatus(2)}
+            />
+            <SidebarItem
+              icon={ShoppingBag}
+              label={t("dangXuLy")}
+              section="order-dangXuLy"
+              badge={getOrderCountByStatus(3)}
+            />
+            <SidebarItem
+              icon={ShoppingBag}
+              label={t("dangVanChuyen")}
+              section="order-dangVanChuyen"
+              badge={getOrderCountByStatus(4)}
+            />
+            <SidebarItem
+              icon={ShoppingBag}
+              label={t("daGiaoHang")}
+              section="order-daGiaoHang"
+              badge={getOrderCountByStatus(5)}
+            />
+            <SidebarItem
+              icon={ShoppingBag}
+              label={t("daHuy")}
+              section="order-daHuy"
+              badge={getOrderCountByStatus(6)}
+            />
+            <SidebarItem
+              icon={ShoppingBag}
+              label={t("hoanTien")}
+              section="order-hoanTien"
+              badge={getOrderCountByStatus(7)}
             />
           </div>
           <div className="sidebar-divider"></div>
@@ -1492,7 +1743,14 @@ const StaffDashboard = () => {
           {activeSection === "hangSanXuat" && t("quanLyHangSanXuat")}
           {activeSection === "thongSo" && t("quanLyThongSo")}
           {activeSection === "product" && t("quanLySanPham")}
-          {activeSection === "order" && t("quanLyDonHang")}
+          {activeSection === "order-choThanhToan" && t("donHangChoThanhToan")}
+          {activeSection === "order-daThanhToan" && t("donHangDaThanhToan")}
+          {activeSection === "order-dangXuLy" && t("donHangDangXuLy")}
+          {activeSection === "order-dangVanChuyen" &&
+            t("donHangDangVanChuyen")}
+          {activeSection === "order-daGiaoHang" && t("donHangDaGiaoHang")}
+          {activeSection === "order-daHuy" && t("donHangDaHuy")}
+          {activeSection === "order-hoanTien" && t("donHangHoanTien")}
         </h1>
         {renderContent()}
 

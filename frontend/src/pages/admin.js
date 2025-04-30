@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, LogOut, UserPlus, Edit, Trash2 } from 'lucide-react';
+import { BarChart3, LogOut, UserPlus, Edit, Trash2, PieChart } from 'lucide-react';
 import axios from 'axios';
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import './style/dashboard.css';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
+
+// Đăng ký các thành phần cần thiết cho Chart.js
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
 const AdminDashboard = () => {
-
-
   const [users, setUsers] = useState([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [error, setError] = useState('');
@@ -24,9 +28,15 @@ const AdminDashboard = () => {
     }
   });
   const [activeTab, setActiveTab] = useState('overview');
+  const [orders, setOrders] = useState([]);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [analyticsError, setAnalyticsError] = useState('');
+  const [analyticsSubTab, setAnalyticsSubTab] = useState('revenue');
 
   useEffect(() => {
     fetchUsers();
+    fetchAnalyticsData();
   }, []);
 
   const fetchUsers = async () => {
@@ -42,6 +52,24 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể tải danh sách người dùng');
+    }
+  };
+
+  const fetchAnalyticsData = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      console.log('Token:', token);
+      const response = await axios.get(`${API_BASE_URL}/orders/list-orders/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log('API Response:', response.data);
+      if (response.data && response.data.status === 'success') {
+        setOrders(response.data.orders);
+        setAnalyticsError('');
+      }
+    } catch (err) {
+      console.error('API Error:', err.response || err.message);
+      setAnalyticsError(err.response?.data?.message || 'Không thể tải dữ liệu đơn hàng');
     }
   };
 
@@ -173,6 +201,287 @@ const AdminDashboard = () => {
     }
   };
 
+  const processAnalyticsData = () => {
+    // Lọc đơn hàng theo ngày
+    const filteredOrdersDelivered = orders.filter(order => {
+      const orderDate = new Date(order.NgayDatHang);
+      orderDate.setHours(0, 0, 0, 0);
+      const start = startDate ? new Date(startDate) : null;
+      const end = endDate ? new Date(endDate) : null;
+      if (start) start.setHours(0, 0, 0, 0);
+      if (end) end.setHours(23, 59, 59, 999);
+
+      return (
+        order.MaTrangThai === 5 &&
+        (!start || orderDate >= start) &&
+        (!end || orderDate <= end)
+      );
+    });
+
+    const filteredOrdersCancelled = orders.filter(order => {
+      const orderDate = new Date(order.NgayDatHang);
+      orderDate.setHours(0, 0, 0, 0);
+      const start = startDate ? new Date(startDate) : null;
+      const end = endDate ? new Date(endDate) : null;
+      if (start) start.setHours(0, 0, 0, 0);
+      if (end) end.setHours(23, 59, 59, 999);
+
+      return (
+        order.MaTrangThai === 6 &&
+        (!start || orderDate >= start) &&
+        (!end || orderDate <= end)
+      );
+    });
+
+    const filteredOrdersRefunded = orders.filter(order => {
+      const orderDate = new Date(order.NgayDatHang);
+      orderDate.setHours(0, 0, 0, 0);
+      const start = startDate ? new Date(startDate) : null;
+      const end = endDate ? new Date(endDate) : null;
+      if (start) start.setHours(0, 0, 0, 0);
+      if (end) end.setHours(23, 59, 59, 999);
+
+      return (
+        order.MaTrangThai === 7 &&
+        (!start || orderDate >= start) &&
+        (!end || orderDate <= end)
+      );
+    });
+
+    // Tạo danh sách các ngày trong khoảng thời gian
+    const dateRange = [];
+    const start = startDate ? new Date(startDate) : new Date(Math.min(...orders.map(o => new Date(o.NgayDatHang))));
+    const end = endDate ? new Date(endDate) : new Date(Math.max(...orders.map(o => new Date(o.NgayDatHang))));
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      dateRange.push(new Date(d).toLocaleDateString('vi-VN'));
+    }
+
+    // Tính doanh thu theo ngày (MaTrangThai = 5)
+    const revenueByDate = dateRange.reduce((acc, date) => {
+      const dailyRevenue = filteredOrdersDelivered
+        .filter(order => new Date(order.NgayDatHang).toLocaleDateString('vi-VN') === date)
+        .reduce((sum, order) => sum + parseFloat(order.TongTien || 0), 0);
+      acc[date] = dailyRevenue;
+      return acc;
+    }, {});
+
+    // Tính số lượng khách hàng theo ngày (MaTrangThai = 5)
+    const customersByDate = dateRange.reduce((acc, date) => {
+      const dailyCustomers = new Set(
+        filteredOrdersDelivered
+          .filter(order => new Date(order.NgayDatHang).toLocaleDateString('vi-VN') === date)
+          .map(order => order.SoDienThoai)
+      ).size;
+      acc[date] = dailyCustomers;
+      return acc;
+    }, {});
+
+    // Tính số lượng đơn bị hủy theo ngày (MaTrangThai = 6)
+    const cancelledOrdersByDate = dateRange.reduce((acc, date) => {
+      const dailyCancelled = filteredOrdersCancelled
+        .filter(order => new Date(order.NgayDatHang).toLocaleDateString('vi-VN') === date)
+        .length;
+      acc[date] = dailyCancelled;
+      return acc;
+    }, {});
+
+    // Tính tổng tiền hoàn theo ngày (MaTrangThai = 7)
+    const refundedAmountByDate = dateRange.reduce((acc, date) => {
+      const dailyRefunded = filteredOrdersRefunded
+        .filter(order => new Date(order.NgayDatHang).toLocaleDateString('vi-VN') === date)
+        .reduce((sum, order) => sum + parseFloat(order.TongTien || 0), 0);
+      acc[date] = dailyRefunded;
+      return acc;
+    }, {});
+
+    return {
+      labels: dateRange,
+      revenueData: dateRange.map(date => revenueByDate[date] || 0),
+      customerData: dateRange.map(date => customersByDate[date] || 0),
+      cancelledData: dateRange.map(date => cancelledOrdersByDate[date] || 0),
+      refundedData: dateRange.map(date => refundedAmountByDate[date] || 0),
+    };
+  };
+
+  const analyticsData = processAnalyticsData();
+
+  const revenueChartData = {
+    labels: analyticsData.labels,
+    datasets: [
+      {
+        label: 'Doanh thu (VNĐ)',
+        data: analyticsData.revenueData,
+        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const customerChartData = {
+    labels: analyticsData.labels,
+    datasets: [
+      {
+        label: 'Số lượng khách hàng',
+        data: analyticsData.customerData,
+        backgroundColor: 'rgba(16, 185, 129, 0.6)',
+        borderColor: 'rgba(16, 185, 129, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const cancelledChartData = {
+    labels: analyticsData.labels,
+    datasets: [
+      {
+        label: 'Số lượng đơn bị hủy',
+        data: analyticsData.cancelledData,
+        backgroundColor: 'rgba(239, 68, 68, 0.6)',
+        borderColor: 'rgba(239, 68, 68, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const refundedChartData = {
+    labels: analyticsData.labels,
+    datasets: [
+      {
+        label: 'Tổng tiền hoàn (VNĐ)',
+        data: analyticsData.refundedData,
+        backgroundColor: 'rgba(245, 158, 11, 0.6)',
+        borderColor: 'rgba(245, 158, 11, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: '',
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: '',
+        },
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Ngày',
+        },
+      },
+    },
+  };
+
+  const revenueChartOptions = {
+    ...chartOptions,
+    plugins: {
+      ...chartOptions.plugins,
+      title: {
+        display: true,
+        text: 'Doanh thu theo ngày',
+      },
+    },
+    scales: {
+      ...chartOptions.scales,
+      y: {
+        ...chartOptions.scales.y,
+        title: {
+          display: true,
+          text: 'Doanh thu (VNĐ)',
+        },
+        ticks: {
+          callback: function(value) {
+            return value.toLocaleString('vi-VN') + ' đ';
+          }
+        }
+      },
+    },
+  };
+
+  const customerChartOptions = {
+    ...chartOptions,
+    plugins: {
+      ...chartOptions.plugins,
+      title: {
+        display: true,
+        text: 'Số lượng khách hàng theo ngày',
+      },
+    },
+    scales: {
+      ...chartOptions.scales,
+      y: {
+        ...chartOptions.scales.y,
+        title: {
+          display: true,
+          text: 'Số lượng khách hàng',
+        },
+      },
+    },
+  };
+
+  const cancelledChartOptions = {
+    ...chartOptions,
+    plugins: {
+      ...chartOptions.plugins,
+      title: {
+        display: true,
+        text: 'Số lượng đơn bị hủy theo ngày',
+      },
+    },
+    scales: {
+      ...chartOptions.scales,
+      y: {
+        ...chartOptions.scales.y,
+        title: {
+          display: true,
+          text: 'Số lượng đơn bị hủy',
+        },
+      },
+    },
+  };
+
+  const refundedChartOptions = {
+    ...chartOptions,
+    plugins: {
+      ...chartOptions.plugins,
+      title: {
+        display: true,
+        text: 'Tổng tiền hoàn theo ngày',
+      },
+    },
+    scales: {
+      ...chartOptions.scales,
+      y: {
+        ...chartOptions.scales.y,
+        title: {
+          display: true,
+          text: 'Tổng tiền hoàn (VNĐ)',
+        },
+        ticks: {
+          callback: function(value) {
+            return value.toLocaleString('vi-VN') + ' đ';
+          }
+        }
+      },
+    },
+  };
+
   const SidebarItem = ({ icon: Icon, label, tab }) => (
     <div
       className={`sidebar-item ${activeTab === tab ? 'active' : ''}`}
@@ -194,6 +503,7 @@ const AdminDashboard = () => {
           <SidebarItem icon={BarChart3} label="Tổng Quan" tab="overview" />
           <SidebarItem icon={Edit} label="Sửa Người Dùng" tab="edit" />
           <SidebarItem icon={Trash2} label="Xóa Người Dùng" tab="delete" />
+          <SidebarItem icon={PieChart} label="Phân tích" tab="analytics" />
           <div 
             className="sidebar-item"
             onClick={() => {
@@ -318,36 +628,6 @@ const AdminDashboard = () => {
                 <button type="submit"><UserPlus size={16} /> Thêm</button>
               </form>
             </div>
-
-            {/* Danh sách người dùng */}
-            {/* <div className="user-management">
-              <h2>Quản Lý Người Dùng</h2>
-              <table className="user-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Tên đăng nhập</th>
-                    <th>Email</th>
-                    <th>Vai trò</th>
-                    <th>Hành động</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map(user => (
-                    <tr key={user.mataikhoan}>
-                      <td>{user.mataikhoan}</td>
-                      <td>{user.tendangnhap}</td>
-                      <td>{user.nguoidung_data.email}</td>
-                      <td>{user.loaiquyen}</td>
-                      <td>
-                        <button onClick={() => handleEdit(user)}><Edit size={16} /> Sửa</button>
-                        <button onClick={() => handleDelete(user.mataikhoan)}><Trash2 size={16} /> Xóa</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div> */}
           </>
         )}
 
@@ -503,6 +783,74 @@ const AdminDashboard = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Tab Phân tích */}
+        {activeTab === 'analytics' && (
+          <div className="analytics-section">
+            <h1>Phân tích</h1>
+            {analyticsError && <div className="alert alert-error">{analyticsError}</div>}
+            <div className="sub-tabs">
+              <button
+                className={`sub-tab ${analyticsSubTab === 'revenue' ? 'active' : ''}`}
+                onClick={() => setAnalyticsSubTab('revenue')}
+              >
+                Doanh thu theo ngày
+              </button>
+              <button
+                className={`sub-tab ${analyticsSubTab === 'customers' ? 'active' : ''}`}
+                onClick={() => setAnalyticsSubTab('customers')}
+              >
+                Số lượng khách theo ngày
+              </button>
+              <button
+                className={`sub-tab ${analyticsSubTab === 'cancel-refunded' ? 'active' : ''}`}
+                onClick={() => setAnalyticsSubTab('cancel-refunded')}
+              >
+                Đơn hủy và Hoàn tiền
+              </button>
+            </div>
+            <div className="date-filter">
+              <div className="form-group">
+                <label>Từ ngày</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>Đến ngày</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="charts-container">
+              {analyticsSubTab === 'revenue' && (
+                <div className="chart-card">
+                  <Bar data={revenueChartData} options={revenueChartOptions} />
+                </div>
+              )}
+              {analyticsSubTab === 'customers' && (
+                <div className="chart-card">
+                  <Bar data={customerChartData} options={customerChartOptions} />
+                </div>
+              )}
+              {analyticsSubTab === 'cancel-refunded' && (
+                <div className="dual-chart-container">
+                  <div className="chart-card">
+                    <Bar data={cancelledChartData} options={cancelledChartOptions} />
+                  </div>
+                  <div className="chart-card">
+                    <Bar data={refundedChartData} options={refundedChartOptions} />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

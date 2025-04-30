@@ -374,4 +374,35 @@ button[type="button"]:hover {
   button {
     padding: 8px 16px;
   }
+  /* Sub Tabs */
+.sub-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.sub-tab {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  background-color: #e5e7eb;
+  color: #4b5563;
+  transition: all 0.3s ease;
+}
+
+.sub-tab.active {
+  background-color: #1abc9c;
+  color: #ffffff;
+}
+
+.sub-tab:hover {
+  background-color: #d1d5db;
+}
+
+.sub-tab.active:hover {
+  background-color: #16a085;
+}
 }

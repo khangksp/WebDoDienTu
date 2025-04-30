@@ -2,8 +2,6 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  transition: none !important; /* Tắt tất cả các hiệu ứng transition */
-  animation: none !important; /* Tắt tất cả các animation */
 }
 
 body {
@@ -789,4 +787,19 @@ body {
   .btn {
     padding: 10px 15px;
   }
+  .sidebar-badge {
+    background-color: #e63946; /* đỏ nổi bật */
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 12px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+  }
+  
 }
