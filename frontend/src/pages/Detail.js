@@ -14,13 +14,9 @@ import './style/detail.css';
 import { useLanguage } from "../context/LanguageContext";
 import { useCart } from "../context/CartContext";
 
-
 function Detail() {
   const { t } = useLanguage();
-
-  // Xử lý khi thêm vào giỏ hàng
   const { addToCart } = useCart();
-
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -30,23 +26,49 @@ function Detail() {
   // State variables for product details
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [randomProducts, setRandomProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [totalSlides, setTotalSlides] = useState(0);
+  const [ratingData, setRatingData] = useState(null); // State cho dữ liệu đánh giá ngẫu nhiên
 
-  // Thêm states cho slider sản phẩm ngẫu nhiên
-  const [randomProducts, setRandomProducts] = useState([]);
-  const [currentSlide, setCurrentSlide] = useState(0);
   const productsPerSlide = 4;
-  
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Hàm tạo đánh giá ngẫu nhiên
+  const generateRandomRating = () => {
+    // Sinh điểm trung bình từ 3.5 đến 5.0
+    const average = (Math.random() * 1.5 + 3.5).toFixed(1); // 3.5 đến 5.0, làm tròn 1 chữ số thập phân
+    // Sinh tổng số đánh giá từ 50 đến 500
+    const totalReviews = Math.floor(Math.random() * 451) + 50; // 50 đến 500
+
+    // Phân phối số lượng đánh giá (ưu tiên 4-5 sao)
+    const counts = [0, 0, 0, 0, 0]; // [1 sao, 2 sao, 3 sao, 4 sao, 5 sao]
+    const weights = [0.05, 0.1, 0.15, 0.3, 0.4]; // Tỷ lệ: 5% 1 sao, 10% 2 sao, 15% 3 sao, 30% 4 sao, 40% 5 sao
+    let remaining = totalReviews;
+
+    for (let i = 4; i >= 0; i--) {
+      if (i === 0) {
+        counts[i] = remaining; // Đổ tất cả số còn lại vào 1 sao
+      } else {
+        const count = Math.floor(totalReviews * weights[i] * (0.8 + Math.random() * 0.4)); // Biến thiên ±20%
+        counts[i] = Math.min(count, remaining);
+        remaining -= counts[i];
+      }
+    }
+
+    return {
+      average: parseFloat(average),
+      counts: counts.reverse(), // Đảo ngược để khớp với hiển thị (5 sao, 4 sao, ..., 1 sao)
+    };
+  };
 
   const handleAddToCart = async () => {
     if (!product) return;
     
     try {
-      // Chuẩn bị dữ liệu sản phẩm
       const productData = {
         id: product.id,
         TenSanPham: product.TenSanPham || product.name,
@@ -54,24 +76,22 @@ function Detail() {
         HinhAnh_URL: product.HinhAnh_URL || product.image_url,
         quantity: quantity,
         category: product.TenDanhMuc || product.category_name,
-        selectedColor: 'default', // Nếu có thể chọn màu
-        size: 'Standard' // Nếu có thể chọn kích thước
+        selectedColor: 'default',
+        size: 'Standard'
       };
       
-      // Gọi hàm addToCart từ context
       await addToCart(productData, quantity);
-      
-      alert('Đã thêm sản phẩm vào giỏ hàng!');
+      alert(t('daThemVaoGioHang'));
     } catch (error) {
       console.error('Error adding to cart:', error);
-      alert('Có lỗi xảy ra khi thêm vào giỏ hàng.');
+      alert(t('loiThemVaoGioHang'));
     }
   };
 
-  // Fetch product data based on ID
+  // Fetch product data and generate random rating
   useEffect(() => {
     if (!productId) {
-      setError("Không tìm thấy ID sản phẩm");
+      setError(t('khongTimThayIDSanPham'));
       setLoading(false);
       return;
     }
@@ -82,43 +102,40 @@ function Detail() {
         const response = await axios.get(`http://localhost:8000/api/products/san-pham/${productId}/`);
         setProduct(response.data);
         
-        // Sau khi lấy sản phẩm, lấy danh sách sản phẩm khác để hiển thị trong phần liên quan
+        // Tạo đánh giá ngẫu nhiên cho sản phẩm
+        setRatingData(generateRandomRating());
+
+        // Lấy danh sách sản phẩm khác
         const allProductsResponse = await axios.get(`http://localhost:8000/api/products/san-pham/`);
         
-        // Lọc sản phẩm liên quan (cùng danh mục nhưng khác ID)
+        // Sản phẩm liên quan
         const related = allProductsResponse.data.filter(p => 
           p.DanhMuc === response.data.DanhMuc && p.id !== response.data.id
         );
-        setRelatedProducts(related.slice(0, 4)); // Lấy tối đa 4 sản phẩm liên quan
+        setRelatedProducts(related.slice(0, 4));
         
-        // Lấy các sản phẩm ngẫu nhiên cho slider
+        // Sản phẩm ngẫu nhiên cho slider
         const otherProducts = allProductsResponse.data.filter(p => p.id !== response.data.id);
-        // Ngẫu nhiên hóa mảng sản phẩm
         const shuffled = [...otherProducts].sort(() => 0.5 - Math.random());
-        const randomProductsData = shuffled.slice(0, 12); // Lấy 12 sản phẩm ngẫu nhiên
+        const randomProductsData = shuffled.slice(0, 12);
         setRandomProducts(randomProductsData);
-        
-        // Cập nhật tổng số trang
         setTotalSlides(Math.ceil(randomProductsData.length / productsPerSlide));
         
         setLoading(false);
       } catch (error) {
         console.error('Error fetching product data:', error);
-        setError("Không thể tải thông tin sản phẩm");
+        setError(t('khongTheTaiThongTinSanPham'));
         setLoading(false);
       }
     };
   
     fetchProductData();
-  }, [productId, productsPerSlide]);
+  }, [productId, productsPerSlide, t]);
 
-
-  // Xử lý khi chọn sản phẩm liên quan
   const handleRelatedProductClick = (relatedProductId) => {
     navigate(`/detail?id=${relatedProductId}`);
   };
 
-  // Xử lý điều hướng slider
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % totalSlides);
   };
@@ -127,10 +144,9 @@ function Detail() {
     setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
   };
 
-  // Render hiển thị đánh giá sao
   const renderStars = (rating) => {
     const stars = [];
-    const roundedRating = Math.round(rating * 2) / 2; // Làm tròn đến 0.5
+    const roundedRating = Math.round(rating * 2) / 2;
     
     for (let i = 1; i <= 5; i++) {
       stars.push(
@@ -144,16 +160,10 @@ function Detail() {
     return stars;
   };
 
-  // Giả lập dữ liệu đánh giá
-  const mockRating = {
-    average: 4.5,
-    counts: [150, 30, 10, 5, 5]
-  };
-
-  // Tính phần trăm cho thanh tiến trình đánh giá
   const calculatePercentage = (count) => {
-    const total = mockRating.counts.reduce((acc, curr) => acc + curr, 0);
-    return (count / total) * 100;
+    if (!ratingData) return 0;
+    const total = ratingData.counts.reduce((acc, curr) => acc + curr, 0);
+    return total ? (count / total) * 100 : 0;
   };
 
   if (loading) {
@@ -170,7 +180,7 @@ function Detail() {
     return (
       <div className="container mt-4">
         <div className="alert alert-danger">
-          {error || "Không tìm thấy sản phẩm"}
+          {error || t('khongTimThaySanPham')}
         </div>
       </div>
     );
@@ -180,7 +190,6 @@ function Detail() {
     <div className="product-detail-container">
       <div className="container mt-4">
         <div className="row">
-          {/* Product Images Section */}
           <div className="col-md-6 mb-4">
             <div className="product-image-gallery">
               <div className="main-image">
@@ -190,16 +199,13 @@ function Detail() {
                   className="img-fluid rounded shadow"
                 />
               </div>
-              {/* Nếu có nhiều ảnh, có thể hiển thị thêm ở đây */}
             </div>
           </div>
 
-          {/* Product Info Section */}
           <div className="col-md-6">
             <div className="product-info p-3">
               <h1 className="product-title mb-3">{product.TenSanPham || product.name}</h1>
               
-              {/* Thẻ thông tin sản phẩm */}
               <div className="product-features d-flex flex-wrap mb-3">
                 {(product.TenDanhMuc || product.category_name) && (
                   <div className="feature-badge me-3 mb-2">
@@ -213,14 +219,12 @@ function Detail() {
                     <span>{product.TenHangSanXuat || product.hang_san_xuat_name}</span>
                   </div>
                 )}
-                {/* Kiểm tra và hiển thị thông số */}
                 {(product.ChiTietThongSo && product.ChiTietThongSo.length > 0) && (
                   <div className="feature-badge me-3 mb-2">
                     <FontAwesomeIcon icon={faExchangeAlt} className="me-1" />
                     <span>{product.ChiTietThongSo[0].TenThongSo}: {product.ChiTietThongSo[0].GiaTriThongSo}</span>
                   </div>
                 )}
-                {/* Hiển thị thông số cũ nếu có */}
                 {(!product.ChiTietThongSo && product.thong_so_name) && (
                   <div className="feature-badge me-3 mb-2">
                     <FontAwesomeIcon icon={faExchangeAlt} className="me-1" />
@@ -229,19 +233,18 @@ function Detail() {
                 )}
               </div>
               
-              {/* Đánh giá sản phẩm */}
               <div className="product-rating mb-3">
-                {renderStars(mockRating.average)}
-                <span className="ms-2">({mockRating.counts.reduce((a, b) => a + b, 0)} {t('danhGia')})</span>
+                {ratingData && renderStars(ratingData.average)}
+                <span className="ms-2">
+                  ({ratingData ? ratingData.counts.reduce((a, b) => a + b, 0) : 0} {t('danhGia')})
+                </span>
               </div>
               
-              {/* Price Section */}
               <div className="product-price mb-3">
                 <h5 className="mb-1 text-muted">{t('gia')}</h5>
                 <h3 className="price">{Number(product.GiaBan || product.price).toLocaleString()} VNĐ</h3>
               </div>
               
-              {/* Description - Fixed version */}
               <div className="product-description mb-3">
                 <h5 className="mb-1 text-muted">{t('moTaSanPham')}</h5>
                 {(product.MoTa || product.description) ? (
@@ -253,7 +256,6 @@ function Detail() {
                 )}
               </div>
               
-              {/* Quantity Selection */}
               <div className="quantity-selection mb-4">
                 <h5 className="mb-2">{t('soLuong')}</h5>
                 <div className="quantity-controls d-flex align-items-center">
@@ -276,40 +278,38 @@ function Detail() {
                 <p className="mt-2 text-muted">{t('con')} {product.SoLuongTon || product.stock} {t('sp')}</p>
               </div>
               
-              {/* Add to Cart Button */}
               <div className="add-to-cart-section">
-              <button 
-                className="btn-add-to-cart" 
-                onClick={handleAddToCart}
-                disabled={(product.SoLuongTon || product.stock) <= 0}
-              >
-                <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
-                {(product.SoLuongTon || product.stock) > 0 ? 'Thêm vào giỏ hàng' : 'Hết hàng'}
-              </button>
+                <button 
+                  className="btn-add-to-cart" 
+                  onClick={handleAddToCart}
+                  disabled={(product.SoLuongTon || product.stock) <= 0}
+                >
+                  <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
+                  {(product.SoLuongTon || product.stock) > 0 ? t('themVaoGioHang') : t('hetHang')}
+                </button>
               </div>
             </div>
           </div>
         </div>
         
-        {/* Product Ratings Section */}
         <div className="row mt-5">
           <div className="col-12">
             <div className="ratings-section p-4 border rounded">
               <h3 className="mb-4">{t('danhGiaSanPham')}</h3>
               
               <div className="row">
-                {/* Overall Rating */}
                 <div className="col-md-3 text-center">
                   <div className="overall-rating">
                     <div className="rating-circle">
-                      <span className="rating-number">{mockRating.average}</span>
+                      <span className="rating-number">{ratingData ? ratingData.average : '0'}</span>
                       <FontAwesomeIcon icon={fasStar} className="rating-star" />
                     </div>
-                    <p className="mt-2">{mockRating.counts.reduce((a, b) => a + b, 0)} {t('danhGia')}</p>
+                    <p className="mt-2">
+                      {ratingData ? ratingData.counts.reduce((a, b) => a + b, 0) : 0} {t('danhGia')}
+                    </p>
                   </div>
                 </div>
                 
-                {/* Rating Breakdown */}
                 <div className="col-md-9">
                   <div className="rating-bars">
                     {[5, 4, 3, 2, 1].map((star, index) => (
@@ -321,13 +321,13 @@ function Detail() {
                           <div 
                             className="progress-bar bg-warning" 
                             role="progressbar" 
-                            style={{ width: `${calculatePercentage(mockRating.counts[5-star])}%` }}
-                            aria-valuenow={calculatePercentage(mockRating.counts[5-star])}
+                            style={{ width: `${ratingData ? calculatePercentage(ratingData.counts[5-star]) : 0}%` }}
+                            aria-valuenow={ratingData ? calculatePercentage(ratingData.counts[5-star]) : 0}
                             aria-valuemin="0" 
                             aria-valuemax="100"
                           ></div>
                         </div>
-                        <span className="ms-2">{mockRating.counts[5-star]}</span>
+                        <span className="ms-2">{ratingData ? ratingData.counts[5-star] : 0}</span>
                       </div>
                     ))}
                   </div>
@@ -337,7 +337,6 @@ function Detail() {
           </div>
         </div>
         
-        {/* Related Products Section */}
         {relatedProducts.length > 0 && (
           <div className="related-products mt-5">
             <h3 className="mb-4">{t('sanPhamLienQuan')}</h3>
@@ -371,11 +370,10 @@ function Detail() {
           </div>
         )}
         
-        {/* Random Products Slider */}
         {randomProducts.length > 0 && (
           <div className="random-products-slider mt-5 mb-5">
             <div className="d-flex align-items-center justify-content-between mb-3">
-              <h3>Sản phẩm khác</h3>
+              <h3>{t('sanPhamKhac')}</h3>
               <div className="slider-controls">
                 <button 
                   className="btn btn-outline-secondary slider-control-btn me-2" 
@@ -433,7 +431,7 @@ function Detail() {
                       key={index}
                       className={`slider-indicator ${currentSlide === index ? 'active' : ''}`}
                       onClick={() => setCurrentSlide(index)}
-                      aria-label={`Trang ${index + 1}`}
+                      aria-label={t('trang', { page: index + 1 })}
                     ></button>
                   ))}
                 </div>

@@ -11,7 +11,11 @@ import random
 import string
 from django.core.mail import send_mail
 from django.conf import settings
+from decimal import Decimal, InvalidOperation
 
+import logging
+
+logger = logging.getLogger(__name__)
 class UserListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -320,3 +324,67 @@ class PasswordResetView(APIView):
                 {"status": "error", "message": f"Lỗi gửi email: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
+class BalanceReductionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Get the total amount to be deducted
+        tongtien = request.data.get('tongtien')
+        
+        # Validate input
+        if tongtien is None:
+            return Response(
+                {"status": "error", "message": "Tổng tiền là bắt buộc"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Convert tongtien to Decimal to match database field type
+            tongtien = Decimal(str(tongtien))
+        except (ValueError, TypeError, InvalidOperation):
+            return Response(
+                {"status": "error", "message": "Tổng tiền phải là một số hợp lệ"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if tongtien is positive
+        if tongtien <= 0:
+            return Response(
+                {"status": "error", "message": "Tổng tiền phải là số dương"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get the current user's account
+        taikhoan = request.user
+        
+        # Get the associated NguoiDung (user details)
+        try:
+            nguoidung = taikhoan.nguoidung.first()
+            if not nguoidung:
+                return Response(
+                    {"status": "error", "message": "Không tìm thấy thông tin người dùng"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        except Exception as e:
+            return Response(
+                {"status": "error", "message": f"Lỗi truy xuất thông tin người dùng: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        # Check if the user has sufficient balance
+        if not nguoidung.sodu or nguoidung.sodu < tongtien:
+            return Response(
+                {"status": "error", "message": "Số dư không đủ để thực hiện giao dịch"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Reduce the balance
+        nguoidung.sodu -= tongtien
+        nguoidung.save()
+        
+        return Response({
+            "status": "ok", 
+            "message": "Trừ tiền thành công", 
+            "sodu_moi": str(nguoidung.sodu)  # Convert to string for JSON serialization
+        }, status=status.HTTP_200_OK)

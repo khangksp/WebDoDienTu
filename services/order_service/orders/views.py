@@ -9,7 +9,8 @@ from .serializers import DonHangSerializer, ChiTietDonHangSerializer, CreateOrde
 from django.db.models import Sum, Count  # Add these imports
 import json
 import logging
-
+import requests
+from decimal import Decimal
 logger = logging.getLogger(__name__)
 
 @api_view(['GET'])
@@ -113,26 +114,22 @@ class DonHangViewSet(viewsets.ModelViewSet):
 
 class CreateOrderView(APIView):
     """API View để tạo đơn hàng mới từ giỏ hàng"""
-    
+
     def post(self, request):
         logger.info(f"Nhận request tạo đơn hàng: {request.data}")
-        
-        # Kiểm tra xác thực
+
         token_user_id = getattr(request.user, 'id', None)
         logger.info(f"User ID từ token: {token_user_id}")
-        
-        # Clone request.data để có thể sửa đổi
+
         data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
-        
-        # Thêm user_id từ token nếu không có trong request hoặc là null
+
         if (not data.get('user_id') or data.get('user_id') is None) and token_user_id:
             data['user_id'] = token_user_id
             logger.info(f"Sử dụng user_id từ token: {token_user_id}")
         elif not data.get('user_id') or data.get('user_id') is None:
             data['user_id'] = 1
             logger.info("Không tìm thấy user_id, sử dụng giá trị mặc định: 1")
-        
-        # Chuyển đổi user_id thành số nếu là chuỗi
+
         if 'user_id' in data and not isinstance(data['user_id'], int):
             try:
                 data['user_id'] = int(data['user_id'])
@@ -140,44 +137,95 @@ class CreateOrderView(APIView):
             except (ValueError, TypeError):
                 data['user_id'] = 1
                 logger.info("Không thể chuyển đổi user_id thành int, sử dụng giá trị mặc định: 1")
-        
+
         serializer = CreateOrderSerializer(data=data)
-        
+
         if serializer.is_valid():
             data = serializer.validated_data
             logger.info(f"Dữ liệu hợp lệ: {data}")
-            
+
             try:
-                # Lấy hoặc tạo trạng thái "Chờ thanh toán"
                 trang_thai, created = TrangThai.objects.get_or_create(
                     TenTrangThai="Đang xử lý",
                     defaults={'LoaiTrangThai': 'Đơn hàng'}
                 )
-                # Tính tổng tiền từ các sản phẩm - SỬA LỖI Ở ĐÂY
-                total_amount = 0
+
+                total_amount = Decimal('0')
                 for item in data['items']:
-                    # Kiểm tra các trường có thể chứa giá
-                    price = None
-                    if 'price' in item:
-                        price = item.get('price')
-                    elif 'GiaBan' in item:
-                        price = item.get('GiaBan')
-                    elif 'GiaSanPham' in item:
-                        price = item.get('GiaSanPham')
-                    
+                    price = item.get('price') or item.get('GiaBan') or item.get('GiaSanPham')
                     quantity = item.get('quantity')
-                    
-                    # Kiểm tra giá trị price và quantity phải hợp lệ
+
                     if price is not None and quantity is not None:
-                        item_total = price * quantity
-                        total_amount += item_total
-                        logger.info(f"Sản phẩm: {item.get('name', item.get('TenSanPham', 'N/A'))}, Giá: {price}, SL: {quantity}, Thành tiền: {item_total}")
+                        try:
+                            price = Decimal(str(price))
+                            quantity = Decimal(str(quantity))
+                            total_amount += price * quantity
+                            logger.info(f"Sản phẩm: {item.get('name', item.get('TenSanPham', 'N/A'))}, Giá: {price}, SL: {quantity}")
+                        except (ValueError, TypeError) as e:
+                            logger.error(f"Lỗi khi tính giá sản phẩm {item.get('TenSanPham', 'N/A')}: {str(e)}")
+                            return Response({
+                                'status': 'error',
+                                'message': f'Giá hoặc số lượng không hợp lệ cho sản phẩm: {item.get("TenSanPham", "N/A")}'
+                            }, status=status.HTTP_400_BAD_REQUEST)
                     else:
                         logger.warning(f"Thiếu thông tin giá hoặc số lượng cho sản phẩm: {item}")
-                
+                        return Response({
+                            'status': 'error',
+                            'message': f'Thiếu thông tin giá hoặc số lượng cho sản phẩm: {item.get("TenSanPham", "N/A")}'
+                        }, status=status.HTTP_400_BAD_REQUEST)
+
                 logger.info(f"Tổng tiền đơn hàng: {total_amount}")
-                
-                # Tạo đơn hàng
+
+                if data.get('payment_method', '').lower() == 'ewallet':
+                    auth_header = request.META.get('HTTP_AUTHORIZATION') or request.headers.get('Authorization')
+                    if not auth_header:
+                        logger.warning("Thiếu Authorization header khi gọi API ví điện tử")
+
+                    headers = {
+                        'Authorization': auth_header,
+                        'Content-Type': 'application/json'
+                    }
+
+                    logger.info(f"Gửi request tới ewallet với headers: {headers}, body: {{'tongtien': {float(total_amount)}}}")
+
+                    try:
+                        ewallet_response = requests.post(
+                            'http://api_gateway:8000/api/auth/balance/reduce/',
+                            json={'tongtien': float(total_amount)},
+                            headers=headers
+                        )
+
+                        logger.info(f"Mã trạng thái: {ewallet_response.status_code}")
+                        logger.info(f"Nội dung phản hồi: {ewallet_response.text}")
+
+                        if ewallet_response.status_code != 200:
+                            logger.error(f"Lỗi thanh toán ví điện tử: {ewallet_response.text}")
+                            try:
+                                error_details = ewallet_response.json()
+                                message = error_details.get('message', '')
+                            except ValueError:
+                                error_details = {'message': 'Không thể phân tích phản hồi từ API trừ tiền'}
+                                message = error_details['message']
+
+                            if "số dư không đủ" in message.lower():
+                                return Response({
+                                    'status': 'error',
+                                    'message': 'Số dư trong ví không đủ để thanh toán'
+                                }, status=status.HTTP_402_PAYMENT_REQUIRED)
+
+                            return Response({
+                                'status': 'error',
+                                'message': message or 'Thanh toán bằng ví điện tử thất bại',
+                                'error_details': error_details
+                            }, status=status.HTTP_400_BAD_REQUEST)
+
+                    except requests.RequestException as e:
+                        logger.error(f"Lỗi kết nối API trừ tiền: {str(e)}")
+                        return Response({
+                            'status': 'error',
+                            'message': 'Lỗi kết nối thanh toán'
+                        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
                 don_hang = DonHang.objects.create(
                     MaNguoiDung=data['user_id'],
                     MaTrangThai=trang_thai,
@@ -187,19 +235,13 @@ class CreateOrderView(APIView):
                     SoDienThoai=data['phone_number'],
                     PhuongThucThanhToan=data['payment_method']
                 )
-                
-                # Tạo chi tiết đơn hàng
+
                 chi_tiet_items = []
                 for item in data['items']:
-                    # Lấy giá từ các trường có thể
                     price = item.get('price', item.get('GiaBan', item.get('GiaSanPham', 0)))
-                    
-                    # Lấy tên sản phẩm từ các trường có thể
                     ten_san_pham = item.get('name', item.get('TenSanPham', ''))
-                    
-                    # Lấy URL hình ảnh từ các trường có thể
                     hinh_anh = item.get('image_url', item.get('HinhAnh_URL', ''))
-                    
+
                     chi_tiet = ChiTietDonHang.objects.create(
                         MaDonHang=don_hang,
                         MaSanPham=item.get('id'),
@@ -212,8 +254,7 @@ class CreateOrderView(APIView):
                         'product_id': chi_tiet.MaSanPham,
                         'quantity': chi_tiet.SoLuong
                     })
-                
-                # Gửi sự kiện order.created lên RabbitMQ
+
                 order_data = {
                     'order_id': don_hang.MaDonHang,
                     'user_id': don_hang.MaNguoiDung,
@@ -227,29 +268,28 @@ class CreateOrderView(APIView):
                 }
                 publish_order_event('created', order_data)
                 logger.info(f"Đã gửi sự kiện order.created cho đơn hàng #{don_hang.MaDonHang}")
-                
-                # Trả về kết quả
+
                 return Response({
                     'order_id': don_hang.MaDonHang,
                     'status': 'success',
                     'message': 'Đơn hàng đã được tạo thành công',
-                    'total_amount': don_hang.TongTien
+                    'total_amount': float(don_hang.TongTien)
                 }, status=status.HTTP_201_CREATED)
-                
+
             except Exception as e:
                 logger.error(f"Lỗi khi tạo đơn hàng: {str(e)}", exc_info=True)
                 return Response({
                     'status': 'error',
                     'message': f'Lỗi khi tạo đơn hàng: {str(e)}'
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
         logger.warning(f"Lỗi dữ liệu đầu vào: {serializer.errors}")
         return Response({
             'status': 'error',
             'message': 'Dữ liệu không hợp lệ',
             'errors': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
-        
+
 @api_view(['GET'])
 def get_user_orders(request, user_id):
     """Lấy danh sách đơn hàng của một người dùng cụ thể"""

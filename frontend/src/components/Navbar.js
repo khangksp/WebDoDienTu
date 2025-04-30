@@ -16,6 +16,7 @@ import {
   faEdit,
   faSave,
   faTimesCircle,
+  faWallet,
 } from "@fortawesome/free-solid-svg-icons";
 import { faFacebookF, faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { useLanguage } from "../context/LanguageContext";
@@ -98,6 +99,19 @@ const NavbarStyles = `
   .btn-cancel {
     background-color: #6c757d;
   }
+
+  .nav-balance {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: #1e293b;
+    margin-left: 16px;
+  }
+
+  .nav-balance svg {
+    margin-right: 4px;
+    color: #6b7280;
+  }
 `;
 
 function Navbar() {
@@ -177,9 +191,8 @@ function Navbar() {
         );
 
         const orders = response.data;
-        // Calculate total quantity from delivered orders (MaTrangThai: 5)
         const totalQuantity = orders
-          .filter((order) => order.MaTrangThai === 5) // Only delivered orders
+          .filter((order) => order.MaTrangThai === 5)
           .reduce((total, order) => {
             return (
               total +
@@ -273,7 +286,7 @@ function Navbar() {
     return () => clearInterval(timer);
   }, [isCountingDown, countdown]);
 
-  // Lấy danh sách tỉnh
+  // Fetch provinces
   useEffect(() => {
     const fetchProvinces = async () => {
       try {
@@ -288,7 +301,7 @@ function Navbar() {
     fetchProvinces();
   }, []);
 
-  // Lấy danh sách huyện khi chọn tỉnh
+  // Fetch districts
   useEffect(() => {
     if (selectedProvince) {
       const fetchDistricts = async () => {
@@ -308,7 +321,7 @@ function Navbar() {
     }
   }, [selectedProvince]);
 
-  // Lấy danh sách xã khi chọn huyện
+  // Fetch wards
   useEffect(() => {
     if (selectedDistrict) {
       const fetchWards = async () => {
@@ -326,7 +339,7 @@ function Navbar() {
     }
   }, [selectedDistrict]);
 
-  // Phân tích địa chỉ hiện tại để chọn tỉnh/huyện/xã
+  // Initialize address
   useEffect(() => {
     const initializeAddress = async () => {
       if (editData.diachi && provinces.length > 0 && isEditing) {
@@ -370,8 +383,6 @@ function Navbar() {
                 }
               }
             }
-          } else {
-            console.warn('Không tìm thấy tỉnh phù hợp cho địa chỉ:', editData.diachi);
           }
         } catch (error) {
           console.error('Lỗi khi phân tích địa chỉ:', error);
@@ -382,7 +393,7 @@ function Navbar() {
     initializeAddress();
   }, [provinces, editData.diachi, isEditing]);
 
-  // Cập nhật địa chỉ khi chọn xã
+  // Update address
   useEffect(() => {
     if (selectedWard && isEditing && selectedProvince && selectedDistrict) {
       const provinceName = provinces.find(p => p.code === Number(selectedProvince))?.name || '';
@@ -505,12 +516,6 @@ function Navbar() {
       console.log("Login response:", response.data);
       const { access, refresh, user } = response.data;
 
-      if (!user.nguoidung_data) {
-        console.warn("nguoidung_data không tồn tại trong response:", user);
-      } else {
-        console.log("nguoidung_data:", user.nguoidung_data);
-      }
-
       localStorage.setItem("access_token", access);
       if (refresh) localStorage.setItem("refresh_token", refresh);
       localStorage.setItem("mataikhoan", user.mataikhoan.toString());
@@ -520,6 +525,7 @@ function Navbar() {
         localStorage.setItem("tennguoidung", user.nguoidung_data.tennguoidung || "");
         localStorage.setItem("sodienthoai", user.nguoidung_data.sodienthoai || "");
         localStorage.setItem("diachi", user.nguoidung_data.diachi || "");
+        localStorage.setItem("sodu", user.nguoidung_data.sodu);
       }
 
       login(user);
@@ -544,7 +550,6 @@ function Navbar() {
           navigate("/", { replace: true });
         }
       }
-      
     } catch (error) {
       console.error("Login error:", error.response?.data);
       setErrorMessage(
@@ -676,7 +681,7 @@ function Navbar() {
   const handleLogout = () => {
     logout();
     resetModals();
-    setPurchasedProductCount(0); // Reset count on logout
+    setPurchasedProductCount(0);
     navigate("/");
   };
 
@@ -782,7 +787,13 @@ function Navbar() {
 
             <div className="d-lg-none d-flex justify-content-between align-items-center">
               <LanguageSwitcher />
-              <div className="d-flex">
+              <div className="d-flex align-items-center">
+                {isAuthenticated && (
+                  <span className="nav-balance me-3">
+                    <FontAwesomeIcon icon={faWallet} className="me-1" />
+                    {Number(user.nguoidung_data?.sodu || 0).toLocaleString('vi-VN')} VNĐ
+                  </span>
+                )}
                 <a className="nav-link me-3" href="#" onClick={handleAccountClick}>
                   <FontAwesomeIcon icon={faUser} />
                   <span className="d-none d-lg-inline ms-1">
@@ -814,6 +825,12 @@ function Navbar() {
             </form>
 
             <LanguageSwitcher />
+            {isAuthenticated && (
+              <span className="nav-balance">
+                <FontAwesomeIcon icon={faWallet} className="me-1" />
+                {Number(user.nguoidung_data?.sodu || 0).toLocaleString('vi-VN')} VNĐ
+              </span>
+            )}
             <a className="nav-link ms-3" href="#" onClick={handleAccountClick}>
               <FontAwesomeIcon icon={faUser} className="me-1" />
               {isAuthenticated ? username : t("taiKhoan")}
@@ -843,7 +860,7 @@ function Navbar() {
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>
-            <div className="login-modal-body">
+             <div className="login-modal-body">
               {user ? (
                 <>
                   <div className="text-center mb-4">
@@ -979,6 +996,15 @@ function Navbar() {
                         <span>
                           <strong>{t("diaChi")}:</strong>{" "}
                           {user.nguoidung_data?.diachi || t("chuaCapNhat")}
+                        </span>
+                      </div>
+                      <div className="user-info mb-2">
+                        <FontAwesomeIcon icon={faWallet} className="me-2" />
+                        <span>
+                          <strong>{t("soDu")}:</strong>{" "}
+                          {user.nguoidung_data?.sodu
+                            ? Number(user.nguoidung_data.sodu).toLocaleString('vi-VN') + ' VNĐ'
+                            : t("chuaCapNhat")}
                         </span>
                       </div>
                       <hr />

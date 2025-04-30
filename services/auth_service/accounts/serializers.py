@@ -5,7 +5,8 @@ from .models import TaiKhoan, NguoiDung
 class NguoiDungSerializer(serializers.ModelSerializer):
     class Meta:
         model = NguoiDung
-        fields = ['manguoidung', 'tennguoidung', 'diachi', 'email', 'sodienthoai']
+        fields = ['manguoidung', 'tennguoidung', 'diachi', 'email', 'sodienthoai', 'sodu']
+
 
 class TaiKhoanSerializer(serializers.ModelSerializer):
     nguoidung = NguoiDungSerializer(many=False, required=True, write_only=True)

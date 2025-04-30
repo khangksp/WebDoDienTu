@@ -65,6 +65,7 @@ class NguoiDung(models.Model):
     diachi = models.CharField(max_length=255, null=True, blank=True)
     email = models.EmailField(max_length=255, unique=True)
     sodienthoai = models.CharField(max_length=255, unique=True)
+    sodu = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)  # Thêm dòng này
     fk_taikhoan = models.ForeignKey(
         TaiKhoan,
         on_delete=models.CASCADE,

@@ -6,12 +6,7 @@ CREATE DATABASE IF NOT EXISTS payment_db;
 
 -- Tạo người dùng 'user' nếu chưa tồn tại và đặt mật khẩu
 CREATE USER IF NOT EXISTS 'user'@'%' IDENTIFIED BY 'password';
--- Tạo người dùng 'user' nếu chưa tồn tại và đặt mật khẩu
--- Tạo người dùng 'user' nếu chưa tồn tại và đặt mật khẩu
--- Tạo người dùng 'user' nếu chưa tồn tại và đặt mật khẩu
--- Tạo người dùng 'user' nếu chưa tồn tại và đặt mật khẩu
 
--- Tạo người dùng 'user' nếu chưa tồn tại và đặt mật khẩu
 -- Cấp toàn quyền cho người dùng 'user' trên các cơ sở dữ liệu
 GRANT ALL PRIVILEGES ON auth_db.* TO 'user'@'%';
 GRANT ALL PRIVILEGES ON product_db.* TO 'user'@'%';
@@ -41,17 +36,31 @@ CREATE TABLE IF NOT EXISTS nguoidung (
     diachi VARCHAR(255),
     email VARCHAR(255) NOT NULL UNIQUE,
     sodienthoai VARCHAR(255) NOT NULL UNIQUE,
+    sodu DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
     fk_taikhoan INT NOT NULL,
     FOREIGN KEY (fk_taikhoan) REFERENCES taikhoan(mataikhoan) ON DELETE CASCADE
 );
--- Chèn dữ liệu mẫu với trường vaitro
--- Chèn dữ liệu vào bảng taikhoan
-INSERT INTO taikhoan (tendangnhap, matkhau, loaiquyen, created_at, last_login, is_active, is_staff, is_superuser)
-SELECT taikhoan, matkhau, vaitro, created_at, last_login, is_active, is_staff, is_superuser
-FROM users;
 
+-- Tạo tài khoản admin mẫu
+INSERT INTO taikhoan (tendangnhap, matkhau, loaiquyen, is_active, is_staff, is_superuser)
+VALUES (
+    'admin',
+    'admin',  -- giả sử đây là mật khẩu đã được băm, ví dụ bằng bcrypt
+    'admin',
+    TRUE,
+    TRUE,
+    TRUE
+);
+
+-- Tạo thông tin người dùng tương ứng cho admin
 INSERT INTO nguoidung (tennguoidung, diachi, email, sodienthoai, fk_taikhoan)
-SELECT taikhoan, NULL, email, sodienthoai, id
-FROM users;
+VALUES (
+    'Quản trị viên',
+    'Hà Nội',
+    'admin@example.com',
+    '0123456789',
+    (SELECT mataikhoan FROM taikhoan WHERE tendangnhap = 'admin')
+);
+
 -- Áp dụng các thay đổi quyền
 FLUSH PRIVILEGES;

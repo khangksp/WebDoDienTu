@@ -325,7 +325,6 @@
             HinhAnh_URL: item.HinhAnh_URL || item.image_url
           }))
         };
-    
         console.log("Dữ liệu đơn hàng gửi đi:", orderData);
     
         const response = await fetch('http://localhost:8000/api/orders/create/', {

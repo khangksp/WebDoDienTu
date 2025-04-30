@@ -1,5 +1,9 @@
 from django.urls import path
-from .views import LoginView, UserListView, RegisterView, UserUpdateView, UserDeleteView, UserDetailView,CurrentUserView,PasswordResetView
+from .views import (
+    LoginView, UserListView, RegisterView, UserUpdateView, 
+    UserDeleteView, UserDetailView, CurrentUserView, 
+    PasswordResetView, BalanceReductionView
+)
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
@@ -10,4 +14,5 @@ urlpatterns = [
     path('users/delete/<int:user_id>/', UserDeleteView.as_view(), name='user-delete'),
     path('auth/me/', CurrentUserView.as_view(), name='current-user'),
     path('password-reset/', PasswordResetView.as_view(), name='password-reset'),
+    path('balance/reduce/', BalanceReductionView.as_view(), name='balance-reduction'),
 ]

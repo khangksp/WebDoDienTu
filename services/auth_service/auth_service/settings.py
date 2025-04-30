@@ -12,7 +12,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-auth-service-key')
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'api_gateway', 'auth_service']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'api_gateway', 'auth_service', 'auth_service:8000']
 
 # Use custom user model
 AUTH_USER_MODEL = 'accounts.TaiKhoan'
