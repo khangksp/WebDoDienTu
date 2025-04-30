@@ -153,7 +153,6 @@ class CreateOrderView(APIView):
                     TenTrangThai="Đang xử lý",
                     defaults={'LoaiTrangThai': 'Đơn hàng'}
                 )
-                
                 # Tính tổng tiền từ các sản phẩm - SỬA LỖI Ở ĐÂY
                 total_amount = 0
                 for item in data['items']:

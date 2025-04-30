@@ -114,6 +114,7 @@ function Navbar() {
     sodienthoai: "",
     diachi: "",
   });
+  const [purchasedProductCount, setPurchasedProductCount] = useState(0);
 
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
@@ -155,6 +156,49 @@ function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 992);
+
+  // Fetch purchased product count
+  useEffect(() => {
+    const fetchPurchasedProductCount = async () => {
+      if (!user || !user.mataikhoan) {
+        setPurchasedProductCount(0);
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) return;
+
+        const response = await axios.get(
+          `${API_BASE_URL}/orders/user/${user.mataikhoan}/`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        const orders = response.data;
+        // Calculate total quantity from delivered orders (MaTrangThai: 5)
+        const totalQuantity = orders
+          .filter((order) => order.MaTrangThai === 5) // Only delivered orders
+          .reduce((total, order) => {
+            return (
+              total +
+              (order.chi_tiet?.reduce(
+                (sum, item) => sum + (item.SoLuong || 0),
+                0
+              ) || 0)
+            );
+          }, 0);
+
+        setPurchasedProductCount(totalQuantity);
+      } catch (err) {
+        console.error("Error fetching purchased product count:", err);
+        setPurchasedProductCount(0);
+      }
+    };
+
+    fetchPurchasedProductCount();
+  }, [user]);
 
   const handleMenuClick = () => {
     setIsToggled(false);
@@ -482,9 +526,15 @@ function Navbar() {
       resetModals();
 
       const redirectPath = localStorage.getItem("redirect_after_login");
-      if (redirectPath) {
+
+      if (
+        redirectPath &&
+        ((user.loaiquyen === "admin" && redirectPath === "/admin") ||
+         (user.loaiquyen === "nhanvien" && redirectPath === "/nhanvien") ||
+         (!["admin", "nhanvien"].includes(user.loaiquyen) && redirectPath === "/"))
+      ) {
         localStorage.removeItem("redirect_after_login");
-        navigate(redirectPath);
+        navigate(redirectPath, { replace: true });
       } else {
         if (user.loaiquyen === "admin") {
           navigate("/admin", { replace: true });
@@ -494,6 +544,7 @@ function Navbar() {
           navigate("/", { replace: true });
         }
       }
+      
     } catch (error) {
       console.error("Login error:", error.response?.data);
       setErrorMessage(
@@ -625,6 +676,7 @@ function Navbar() {
   const handleLogout = () => {
     logout();
     resetModals();
+    setPurchasedProductCount(0); // Reset count on logout
     navigate("/");
   };
 
@@ -702,7 +754,15 @@ function Navbar() {
                   { path: "/about", label: t("gioiThieu") },
                   { path: "/products", label: t("sanPham") },
                   { path: "/contact", label: t("lienHe") },
-                  ...(isAuthenticated ? [{ path: "/my-orders", label: t("donHangCuaToi") }] : []),
+                  ...(isAuthenticated
+                    ? [
+                        {
+                          path: "/my-orders",
+                          label: t("donHangCuaToi"),
+                          badge: purchasedProductCount > 0 ? purchasedProductCount : null,
+                        },
+                      ]
+                    : []),
                 ].map((item) => (
                   <Link
                     key={item.path}
@@ -711,6 +771,9 @@ function Navbar() {
                     onClick={handleMenuClick}
                   >
                     {item.label}
+                    {item.badge && (
+                      <span className="badge badge-orders ms-1">{item.badge}</span>
+                    )}
                   </Link>
                 ))}
                 <div className="indicator" style={indicatorStyle}></div>
