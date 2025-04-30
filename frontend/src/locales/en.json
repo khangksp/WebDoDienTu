@@ -288,8 +288,41 @@
     "donHangDaGiaoHang": "Delivered Orders",
     "donHangDaHuy": "Cancelled Orders",
     "donHangHoanTien": "Refunded Orders",
-    "dangNhapThatBai": "Login Failed"
+    "dangNhapThatBai": "Login Failed",
     
+    "capNhat": "Update",
+    "banCoChacChanMuonXoa": "Are you sure you want to delete ",
+    "hanhDongNayKhongTheHoanTac": "This action cannot be undone",
+    "xoa": "Delete",
+    "xacNhanXoa": "Confirm delete",
+
+    "capNhatTrangThaiDonHang": "Update order status",
+    "trangThaiHienTai": "Current status",
+    "trangThaiMoi": "New status",
+
+    "soLuongTonKho": "Stock quantity",
+    "deTrongNeuKhongMuonThayDoiHinhAnh": "Leave blank if you do not want to change the image",
+    "chonThongSo": "Select parameter",
+    "chonDanhMuc": "Select category",
+    "chonHangSanXuat": "Select manufacturer",
+
+    "suaTrangThai": "Edit",
+    "huyDonHang": "Cancel",
+    "them": "Add",
+    "capNhatTrangThaiThanhCong": "Order status updated successfully",
+    "capNhatcategoryThanhCong": "Category updated successfully",
+    "capNhathangSanXuatThanhCong": "Manufacturer updated successfully",
+    "themhangSanXuatThanhCong": "Manufacturer added successfully",
+    "vuiLongNhapTenHangSanXuat": "Please enter manufacturer name",
+    "vuiLongNhapTenDanhMuc": "Please enter category name",
+    "themthongSoThanhCong": "Parameter added successfully",
+    "vuiLongNhapTenThongSo": "Please enter parameter name",
+    "capNhatthongSoThanhCong": "Parameter updated successfully",
+    "capNhatproductThanhCong": "Product updated successfully",
+    "vuiLongNhapDayDuThongTinSanPham": "Please enter complete product information",
+    "themproductThanhCong": "Product added successfully",
+    "khongCoHinhAnh": "No image available",
+    "xoaDonHangThatBai": "Delete order failed"
 
 
   }
