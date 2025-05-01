@@ -13,6 +13,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'aos/dist/aos.css';
 import "./style/style.css";
 
+import { API_BASE_URL } from '../config';
 import { useLanguage } from "../context/LanguageContext";
 
 function HomePage() {

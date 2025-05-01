@@ -7,6 +7,7 @@ import AOS from 'aos';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'aos/dist/aos.css';
+
 import { API_BASE_URL } from "../config";
 import { useLanguage } from "../context/LanguageContext";
 

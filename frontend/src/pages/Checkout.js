@@ -15,6 +15,8 @@
   import 'bootstrap/dist/css/bootstrap.min.css';
   import './style/checkout.css';
   import axios from 'axios';
+
+  import { API_BASE_URL } from '../config';
   import { useLanguage } from "../context/LanguageContext";
   import { useCart } from "../context/CartContext";
 

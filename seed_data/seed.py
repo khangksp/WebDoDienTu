@@ -30,14 +30,14 @@ USE_DIRECT_SERVICE = True  # Set to True to bypass API Gateway
 # ======================= AUTH DATA =======================
 users = [
     {
-        "tendangnhap": "admin",
-        "password": "admin123",
-        "loaiquyen": "admin",
-        "nguoidung": {
-            "tennguoidung": "Quản trị viên",
-            "diachi": "Hà Nội, Việt Nam",
-            "email": "admin@example.com",
-            "sodienthoai": "0987654321"
+        "tendangnhap":"admin123",
+        "password": "123456",
+        "loaiquyen":"admin",
+        "nguoidung":{
+            "tennguoidung":"Administrator",
+            "diachi":"binh duong",
+            "email":"22050006@studenst.bdu.edu.vn",
+            "sodienthoai":"012341323"
         }
     },
     {

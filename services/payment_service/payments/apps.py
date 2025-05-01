@@ -3,4 +3,4 @@ class PaymentServiceConfig(AppConfig):
     name = 'payment_service'
 
     def ready(self):
-        import payment_service.payments  # <-- dòng này rất quan trọng
+        import payment_service.payments  # <-- dòng này rất quan trọng 🤔

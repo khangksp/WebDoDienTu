@@ -11,6 +11,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import './style/detail.css';
 
+import { API_BASE_URL } from '../config';
 import { useLanguage } from "../context/LanguageContext";
 import { useCart } from "../context/CartContext";
 
