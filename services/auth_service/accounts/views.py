@@ -389,14 +389,15 @@ class BalanceReductionView(APIView):
             "sodu_moi": str(nguoidung.sodu)  # Convert to string for JSON serialization
         }, status=status.HTTP_200_OK)
     
+
+
 class BalanceAdditionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Lấy số tiền cần nạp
         sotien = request.data.get('sotien')
+        manguoidung = request.data.get('manguoidung')
 
-        # Kiểm tra đầu vào
         if sotien is None:
             return Response(
                 {"status": "error", "message": "Số tiền là bắt buộc"},
@@ -417,20 +418,23 @@ class BalanceAdditionView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Lấy tài khoản hiện tại
-        taikhoan = request.user
+        if not manguoidung:
+            return Response(
+                {"status": "error", "message": "Mã người dùng là bắt buộc"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # Tìm thông tin người dùng liên kết
+        # Tìm người dùng theo manguoidung
         try:
-            nguoidung = taikhoan.nguoidung.first()
-            if not nguoidung:
-                return Response(
-                    {"status": "error", "message": "Không tìm thấy thông tin người dùng"},
-                    status=status.HTTP_404_NOT_FOUND
-                )
+            nguoidung = NguoiDung.objects.get(pk=manguoidung)
+        except NguoiDung.DoesNotExist:
+            return Response(
+                {"status": "error", "message": "Không tìm thấy người dùng"},
+                status=status.HTTP_404_NOT_FOUND
+            )
         except Exception as e:
             return Response(
-                {"status": "error", "message": f"Lỗi truy xuất thông tin người dùng: {str(e)}"},
+                {"status": "error", "message": f"Lỗi truy xuất người dùng: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
