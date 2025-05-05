@@ -179,14 +179,31 @@ function MyOrders() {
         }
       );
 
-      // Bước 2: Hoàn tiền vào ví
-      await axios.post(
-        `${API_BASE_URL}/auth/balance/add/`,
-        { sotien: order.TongTien.toString() },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      // Bước 2: Chỉ hoàn tiền nếu phương thức thanh toán là ví điện tử (elecpay)
+      if (order.PhuongThucThanhToan === "ewallet") {
+        console.log("User info:", user);
+        console.log("User ID:", user.mataikhoan);
+        console.log("Order total:", order.TongTien);
+
+        const payload = {
+          manguoidung: user.mataikhoan,
+          sotien: order.TongTien.toString(),
+        };
+
+        console.log("Balance add payload:", payload);
+
+        const response = await axios.post(
+          `${API_BASE_URL}/auth/balance/add/`,
+          payload,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        console.log("Balance add response:", response.data);
+      } else {
+        console.log("No refund processed for payment method:", order.PhuongThucThanhToan);
+      }
 
       // Cập nhật state orders
       setOrders((prevOrders) =>
@@ -215,9 +232,19 @@ function MyOrders() {
       });
 
       setError("");
-      alert(t("huyDonHangVaHoanTienThanhCong"));
+      alert(t("huyDonHangThanhCong") + (order.PhuongThucThanhToan === "ewallet" ? t("vaHoanTien") : ""));
     } catch (err) {
       console.error("Error cancelling order or refunding:", err);
+      if (err.response) {
+        console.error("Error response data:", err.response.data);
+        console.error("Error response status:", err.response.status);
+        console.error("Error response headers:", err.response.headers);
+      } else if (err.request) {
+        console.error("Error request:", err.request);
+      } else {
+        console.error("Error message:", err.message);
+      }
+
       setError(
         t("loiKhiHuyDonHangHoacHoanTien") +
           ": " +
@@ -243,8 +270,10 @@ function MyOrders() {
         throw new Error(t("khongTimThayDonHangHoacTongTien"));
       }
 
-      // Cập nhật trạng thái đơn hàng sang Hoàn tiền
-      await axios.put(
+      console.log("Updating order status for order ID:", orderId);
+      console.log("New status:", 7);
+
+      const statusResponse = await axios.put(
         `${API_BASE_URL}/orders/update-status/${orderId}/`,
         { MaTrangThai: 7 },
         {
@@ -252,16 +281,29 @@ function MyOrders() {
         }
       );
 
-      // Hoàn tiền vào ví
-      await axios.post(
+      console.log("Status update response:", statusResponse.data);
+
+      console.log("User info:", user);
+      console.log("User ID:", user.mataikhoan);
+      console.log("Order total:", order.TongTien);
+
+      const payload = {
+        manguoidung: user.mataikhoan,
+        sotien: order.TongTien.toString(),
+      };
+
+      console.log("Balance add payload:", payload);
+
+      const balanceResponse = await axios.post(
         `${API_BASE_URL}/auth/balance/add/`,
-        { sotien: order.TongTien.toString() },
+        payload,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      // Cập nhật state orders
+      console.log("Balance add response:", balanceResponse.data);
+
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           order.MaDonHang === orderId
@@ -270,7 +312,6 @@ function MyOrders() {
         )
       );
 
-      // Cập nhật orderStats
       setOrderStats((prevStats) => {
         const newStatuses = { ...prevStats.statuses };
         const deliveredLabel = statusMap[5].label;
@@ -290,6 +331,16 @@ function MyOrders() {
       alert(t("yeuCauHoanTienThanhCong"));
     } catch (err) {
       console.error("Error requesting refund:", err);
+      if (err.response) {
+        console.error("Error response data:", err.response.data);
+        console.error("Error response status:", err.response.status);
+        console.error("Error response headers:", err.response.headers);
+      } else if (err.request) {
+        console.error("Error request:", err.request);
+      } else {
+        console.error("Error message:", err.message);
+      }
+
       setError(
         t("loiKhiYeuCauHoanTien") +
           ": " +
@@ -310,7 +361,6 @@ function MyOrders() {
     setSelectedOrder(null);
   };
 
-  // Lọc đơn hàng theo trạng thái
   const filteredOrders = selectedStatus
     ? orders.filter((order) => order.MaTrangThai === parseInt(selectedStatus))
     : orders;
