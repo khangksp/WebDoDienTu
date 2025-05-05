@@ -49,7 +49,7 @@ function MyOrders() {
   const paymentMethodMap = {
     elecpay: t("viDienTu"),
     cash: t("tienMat"),
-    banking: t("chuyenKhoan"),
+    banking: t("RandchuyenKhoan"),
   };
 
   useEffect(() => {
@@ -179,7 +179,7 @@ function MyOrders() {
         }
       );
 
-      // Bước 2: Chỉ hoàn tiền nếu phương thức thanh toán là ví điện tử (elecpay)
+      // Bước 2: Chỉ hoàn tiền nếu phương thức thanh toán là ví điện tử (ewallet)
       if (order.PhuongThucThanhToan === "ewallet") {
         console.log("User info:", user);
         console.log("User ID:", user.mataikhoan);
@@ -270,6 +270,7 @@ function MyOrders() {
         throw new Error(t("khongTimThayDonHangHoacTongTien"));
       }
 
+      // Cập nhật trạng thái đơn hàng thành "Hoàn tiền" (MaTrangThai: 7)
       console.log("Updating order status for order ID:", orderId);
       console.log("New status:", 7);
 
@@ -283,27 +284,36 @@ function MyOrders() {
 
       console.log("Status update response:", statusResponse.data);
 
-      console.log("User info:", user);
-      console.log("User ID:", user.mataikhoan);
-      console.log("Order total:", order.TongTien);
+      // Chỉ hoàn tiền nếu phương thức thanh toán là ewallet
+      if (order.PhuongThucThanhToan === "ewallet") {
+        console.log("User info:", user);
+        console.log("User ID:", user.mataikhoan);
+        console.log("Order total:", order.TongTien);
 
-      const payload = {
-        manguoidung: user.mataikhoan,
-        sotien: order.TongTien.toString(),
-      };
+        const payload = {
+          manguoidung: user.mataikhoan,
+          sotien: order.TongTien.toString(),
+        };
 
-      console.log("Balance add payload:", payload);
+        console.log("Balance add payload:", payload);
 
-      const balanceResponse = await axios.post(
-        `${API_BASE_URL}/auth/balance/add/`,
-        payload,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+        const balanceResponse = await axios.post(
+          `${API_BASE_URL}/auth/balance/add/`,
+          payload,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-      console.log("Balance add response:", balanceResponse.data);
+        console.log("Balance add response:", balanceResponse.data);
 
+        alert(t("yeuCauHoanTienThanhCong"));
+      } else {
+        // Thông báo cho các phương thức thanh toán khác (cash, banking)
+        alert(t("yeuCauHoanTienDaGui") + " " + t("lienHeHoTro"));
+      }
+
+      // Cập nhật state orders
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           order.MaDonHang === orderId
@@ -312,6 +322,7 @@ function MyOrders() {
         )
       );
 
+      // Cập nhật orderStats
       setOrderStats((prevStats) => {
         const newStatuses = { ...prevStats.statuses };
         const deliveredLabel = statusMap[5].label;
@@ -327,8 +338,6 @@ function MyOrders() {
 
         return { ...prevStats, statuses: newStatuses };
       });
-
-      alert(t("yeuCauHoanTienThanhCong"));
     } catch (err) {
       console.error("Error requesting refund:", err);
       if (err.response) {
