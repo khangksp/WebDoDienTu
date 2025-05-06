@@ -26,7 +26,6 @@ def message_callback(ch, method, properties, body):
             # Example: Check if any pending orders can be fulfilled now
             product_id = message.get('product_id')
             new_stock = message.get('new_stock', 0)
-            
             if product_id and new_stock > 0:
                 # Find pending orders with this product
                 order_items = OrderItem.objects.filter(
