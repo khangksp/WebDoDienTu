@@ -1,7 +1,8 @@
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid'; // Thêm thư viện uuid để tạo ID duy nhất
 
-const API_BASE_URL = 'http://localhost:8000'; // Update with your API Gateway URL
+const API_BASE_URL = 'http://localhost:8000';
 
 const CartContext = createContext();
 
@@ -11,21 +12,29 @@ export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState({ items: [], total: 0 });
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [sessionId, setSessionId] = useState(null);
+
+  // Khởi tạo session ID cho người dùng chưa đăng nhập
+  useEffect(() => {
+    let sid = localStorage.getItem('session_id');
+    if (!sid) {
+      sid = uuidv4();
+      localStorage.setItem('session_id', sid);
+    }
+    setSessionId(sid);
+  }, []);
 
   // Lấy giỏ hàng từ server
   const fetchCart = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('access_token');
-      if (!token) {
-        setCart({ items: [], total: 0 });
-        setLoading(false);
-        return;
-      }
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const cartId = token ? null : sessionId; // Nếu không có token, dùng sessionId
 
-      console.log('Fetching cart data at:', new Date().toISOString());
       const response = await axios.get(`${API_BASE_URL}/api/cart/`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers,
+        params: { session_id: cartId }, // Gửi session_id nếu không đăng nhập
       });
       setCart(response.data);
     } catch (error) {
@@ -33,52 +42,41 @@ export const CartProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [sessionId]);
 
-  // Cập nhật giỏ hàng khi refreshTrigger thay đổi
+  // Cập nhật giỏ hàng khi refreshTrigger hoặc sessionId thay đổi
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
+    if (sessionId) {
       fetchCart();
-    } else {
-      setCart({ items: [], total: 0 });
-      setLoading(false);
     }
-  }, [refreshTrigger, fetchCart]);
+  }, [refreshTrigger, sessionId, fetchCart]);
 
-  // Refresh cart function that triggers a refresh
+  // Refresh cart
   const refreshCart = useCallback(() => {
-    setRefreshTrigger(prev => prev + 1);
+    setRefreshTrigger((prev) => prev + 1);
   }, []);
 
   // Thêm sản phẩm vào giỏ hàng
   const addToCart = async (product, quantity = 1) => {
     try {
       const token = localStorage.getItem('access_token');
-      if (!token) {
-        alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
-        return;
-      }
-  
-      // Chuẩn bị dữ liệu sản phẩm, hỗ trợ cả tên trường cũ và mới
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const cartId = token ? null : sessionId;
+
       const response = await axios.post(
         `${API_BASE_URL}/api/cart/add/`,
         {
           product_id: product.id,
-          name: product.TenSanPham || product.name, // Hỗ trợ cả hai trường
-          price: product.GiaBan || product.price,   // Hỗ trợ cả hai trường 
-          image_url: product.HinhAnh_URL || product.HinhAnh || product.image_url, // Hỗ trợ nhiều trường
+          name: product.TenSanPham || product.name,
+          price: product.GiaBan || product.price,
+          image_url: product.HinhAnh_URL || product.HinhAnh || product.image_url,
           quantity: quantity,
           category: product.DanhMuc || product.TenDanhMuc || product.category || '',
           selected_color: product.selectedColor || 'default',
-          size: product.size || 'Standard'
+          size: product.size || 'Standard',
+          session_id: cartId, // Gửi session_id nếu không đăng nhập
         },
-        {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+        { headers }
       );
       setCart(response.data);
       return response.data;
@@ -92,17 +90,17 @@ export const CartProvider = ({ children }) => {
   const updateQuantity = async (productId, quantity) => {
     try {
       const token = localStorage.getItem('access_token');
-      if (!token) return;
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const cartId = token ? null : sessionId;
 
       const response = await axios.put(
         `${API_BASE_URL}/api/cart/update/`,
         {
           product_id: productId,
-          quantity: quantity
+          quantity: quantity,
+          session_id: cartId,
         },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { headers }
       );
       setCart(response.data);
       return response.data;
@@ -116,10 +114,12 @@ export const CartProvider = ({ children }) => {
   const removeFromCart = async (productId) => {
     try {
       const token = localStorage.getItem('access_token');
-      if (!token) return;
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const cartId = token ? null : sessionId;
 
       const response = await axios.delete(`${API_BASE_URL}/api/cart/remove/${productId}/`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers,
+        data: { session_id: cartId },
       });
       setCart(response.data);
       return response.data;
@@ -129,21 +129,23 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Xóa các sản phẩm được chỉ định khỏi giỏ hàng hoặc toàn bộ giỏ hàng nếu không chỉ định
+  // Xóa giỏ hàng
   const clearCart = async (itemsToRemove = null) => {
     try {
       const token = localStorage.getItem('access_token');
-      if (!token) return;
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const cartId = token ? null : sessionId;
 
       let response;
       if (itemsToRemove && Array.isArray(itemsToRemove) && itemsToRemove.length > 0) {
         for (const item of itemsToRemove) {
           await removeFromCart(item.id || item.product_id);
         }
-        await fetchCart(); // Làm mới giỏ hàng sau khi xóa
+        await fetchCart();
       } else {
         response = await axios.delete(`${API_BASE_URL}/api/cart/clear/`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers,
+          data: { session_id: cartId },
         });
         setCart(response.data);
       }
@@ -162,7 +164,7 @@ export const CartProvider = ({ children }) => {
         updateQuantity,
         removeFromCart,
         clearCart,
-        refreshCart
+        refreshCart,
       }}
     >
       {children}
