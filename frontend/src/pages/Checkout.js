@@ -20,20 +20,21 @@ import { loadStripe } from '@stripe/stripe-js';
 import { API_BASE_URL } from '../config';
 import { useLanguage } from "../context/LanguageContext";
 import { useCart } from "../context/CartContext";
-import { loadStripe } from '@stripe/stripe-js';
-// Khởi tạo Stripe với Publishable Key
+
+// Initialize Stripe with Publishable Key
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
-// Hàm giải mã JWT
+
+// Parse JWT token
 function parseJwt(token) {
   try {
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(''));
     return JSON.parse(jsonPayload);
   } catch (e) {
-    console.error("Lỗi khi parse JWT:", e);
+    console.error("Error parsing JWT:", e);
     return {};
   }
 }
@@ -45,34 +46,34 @@ function Checkout() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Kiểm tra xác thực
+  // Check authentication on mount
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (!token) {
       localStorage.setItem("redirect_after_login", window.location.pathname);
-      alert('Vui lòng đăng nhập để tiếp tục thanh toán');
+      alert('Please log in to continue checkout');
       navigate('/login');
     }
   }, [navigate]);
 
-  // Lấy thông tin người dùng
+  // Get user data from localStorage
   const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
   const nguoiDungData = userData.nguoidung_data || {};
 
-  // Sử dụng sản phẩm từ giỏ hàng hoặc location state
+  // Initialize cart items from location.state or cart
   const [cartItems, setCartItems] = useState([]);
   useEffect(() => {
-    if (cart && cart.items && cart.items.length > 0) {
-      setCartItems(cart.items);
-    } else if (location.state?.cartItems) {
+    if (location.state?.cartItems) {
       setCartItems(location.state.cartItems);
+    } else if (cart?.items?.length > 0) {
+      setCartItems(cart.items);
     }
   }, [cart, location.state]);
 
   const [paymentMethod, setPaymentMethod] = useState(location.state?.paymentMethod || 'cash');
   const [showAddressModal, setShowAddressModal] = useState(false);
 
-  // Khởi tạo địa chỉ
+  // Initialize address from user data
   const [selectedAddress, setSelectedAddress] = useState({
     id: 1,
     isDefault: true,
@@ -81,14 +82,14 @@ function Checkout() {
     address: nguoiDungData.diachi || ''
   });
 
-  // Form chỉnh sửa địa chỉ
+  // State for address form
   const [editAddress, setEditAddress] = useState({
     recipient: nguoiDungData.tennguoidung || '',
     phone: nguoiDungData.sodienthoai || '',
     address: nguoiDungData.diachi || ''
   });
 
-  // Dropdown Tỉnh/Huyện/Xã
+  // State for province/district/ward dropdowns
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
@@ -96,7 +97,7 @@ function Checkout() {
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selectedWard, setSelectedWard] = useState('');
 
-  // Lấy danh sách tỉnh
+  // Fetch provinces
   useEffect(() => {
     const fetchProvinces = async () => {
       try {
@@ -104,13 +105,13 @@ function Checkout() {
         const data = await response.json();
         setProvinces(data);
       } catch (error) {
-        console.error('Lỗi khi lấy danh sách tỉnh:', error);
+        console.error('Error fetching provinces:', error);
       }
     };
     fetchProvinces();
   }, []);
 
-  // Lấy danh sách huyện
+  // Fetch districts when province is selected
   useEffect(() => {
     if (selectedProvince) {
       const fetchDistricts = async () => {
@@ -122,14 +123,14 @@ function Checkout() {
           setSelectedDistrict('');
           setSelectedWard('');
         } catch (error) {
-          console.error('Lỗi khi lấy danh sách huyện:', error);
+          console.error('Error fetching districts:', error);
         }
       };
       fetchDistricts();
     }
   }, [selectedProvince]);
 
-  // Lấy danh sách xã
+  // Fetch wards when district is selected
   useEffect(() => {
     if (selectedDistrict) {
       const fetchWards = async () => {
@@ -139,14 +140,14 @@ function Checkout() {
           setWards(data.wards || []);
           setSelectedWard('');
         } catch (error) {
-          console.error('Lỗi khi lấy danh sách xã:', error);
+          console.error('Error fetching wards:', error);
         }
       };
       fetchWards();
     }
   }, [selectedDistrict]);
 
-  // Tự động điền địa chỉ
+  // Auto-fill address when ward is selected
   useEffect(() => {
     if (selectedWard) {
       const provinceName = provinces.find(p => p.code === parseInt(selectedProvince))?.name || '';
@@ -157,7 +158,7 @@ function Checkout() {
     }
   }, [selectedWard, provinces, districts, wards]);
 
-  // Tính tổng giá
+  // Calculate total price
   const totalPrice = cartItems.reduce((sum, item) => {
     const price = item.GiaBan || item.price;
     return sum + price * item.quantity;
@@ -165,33 +166,33 @@ function Checkout() {
   const shippingFee = 0;
   const grandTotal = totalPrice + shippingFee;
 
-  // Lấy thông tin phương thức thanh toán
+  // Get payment method details
   const getPaymentMethodName = (method) => {
     const methods = {
-      'cash': { name: 'Tiền mặt', icon: faMoneyBill },
-      'ewallet': { name: 'Ví điện tử', icon: faWallet },
-      'stripe': { name: 'Thẻ tín dụng (Stripe)', icon: faCcStripe }
+      'cash': { name: 'Cash', icon: faMoneyBill },
+      'ewallet': { name: 'E-Wallet', icon: faWallet },
+      'stripe': { name: 'Credit Card (Stripe)', icon: faCcStripe }
     };
-    return methods[method] || { name: 'Không xác định', icon: faMoneyBill };
+    return methods[method] || { name: 'Unknown', icon: faMoneyBill };
   };
 
-  // Format giá
+  // Format price to VND
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price) + ' VND';
   };
 
-  // Xử lý thay đổi form địa chỉ
+  // Handle address form changes
   const handleAddressChange = (e) => {
     const { name, value } = e.target;
     setEditAddress(prev => ({ ...prev, [name]: value }));
   };
 
-  // Cập nhật địa chỉ
+  // Update address
   const updateAddress = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("access_token");
     if (!token || !userData?.mataikhoan) {
-      alert(t("vuiLongDangNhap"));
+      alert(t("pleaseLogin"));
       navigate('/login');
       return;
     }
@@ -238,24 +239,24 @@ function Checkout() {
         });
 
         setShowAddressModal(false);
-        alert(t("capNhatThanhCong"));
+        alert(t("updateSuccess"));
       }
     } catch (error) {
-      console.error('Lỗi khi cập nhật địa chỉ:', error);
-      const errorMsg = error.response?.data?.message || t("capNhatThatBai");
+      console.error('Error updating address:', error);
+      const errorMsg = error.response?.data?.message || t("updateFailed");
       alert(errorMsg);
     }
   };
 
-  // Xử lý đặt hàng
+  // Place order
   const placeOrder = async () => {
     if (!selectedAddress) {
-      alert('Vui lòng chọn địa chỉ nhận hàng');
+      alert('Please select a delivery address');
       return;
     }
 
     if (cartItems.length === 0) {
-      alert('Giỏ hàng trống, không thể đặt hàng');
+      alert('Cart is empty, cannot place order');
       return;
     }
 
@@ -264,7 +265,7 @@ function Checkout() {
     try {
       const token = localStorage.getItem("access_token");
       if (!token) {
-        alert('Vui lòng đăng nhập để đặt hàng');
+        alert('Please log in to place order');
         localStorage.setItem("redirect_after_login", window.location.pathname);
         navigate('/login');
         setIsLoading(false);
@@ -275,7 +276,6 @@ function Checkout() {
       if (!userId) {
         const tokenPayload = parseJwt(token);
         userId = tokenPayload.user_id || tokenPayload.id || tokenPayload.sub;
-        console.log("Lấy user_id từ JWT token:", userId);
       }
 
       if (!userId) {
@@ -290,13 +290,13 @@ function Checkout() {
             localStorage.setItem("user_data", JSON.stringify(userData));
           }
         } catch (error) {
-          console.error("Lỗi khi lấy thông tin người dùng:", error);
+          console.error("Error fetching user data:", error);
         }
       }
 
       if (!userId) {
         userId = 1;
-        console.warn("Không tìm thấy user_id, sử dụng giá trị mặc định:", userId);
+        console.warn("User ID not found, using default:", userId);
       }
 
       const orderData = {
@@ -315,7 +315,6 @@ function Checkout() {
       };
 
       if (paymentMethod === 'stripe') {
-        // Gọi API tạo Stripe Checkout Session
         const response = await fetch(`${API_BASE_URL}/payments/create-checkout-session/`, {
           method: 'POST',
           headers: {
@@ -323,7 +322,7 @@ function Checkout() {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            order_id: `temp_${Date.now()}`, // ID tạm thời, sẽ được cập nhật bởi webhook
+            order_id: `temp_${Date.now()}`,
             amount: grandTotal,
             currency: 'vnd',
             items: orderData.items,
@@ -336,18 +335,16 @@ function Checkout() {
 
         const result = await response.json();
         if (!response.ok) {
-          throw new Error(result.error || 'Lỗi khi tạo phiên thanh toán Stripe');
+          throw new Error(result.error || 'Error creating Stripe checkout session');
         }
 
-        // Chuyển hướng đến Stripe Checkout
         const stripe = await stripePromise;
         const { error } = await stripe.redirectToCheckout({ sessionId: result.session_id });
         if (error) {
           throw new Error(error.message);
         }
       } else {
-        // Xử lý cash hoặc e-wallet
-        const response = await fetch(`${API_BASE_URL}orders/create/`, {
+        const response = await fetch(`${API_BASE_URL}/orders/create/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -359,21 +356,21 @@ function Checkout() {
         const responseText = await response.text();
         if (!response.ok) {
           if (response.status === 401) {
-            alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            alert('Session expired. Please log in again.');
             navigate('/login');
             return;
           }
           try {
             const errorData = JSON.parse(responseText);
-            throw new Error(errorData.message || `Lỗi HTTP: ${response.status}`);
+            throw new Error(errorData.message || `HTTP Error: ${response.status}`);
           } catch (e) {
-            throw new Error(`Lỗi HTTP: ${response.status}`);
+            throw new Error(`HTTP Error: ${response.status}`);
           }
         }
 
         const result = JSON.parse(responseText);
-        await clearCart();
-        alert('Đặt hàng thành công! Cảm ơn bạn đã mua sắm.');
+        await clearCart(cartItems);
+        alert('Order placed successfully! Thank you for shopping.');
         navigate('/order-confirmation', { 
           state: { 
             orderId: result.order_id,
@@ -382,14 +379,14 @@ function Checkout() {
         });
       }
     } catch (error) {
-      console.error('Lỗi khi đặt hàng:', error);
-      alert(`Có lỗi xảy ra khi đặt hàng: ${error.message}`);
+      console.error('Error placing order:', error);
+      alert(`An error occurred while placing the order: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Quay lại giỏ hàng
+  // Go back to cart
   const goBackToCart = () => {
     navigate('/cart');
   };
@@ -413,9 +410,9 @@ function Checkout() {
               }}
             >
               <FontAwesomeIcon icon={faArrowLeft} /> 
-              <span>{t('quayLaiGioHang')}</span>
+              <span>{t('backToCart')}</span>
             </button>
-            <h2 className="checkout-title mt-3" style={{ margin: '0', padding: '0' }}>{t('thanhToan')}</h2>
+            <h2 className="checkout-title mt-3" style={{ margin: '0', padding: '0' }}>{t('checkout')}</h2>
           </div>
 
           <div className="col-lg-8">
@@ -423,12 +420,12 @@ function Checkout() {
             <div className="checkout-card mb-4">
               <div className="checkout-card-header">
                 <FontAwesomeIcon icon={faMapMarkerAlt} className="header-icon" />
-                <h5>{t('diaChiNhanHang')}</h5>
+                <h5>{t('shippingAddress')}</h5>
                 <button 
                   className="btn btn-sm ms-auto custom-hover"
                   onClick={() => setShowAddressModal(true)}
                 >
-                  <FontAwesomeIcon icon={faEdit} className="me-1" /> {t('thayDoi')}
+                  <FontAwesomeIcon icon={faEdit} className="me-1" /> {t('change')}
                 </button>
               </div>
               <div className="checkout-card-body">
@@ -439,7 +436,7 @@ function Checkout() {
                       <span className="text-divider">|</span>
                       <span>{selectedAddress.phone}</span>
                       {selectedAddress.isDefault && (
-                        <span className="default-badge ms-2">{t('macDinh')}</span>
+                        <span className="default-badge ms-2">{t('default')}</span>
                       )}
                     </div>
                     <div className="address-text mt-2">
@@ -448,12 +445,12 @@ function Checkout() {
                   </div>
                 ) : (
                   <div className="no-address">
-                    <p>{t('banChuaCoDiaChi')}</p>
+                    <p>{t('noAddress')}</p>
                     <button 
                       className="btn btn-primary"
                       onClick={() => setShowAddressModal(true)}
                     >
-                      {t('themDiaChi')}
+                      {t('addAddress')}
                     </button>
                   </div>
                 )}
@@ -464,7 +461,7 @@ function Checkout() {
             <div className="checkout-card mb-4">
               <div className="checkout-card-header">
                 <FontAwesomeIcon icon={getPaymentMethodName(paymentMethod).icon} className="header-icon" />
-                <h5>{t('phuongThucThanhToan')}</h5>
+                <h5>{t('paymentMethod')}</h5>
               </div>
               <div className="checkout-card-body">
                 <div className="payment-method-info">
@@ -474,9 +471,9 @@ function Checkout() {
                   <div className="method-details">
                     <p className="mb-0">{getPaymentMethodName(paymentMethod).name}</p>
                     <small className="text-muted">
-                      {paymentMethod === 'cash' && 'Thanh toán khi nhận hàng (COD)'}
-                      {paymentMethod === 'ewallet' && 'Thanh toán qua ví của electronic store'}
-                      {paymentMethod === 'stripe' && 'Thanh toán an toàn qua Stripe'}
+                      {paymentMethod === 'cash' && 'Pay on delivery (COD)'}
+                      {paymentMethod === 'ewallet' && 'Pay via electronic store wallet'}
+                      {paymentMethod === 'stripe' && 'Secure payment via Stripe'}
                     </small>
                   </div>
                 </div>
@@ -487,7 +484,7 @@ function Checkout() {
             <div className="checkout-card mb-4">
               <div className="checkout-card-header">
                 <FontAwesomeIcon icon={faShoppingBag} className="header-icon" />
-                <h5>{t('donHangCuaBan')} ({cartItems.length} {t('sp')})</h5>
+                <h5>{t('yourOrder')} ({cartItems.length} {t('items')})</h5>
               </div>
               <div className="checkout-card-body p-0">
                 {cartItems.map((item, index) => (
@@ -523,13 +520,13 @@ function Checkout() {
             <div className="checkout-card mb-4">
               <div className="checkout-card-header">
                 <FontAwesomeIcon icon={faTruck} className="header-icon" />
-                <h5>{t('thongTinVanChuyen')}</h5>
+                <h5>{t('shippingInfo')}</h5>
               </div>
               <div className="checkout-card-body">
                 <div className="shipping-info">
-                  <p className="mb-1">{t('phuongThucVanChuyen')}</p>
-                  <p className="mb-1">{t('thoiGianVanChuyen')}</p>
-                  <p className="mb-0">{t('phiVanChuyen')} {shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee)}</p>
+                  <p className="mb-1">{t('shippingMethod')}</p>
+                  <p className="mb-1">{t('shippingTime')}</p>
+                  <p className="mb-0">{t('shippingFee')} {shippingFee === 0 ? 'Free' : formatPrice(shippingFee)}</p>
                 </div>
               </div>
             </div>
@@ -539,20 +536,20 @@ function Checkout() {
             {/* Order Summary Card */}
             <div className="checkout-card summary-card">
               <div className="checkout-card-header">
-                <h5>{t('tongCong')}</h5>
+                <h5>{t('total')}</h5>
               </div>
               <div className="checkout-card-body">
                 <div className="summary-item d-flex justify-content-between">
-                  <span>{t('tamTinh')}</span>
+                  <span>{t('subtotal')}</span>
                   <span>{formatPrice(totalPrice)}</span>
                 </div>
                 <div className="summary-item d-flex justify-content-between">
-                  <span>{t('phiVanChuyen')}</span>
-                  <span>{shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee)}</span>
+                  <span>{t('shippingFee')}</span>
+                  <span>{shippingFee === 0 ? 'Free' : formatPrice(shippingFee)}</span>
                 </div>
                 <hr />
                 <div className="summary-total d-flex justify-content-between">
-                  <span className="fw-bold">{t('tongTien')}</span>
+                  <span className="fw-bold">{t('grandTotal')}</span>
                   <span className="fw-bold text-danger">{formatPrice(grandTotal)}</span>
                 </div>
                 <button 
@@ -563,11 +560,11 @@ function Checkout() {
                   {isLoading ? (
                     <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                   ) : (
-                    t('datHang')
+                    t('placeOrder')
                   )}
                 </button>
                 <div className="order-note mt-3">
-                  <p className="mb-0 text-muted small">{t('bangCach')}</p>
+                  <p className="mb-0 text-muted small">{t('orderNote')}</p>
                 </div>
               </div>
             </div>
@@ -581,7 +578,7 @@ function Checkout() {
           <div className="modal-wrapper">
             <div className="address-modal">
               <div className="modal-header">
-                <h5>{t('diaChiNhanHang')}</h5>
+                <h5>{t('shippingAddress')}</h5>
                 <button 
                   className="btn-close"
                   onClick={() => setShowAddressModal(false)}
@@ -590,7 +587,7 @@ function Checkout() {
               </div>
               <div className="modal-body">
                 <div className="address-list">
-                  <h6 className="mb-3">{t('diaChiHienTai')}</h6>
+                  <h6 className="mb-3">{t('currentAddress')}</h6>
                   {selectedAddress ? (
                     <div className="address-option selected">
                       <div className="recipient">
@@ -598,7 +595,7 @@ function Checkout() {
                         <span className="text-divider">|</span>
                         <span>{selectedAddress.phone}</span>
                         {selectedAddress.isDefault && (
-                          <span className="default-badge ms-2">{t('macDinh')}</span>
+                          <span className="default-badge ms-2">{t('default')}</span>
                         )}
                       </div>
                       <div className="address-text mt-2">
@@ -606,15 +603,15 @@ function Checkout() {
                       </div>
                     </div>
                   ) : (
-                    <p>{t('chuaCoDiaChiDuocLuu')}</p>
+                    <p>{t('noSavedAddress')}</p>
                   )}
                 </div>
                 <hr />
                 <div className="edit-address-form">
-                  <h6 className="mb-3">{t('chinhSuaDiaChi')}</h6>
+                  <h6 className="mb-3">{t('editAddress')}</h6>
                   <form onSubmit={updateAddress}>
                     <div className="mb-3">
-                      <label htmlFor="recipient" className="form-label">{t('hoTenNguoiNhan')}</label>
+                      <label htmlFor="recipient" className="form-label">{t('recipientName')}</label>
                       <input 
                         type="text" 
                         className="form-control" 
@@ -626,7 +623,7 @@ function Checkout() {
                       />
                     </div>
                     <div className="mb-3">
-                      <label htmlFor="phone" className="form-label">{t('soDienThoai')}</label>
+                      <label htmlFor="phone" className="form-label">{t('phoneNumber')}</label>
                       <input 
                         type="tel" 
                         className="form-control" 
@@ -638,7 +635,7 @@ function Checkout() {
                       />
                     </div>
                     <div className="mb-3">
-                      <label htmlFor="province" className="form-label">{t('tinhThanhPho')}</label>
+                      <label htmlFor="province" className="form-label">{t('province')}</label>
                       <select
                         className="form-control"
                         id="province"
@@ -646,7 +643,7 @@ function Checkout() {
                         onChange={(e) => setSelectedProvince(e.target.value)}
                         required
                       >
-                        <option value="">{t('chonTinh')}</option>
+                        <option value="">{t('selectProvince')}</option>
                         {provinces.map(province => (
                           <option key={province.code} value={province.code}>
                             {province.name}
@@ -655,7 +652,7 @@ function Checkout() {
                       </select>
                     </div>
                     <div className="mb-3">
-                      <label htmlFor="district" className="form-label">{t('quanHuyen')}</label>
+                      <label htmlFor="district" className="form-label">{t('district')}</label>
                       <select
                         className="form-control"
                         id="district"
@@ -664,7 +661,7 @@ function Checkout() {
                         required
                         disabled={!selectedProvince}
                       >
-                        <option value="">{t('chonHuyen')}</option>
+                        <option value="">{t('selectDistrict')}</option>
                         {districts.map(district => (
                           <option key={district.code} value={district.code}>
                             {district.name}
@@ -673,7 +670,7 @@ function Checkout() {
                       </select>
                     </div>
                     <div className="mb-3">
-                      <label htmlFor="ward" className="form-label">{t('xaPhuong')}</label>
+                      <label htmlFor="ward" className="form-label">{t('ward')}</label>
                       <select
                         className="form-control"
                         id="ward"
@@ -682,7 +679,7 @@ function Checkout() {
                         required
                         disabled={!selectedDistrict}
                       >
-                        <option value="">{t('chonXa')}</option>
+                        <option value="">{t('selectWard')}</option>
                         {wards.map(ward => (
                           <option key={ward.code} value={ward.code}>
                             {ward.name}
@@ -691,7 +688,7 @@ function Checkout() {
                       </select>
                     </div>
                     <div className="mb-3">
-                      <label htmlFor="address" className="form-label">{t('diaChiDayDu')}</label>
+                      <label htmlFor="address" className="form-label">{t('fullAddress')}</label>
                       <textarea 
                         className="form-control" 
                         id="address" 
@@ -708,13 +705,13 @@ function Checkout() {
                         className="btn btn-outline-secondary"
                         onClick={() => setShowAddressModal(false)}
                       >
-                        {t('huy')}
+                        {t('cancel')}
                       </button>
                       <button 
                         type="submit" 
                         className="btn btn-primary"
                       >
-                        {t('luuDiaChi')}
+                        {t('saveAddress')}
                       </button>
                     </div>
                   </form>
@@ -722,8 +719,8 @@ function Checkout() {
               </div>
             </div>
           </div>
-          </div>
-        )}
+        </div>
+      )}
     </div>
   );
 }

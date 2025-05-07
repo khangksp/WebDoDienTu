@@ -37,6 +37,8 @@ function Cart() {
   const [showModal, setShowModal] = useState(false);
   // State for selected payment method
   const [selectedPayment, setSelectedPayment] = useState(null);
+  // State to manage checked items
+  const [checkedItems, setCheckedItems] = useState({});
 
   // Payment methods
   const paymentMethods = [
@@ -44,6 +46,15 @@ function Cart() {
     { id: 'ewallet', name: 'Ví điện tử', icon: faWallet, description: 'Thanh toán qua ví của electronic store' },
     { id: 'stripe', name: 'Thẻ tín dụng (Stripe)', icon: faCcStripe, description: 'Thanh toán an toàn qua Stripe' }
   ];
+
+  // Initialize checked state when cart items change
+  useEffect(() => {
+    const initialChecked = {};
+    cart.items.forEach(item => {
+      initialChecked[item.product_id] = true; // Default all items as checked
+    });
+    setCheckedItems(initialChecked);
+  }, [cart.items]);
 
   // Function to update quantity
   const handleUpdateQuantity = async (id, increment) => {
@@ -54,14 +65,23 @@ function Cart() {
     }
   };
 
-  // Bỏ sản phẩm khỏi giỏ hàng
+  // Remove item from cart
   const handleRemoveItem = async (id) => {
     await removeFromCart(id);
+    // Remove the item from checkedItems state
+    setCheckedItems(prev => {
+      const newChecked = { ...prev };
+      delete newChecked[id];
+      return newChecked;
+    });
   };
 
-  // Update selected color (if your cart items have color options)
-  const updateColor = (id, color) => {
-    console.log("Updating color", id, color);
+  // Update checked state for an item
+  const handleCheckboxChange = (id) => {
+    setCheckedItems(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
   };
 
   // Handle payment selection
@@ -69,12 +89,18 @@ function Cart() {
     setSelectedPayment(paymentId);
   };
 
-  // Complete payment - Navigate to checkout
+  // Complete payment - Navigate to checkout with only checked items
   const completePayment = () => {
     if (selectedPayment) {
+      const checkedCartItems = cart.items.filter(item => checkedItems[item.product_id]);
+      if (checkedCartItems.length === 0) {
+        alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán');
+        return;
+      }
+      // Navigate to checkout page with only checked items and payment method
       navigate('/checkout', {
         state: {
-          cartItems: cart.items.map(item => ({
+          cartItems: checkedCartItems.map(item => ({
             id: item.product_id,
             name: item.name,
             price: item.price,
@@ -128,7 +154,12 @@ function Cart() {
                     <div className="row align-items-center">
                       <div className="col-auto">
                         <div className="form-check">
-                          <input className="form-check-input bg-danger border-0" type="checkbox" checked={true} onChange={() => {}} />
+                          <input
+                            className="form-check-input bg-danger border-0"
+                            type="checkbox"
+                            checked={checkedItems[item.product_id] || false}
+                            onChange={() => handleCheckboxChange(item.product_id)}
+                          />
                         </div>
                       </div>
                       <div className="col-md-2">
@@ -215,8 +246,8 @@ function Cart() {
               </div>
               <div className="card-body">
                 <div className="d-flex justify-content-between mb-2">
-                  <span>{t('tamTinh')} ({cart.items.length} {t('sp')}):</span>
-                  <strong>{formatPrice(cart.total)}</strong>
+                  <span>{t('tamTinh')} ({cart.items.filter(item => checkedItems[item.product_id]).length} {t('sp')}):</span>
+                  <strong>{formatPrice(cart.items.reduce((sum, item) => checkedItems[item.product_id] ? sum + (item.price * item.quantity) : sum, 0))}</strong>
                 </div>
                 <div className="d-flex justify-content-between mb-2">
                   <span>{t('phiVanChuyen')}</span>
@@ -225,7 +256,7 @@ function Cart() {
                 <hr />
                 <div className="d-flex justify-content-between mb-3">
                   <span>{t('tongTien')}</span>
-                  <strong className="text-danger">{formatPrice(cart.total)}</strong>
+                  <strong className="text-danger">{formatPrice(cart.items.reduce((sum, item) => checkedItems[item.product_id] ? sum + (item.price * item.quantity) : sum, 0))}</strong>
                 </div>
                 <button 
                   className="btn btn-danger w-100 py-2 mb-3"
