@@ -26,8 +26,16 @@ const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 
 // Parse JWT token
 function parseJwt(token) {
+  if (!token || typeof token !== 'string') {
+    console.error("Invalid or missing JWT token");
+    return {};
+  }
   try {
     const base64Url = token.split('.')[1];
+    if (!base64Url) {
+      console.error("JWT token has no payload");
+      return {};
+    }
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
       return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
@@ -288,6 +296,8 @@ function Checkout() {
             userId = userData.id || userData.user_id;
             localStorage.setItem("user_id", userId);
             localStorage.setItem("user_data", JSON.stringify(userData));
+          } else {
+            throw new Error('Failed to fetch user data');
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
