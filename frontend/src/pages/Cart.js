@@ -91,13 +91,19 @@ function Cart() {
 
   // Complete payment - Navigate to checkout with only checked items
   const completePayment = () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      alert('Vui lòng đăng nhập để thanh toán');
+      navigate('/login', { state: { from: '/cart' } }); // Chuyển hướng đến trang đăng nhập
+      return;
+    }
+
     if (selectedPayment) {
       const checkedCartItems = cart.items.filter(item => checkedItems[item.product_id]);
       if (checkedCartItems.length === 0) {
         alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán');
         return;
       }
-      // Navigate to checkout page with only checked items and payment method
       navigate('/checkout', {
         state: {
           cartItems: checkedCartItems.map(item => ({
