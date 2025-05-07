@@ -5,7 +5,6 @@ import threading
 import logging
 from django.conf import settings
 import time
-# Import RabbitMQ utility
 from .utils import get_rabbitmq_client
 from .models import DonHang as Order, ChiTietDonHang as OrderItem
 
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 def message_callback(ch, method, properties, body):
     """
-    Callback function for processing incoming messages
+    Callback function for processing incoming messages from RabbitMQ
     """
     try:
         message = json.loads(body)
@@ -38,8 +37,7 @@ def message_callback(ch, method, properties, body):
                         # We can fulfill this order item
                         order = item.MaDonHang
                         
-                        # Cập nhật trạng thái đơn hàng
-                        # Lấy trạng thái "Đang xử lý"
+                        # Update order status to "Đang xử lý"
                         from .models import TrangThai
                         processing_status = TrangThai.objects.get(TenTrangThai='Đang xử lý')
                         order.MaTrangThai = processing_status
@@ -87,11 +85,11 @@ def start_consumer():
         client.consume(queue_name, routing_keys, message_callback)
     except Exception as e:
         logger.error(f"Error starting RabbitMQ consumer: {str(e)}")
-        # Don't raise exception to prevent app from crashing on startup
-
-import time
 
 def publish_order_event(event_type, order_data, max_retries=3, retry_delay=2):
+    """
+    Publish an order-related event to RabbitMQ with retry mechanism
+    """
     logger.debug(f"Preparing to publish {event_type} event: {order_data}")
     try:
         client = get_rabbitmq_client()
@@ -116,7 +114,11 @@ def publish_order_event(event_type, order_data, max_retries=3, retry_delay=2):
     except Exception as e:
         logger.error(f"Error initializing client for {routing_key}: {str(e)}", exc_info=True)
         return False
+
 def start_consumer_thread():
+    """
+    Start RabbitMQ consumer in a separate thread
+    """
     try:
         consumer_thread = threading.Thread(target=start_consumer)
         consumer_thread.daemon = True

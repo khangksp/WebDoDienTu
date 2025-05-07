@@ -6,11 +6,12 @@ from rest_framework.views import APIView
 from .rabbitmq import publish_order_event
 from .models import DonHang, ChiTietDonHang, TrangThai
 from .serializers import DonHangSerializer, ChiTietDonHangSerializer, CreateOrderSerializer
-from django.db.models import Sum, Count  # Add these imports
+from django.db.models import Sum, Count
 import json
 import logging
 import requests
 from decimal import Decimal
+
 logger = logging.getLogger(__name__)
 
 @api_view(['GET'])
@@ -29,6 +30,7 @@ def count_orders(request):
             'status': 'error',
             'message': f'Lỗi khi đếm đơn hàng: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def list_orders(request):
@@ -46,40 +48,22 @@ def list_orders(request):
             'status': 'error',
             'message': f'Lỗi khi lấy danh sách đơn hàng: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_order_info(request, user_id):
     """
     API lấy thông tin tổng quan về các đơn hàng của một người dùng
-    
-    Parameters:
-    - user_id: ID của người dùng
-    
-    Returns:
-    - Tổng số đơn hàng
-    - Tổng số tiền đã đặt hàng
-    - Chi tiết các đơn hàng
     """
     try:
-        # Lọc các đơn hàng của người dùng
         orders = DonHang.objects.filter(MaNguoiDung=user_id).order_by('-NgayDatHang')
-        
-        # Tính tổng số đơn hàng
         total_orders = orders.count()
-        
-        # Tính tổng số tiền từ tất cả các đơn hàng
         total_amount = orders.aggregate(total=Sum('TongTien'))['total'] or 0.0
-        
-        # Serialize các đơn hàng
         orders_serializer = DonHangSerializer(orders, many=True)
-        
-        # Phân nhóm đơn hàng theo trạng thái
         order_status_summary = orders.values('MaTrangThai__TenTrangThai').annotate(
             count=Count('MaDonHang'),
             total_amount=Sum('TongTien')
         )
-        
-        # Chuyển đổi các giá trị total_amount trong order_status_summary thành float
         order_status_summary_list = []
         for summary in order_status_summary:
             summary_dict = dict(summary)
@@ -93,13 +77,13 @@ def get_user_order_info(request, user_id):
             'orders': orders_serializer.data,
             'order_status_summary': order_status_summary_list
         }, status=status.HTTP_200_OK)
-    
     except Exception as e:
         logger.error(f"Lỗi khi lấy thông tin đơn hàng theo user ID: {str(e)}", exc_info=True)
         return Response({
             'status': 'error',
             'message': f'Lỗi khi lấy thông tin đơn hàng: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class DonHangViewSet(viewsets.ModelViewSet):
     queryset = DonHang.objects.all()
     serializer_class = DonHangSerializer
@@ -280,6 +264,7 @@ class CreateOrderView(APIView):
             'message': 'Dữ liệu không hợp lệ',
             'errors': serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['GET'])
 def get_user_orders(request, user_id):
     """Lấy danh sách đơn hàng của một người dùng cụ thể"""
@@ -287,15 +272,12 @@ def get_user_orders(request, user_id):
     serializer = DonHangSerializer(orders, many=True)
     return Response(serializer.data)
 
-
 @api_view(['GET'])
 def get_order_details(request, order_id):
     """Lấy chi tiết một đơn hàng cụ thể"""
     try:
         order = DonHang.objects.get(MaDonHang=order_id)
         order_data = DonHangSerializer(order).data
-        
-        # Lấy chi tiết các sản phẩm trong đơn hàng
         order_items = ChiTietDonHang.objects.filter(MaDonHang=order)
         order_items_data = ChiTietDonHangSerializer(order_items, many=True).data
         
@@ -308,62 +290,101 @@ def get_order_details(request, order_id):
             'status': 'error',
             'message': 'Đơn hàng không tồn tại'
         }, status=status.HTTP_404_NOT_FOUND)
-    
+
 @api_view(['PUT'])
 @permission_classes([AllowAny])
 def update_order_status(request, order_id):
     """
     API để cập nhật trạng thái của một đơn hàng
-    
-    Parameters:
-    - order_id: ID của đơn hàng
-    - Body: { "MaTrangThai": <integer> } (ví dụ: { "MaTrangThai": 2 })
-    
-    Returns:
-    - Thông tin đơn hàng đã cập nhật
     """
     try:
-        # Lấy đơn hàng
         order = DonHang.objects.get(MaDonHang=order_id)
-        
-        # Lấy trạng thái từ body request
         new_status_id = request.data.get('MaTrangThai')
         if not new_status_id:
+            logger.error(f"Thiếu MaTrangThai trong request cho đơn hàng #{order_id}")
             return Response({
                 'status': 'error',
                 'message': 'Vui lòng cung cấp MaTrangThai'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Kiểm tra trạng thái có tồn tại
         try:
             new_status = TrangThai.objects.get(MaTrangThai=new_status_id)
         except TrangThai.DoesNotExist:
+            logger.error(f"Trạng thái với MaTrangThai={new_status_id} không tồn tại")
             return Response({
                 'status': 'error',
                 'message': f'Trạng thái với MaTrangThai={new_status_id} không tồn tại'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Cập nhật trạng thái đơn hàng
-        old_status = order.MaTrangThai.TenTrangThai
+        old_status_id = order.MaTrangThai.MaTrangThai
+        old_status_name = order.MaTrangThai.TenTrangThai
+        
+        # Validate status transitions
+        if old_status_id in [6, 7]:
+            logger.warning(f"Không thể cập nhật trạng thái đơn hàng #{order_id} với trạng thái hiện tại {old_status_name}")
+            return Response({
+                'status': 'error',
+                'message': 'Không thể cập nhật trạng thái của đơn hàng đã hủy hoặc đã hoàn tiền'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if new_status_id == 6 and old_status_id != 3:
+            logger.warning(f"Chỉ đơn hàng đang xử lý mới có thể hủy, đơn hàng #{order_id} hiện tại: {old_status_name}")
+            return Response({
+                'status': 'error',
+                'message': 'Chỉ đơn hàng đang xử lý mới có thể được hủy'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if old_status_id == 5 and new_status_id != 7:
+            logger.warning(f"Đơn hàng đã giao #{order_id} chỉ có thể chuyển sang trạng thái hoàn tiền")
+            return Response({
+                'status': 'error',
+                'message': 'Đơn hàng đã giao chỉ có thể được cập nhật sang trạng thái hoàn tiền'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         order.MaTrangThai = new_status
         order.save()
         
-        # Gửi sự kiện order.status_updated lên RabbitMQ
+        # Prepare order items for the event
+        order_items = ChiTietDonHang.objects.filter(MaDonHang=order)
+        chi_tiet_items = [
+            {
+                'product_id': item.MaSanPham,
+                'quantity': item.SoLuong,
+                'price': float(item.GiaSanPham),
+                'name': item.TenSanPham,
+                'image_url': item.HinhAnh
+            } for item in order_items
+        ]
+        
+        # Prepare order data for events
         order_data = {
             'order_id': order.MaDonHang,
             'user_id': order.MaNguoiDung,
-            'old_status': old_status,
+            'old_status': old_status_name,
             'new_status': new_status.TenTrangThai,
             'total_amount': float(order.TongTien),
             'payment_method': order.PhuongThucThanhToan,
             'recipient_name': order.TenNguoiNhan,
             'phone_number': order.SoDienThoai,
             'address': order.DiaChi,
+            'items': chi_tiet_items
         }
-        publish_order_event('status_updated', order_data)
-        logger.info(f"Đã gửi sự kiện order.status_updated cho đơn hàng #{order.MaDonHang}")
         
-        # Serialize đơn hàng để trả về
+        # Publish order.status_updated event
+        try:
+            publish_order_event('status_updated', order_data)
+            logger.info(f"Đã gửi sự kiện order.status_updated cho đơn hàng #{order.MaDonHang}")
+        except Exception as e:
+            logger.error(f"Lỗi khi gửi sự kiện order.status_updated cho đơn hàng #{order.MaDonHang}: {str(e)}", exc_info=True)
+        
+        # Publish order.cancelled event if status is changed to Cancelled (MaTrangThai: 6)
+        if new_status_id == 6:
+            try:
+                publish_order_event('cancelled', order_data)
+                logger.info(f"Đã gửi sự kiện order.cancelled cho đơn hàng #{order.MaDonHang}")
+            except Exception as e:
+                logger.error(f"Lỗi khi gửi sự kiện order.cancelled cho đơn hàng #{order.MaDonHang}: {str(e)}", exc_info=True)
+        
         serializer = DonHangSerializer(order)
         
         return Response({

@@ -1,6 +1,10 @@
 import os
 import socket
+import logging
 from pathlib import Path
+
+# Cấu hình logging
+logger = logging.getLogger(__name__)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -11,13 +15,10 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-product-service-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-
 HOSTNAME = socket.gethostname()
 ALLOWED_HOSTS = ['*', 'localhost', 'product_service', 'product_service:8000', 'api_gateway', 'api_gateway:8000', HOSTNAME]
 
-
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -62,8 +63,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'product_service.wsgi.application'
 
 # Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -79,8 +78,6 @@ DATABASES = {
 }
 
 # Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -97,24 +94,23 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
-
+# Static files
 STATIC_URL = 'static/'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# Ensure media directories exist
+PRODUCT_IMAGES_DIR = os.path.join(MEDIA_ROOT, 'products')
+os.makedirs(PRODUCT_IMAGES_DIR, exist_ok=True)
+
+# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS Settings
@@ -128,20 +124,35 @@ REST_FRAMEWORK = {
 
 # Service URLs
 AUTH_SERVICE_URL = os.environ.get('AUTH_SERVICE_URL', 'http://auth_service:8000')
+API_GATEWAY_URL = os.environ.get('API_GATEWAY_URL', 'http://localhost:8000')
 
-# RabbitMQ Settings (will be used later)
+# RabbitMQ Settings
 RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST', 'rabbitmq')
 RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT', 5672)
 RABBITMQ_USER = os.environ.get('RABBITMQ_USER', 'guest')
 RABBITMQ_PASS = os.environ.get('RABBITMQ_PASS', 'guest')
 
-
-# Media files (Uploads)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# Ensure media directories exist
-PRODUCT_IMAGES_DIR = os.path.join(MEDIA_ROOT, 'products')
-os.makedirs(PRODUCT_IMAGES_DIR, exist_ok=True)
-
-API_GATEWAY_URL = os.environ.get('API_GATEWAY_URL', 'http://localhost:8000')
+# Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
