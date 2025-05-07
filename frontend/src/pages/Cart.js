@@ -12,13 +12,12 @@ import {
   faWallet,
   faTimes
 } from '@fortawesome/free-solid-svg-icons';
-import { faCcVisa, faCcPaypal, faCcApplePay, faGooglePay } from "@fortawesome/free-brands-svg-icons";
+import { faCcVisa, faCcPaypal, faCcApplePay, faGooglePay, faCcStripe } from "@fortawesome/free-brands-svg-icons";
 import { useCart } from "../context/CartContext";
 import AOS from 'aos';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'aos/dist/aos.css';
 import "./style/style.css";
-
 import { useLanguage } from "../context/LanguageContext";
 
 function Cart() {
@@ -42,7 +41,8 @@ function Cart() {
   // Payment methods
   const paymentMethods = [
     { id: 'cash', name: 'Tiền mặt', icon: faMoneyBill, description: 'Thanh toán khi nhận hàng (COD)' },
-    { id: 'ewallet', name: 'Ví điện tử', icon: faWallet, description: 'Thanh toán qua ví của electronic store' }
+    { id: 'ewallet', name: 'Ví điện tử', icon: faWallet, description: 'Thanh toán qua ví của electronic store' },
+    { id: 'stripe', name: 'Thẻ tín dụng (Stripe)', icon: faCcStripe, description: 'Thanh toán an toàn qua Stripe' }
   ];
 
   // Function to update quantity
@@ -61,7 +61,6 @@ function Cart() {
 
   // Update selected color (if your cart items have color options)
   const updateColor = (id, color) => {
-    // Implement this with your cart context if needed
     console.log("Updating color", id, color);
   };
 
@@ -73,7 +72,6 @@ function Cart() {
   // Complete payment - Navigate to checkout
   const completePayment = () => {
     if (selectedPayment) {
-      // Navigate to checkout page with cart items and payment method
       navigate('/checkout', {
         state: {
           cartItems: cart.items.map(item => ({
@@ -81,13 +79,11 @@ function Cart() {
             name: item.name,
             price: item.price,
             quantity: item.quantity,
-            image_url: item.image_url // Đảm bảo truyền đúng thuộc tính này
+            image_url: item.image_url
           })),
           paymentMethod: selectedPayment
         }
       });
-      
-      // Close the modal
       setShowModal(false);
     } else {
       alert('Vui lòng chọn phương thức thanh toán');
@@ -120,10 +116,7 @@ function Cart() {
   return (
     <div className="container my-5" data-aos="fade-up">
       <style>{modalAnimation}</style>
-      <h2 className="mb-4"
-        style={{ 
-          paddingTop: '55px',
-        }}>{t('gioHangCuaBan')}</h2>
+      <h2 className="mb-4" style={{ paddingTop: '55px' }}>{t('gioHangCuaBan')}</h2>
       
       {cart.items && cart.items.length > 0 ? (
         <div className="row">
@@ -138,26 +131,20 @@ function Cart() {
                           <input className="form-check-input bg-danger border-0" type="checkbox" checked={true} onChange={() => {}} />
                         </div>
                       </div>
-                      
                       <div className="col-md-2">
-                      <img 
-                        src={item.image_url || item.HinhAnh_URL}
-                        alt={item.name || item.TenSanPham} 
-                        className="img-fluid"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = '/assets/placeholder.png'; // Fallback nếu ảnh lỗi
-                        }}
-                      />
+                        <img 
+                          src={item.image_url || item.HinhAnh_URL}
+                          alt={item.name || item.TenSanPham} 
+                          className="img-fluid"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/assets/placeholder.png';
+                          }}
+                        />
                       </div>
-                      
                       <div className="col-md-5">
-
                         <h5 className="product-title">{item.name || item.TenSanPham}</h5>
-
                         <p className="text-muted small mb-2">{t('gia')}: {formatPrice(item.price || item.GiaBan)}</p>
-                        
-                        {/* Hiển thị màu sắc nếu có */}
                         {item.selected_color && item.selected_color !== 'default' && (
                           <div className="d-flex mt-2">
                             <span className="me-2">{t('mauSac')}:</span>
@@ -175,13 +162,11 @@ function Cart() {
                             ></div>
                           </div>
                         )}
-                        
                         <div className="mt-2">
                           <span className="me-2">{t('kichThuoc')}:</span>
                           <span className="badge bg-light text-dark">{item.size || t('tieuChuan')}</span>
                         </div>
                       </div>
-                      
                       <div className="col-md-4">
                         <div className="d-flex align-items-center justify-content-end">
                           <div className="quantity-controls d-flex align-items-center">
@@ -206,7 +191,6 @@ function Cart() {
                               <FontAwesomeIcon icon={faPlus} />
                             </button>
                           </div>
-                          
                           <button 
                             className="btn btn-sm text-danger ms-3" 
                             onClick={() => handleRemoveItem(item.product_id)}
@@ -214,7 +198,6 @@ function Cart() {
                             <FontAwesomeIcon icon={faTrash} />
                           </button>
                         </div>
-                        
                         <div className="text-end mt-2">
                           <strong>{formatPrice(item.price * item.quantity)}</strong>
                         </div>
@@ -225,7 +208,6 @@ function Cart() {
               </div>
             </div>
           </div>
-          
           <div className="col-lg-4">
             <div className="card shadow-sm">
               <div className="card-header bg-white">
@@ -245,14 +227,12 @@ function Cart() {
                   <span>{t('tongTien')}</span>
                   <strong className="text-danger">{formatPrice(cart.total)}</strong>
                 </div>
-                
                 <button 
                   className="btn btn-danger w-100 py-2 mb-3"
                   onClick={() => setShowModal(true)}
                 >
-                  Thanh toán <FontAwesomeIcon icon={faCheckCircle} className="ms-2 " />
+                  Thanh toán <FontAwesomeIcon icon={faCheckCircle} className="ms-2" />
                 </button>
-                
                 <div className="payment-methods mt-3">
                   <p className="small mb-2">{t('cacDoiTacThanhToan')}</p>
                   <div className="d-flex flex-wrap">
@@ -260,11 +240,11 @@ function Cart() {
                     <FontAwesomeIcon icon={faCcPaypal} className="payment-icon me-2 mb-2" style={{width: '40px'}} size="2x" />
                     <FontAwesomeIcon icon={faCcApplePay} className="payment-icon me-2 mb-2" style={{width: '40px'}} size="2x" />
                     <FontAwesomeIcon icon={faGooglePay} className="payment-icon me-2 mb-2" style={{width: '40px'}} size="2x" />
+                    <FontAwesomeIcon icon={faCcStripe} className="payment-icon me-2 mb-2" style={{width: '40px'}} size="2x" />
                   </div>
                 </div>
               </div>
             </div>
-            
             <div className="card mt-3 shadow-sm">
               <div className="card-body">
                 <div className="input-group">
@@ -288,8 +268,6 @@ function Cart() {
           </button>
         </div>
       )}
-
-      {/* Modal Phương thức thanh toán */}
       {showModal && (
         <div className="modal-backdrop" 
              style={{
@@ -337,7 +315,7 @@ function Cart() {
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
                       backgroundColor: selectedPayment === method.id ? '#dee1e3' : 'white',
-                      borderColor: selectedPayment === method.id ? '#ff424e' : '', // Add this line to change the border color
+                      borderColor: selectedPayment === method.id ? '#ff424e' : '',
                     }}
                     onClick={() => handlePaymentSelection(method.id)}
                   >
@@ -376,7 +354,7 @@ function Cart() {
                 {t('huy')}
               </button>
               <button 
-                className="btn btn-danger " 
+                className="btn btn-danger" 
                 onClick={completePayment}
                 disabled={!selectedPayment}
               >

@@ -1,12 +1,11 @@
-# File: payment_service/apps/payments/rabbitmq.py
-
 import json
 import threading
 import logging
 from django.conf import settings
 from django.utils import timezone
+from django.db import transaction
 from .utils import get_rabbitmq_client
-from .models import ThanhToan
+from .models import ThanhToan, UserBalance
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,6 @@ def message_callback(ch, method, properties, body):
 
         logger.info(f"Received message with routing key {routing_key}: {message}")
 
-        # Process order.created event
         if routing_key == 'order.created':
             order_id = message.get('order_id')
             user_id = message.get('user_id')
@@ -32,43 +30,63 @@ def message_callback(ch, method, properties, body):
                 ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
                 return
 
-            # Create a new ThanhToan record
-            thanh_toan = ThanhToan.objects.create(
-                fk_MaDonHang=order_id,
-                PhuongThucThanhToan=payment_method,
-                NgayThanhToan=timezone.now().date(),
-                TrangThaiThanhToan='processing'  # Initial status
-            )
+            with transaction.atomic():
+                if payment_method == 'ewallet':
+                    # Kiểm tra và trừ số dư
+                    try:
+                        user_balance = UserBalance.objects.get(user_id=user_id)
+                        if user_balance.balance >= total_amount:
+                            user_balance.balance -= total_amount
+                            user_balance.save()
+                            status = 'Hoàn tất'
+                        else:
+                            logger.error(f"Insufficient balance for user {user_id}")
+                            status = 'Thất bại'
+                    except UserBalance.DoesNotExist:
+                        logger.error(f"No balance record for user {user_id}")
+                        status = 'Thất bại'
+                else:
+                    # Cash hoặc Stripe: Đặt trạng thái ban đầu là Chờ xử lý
+                    status = 'Chờ xử lý'
 
-            logger.info(f"Created ThanhToan record for order #{order_id}: {thanh_toan.pk_MaThanhToan}")
+                # Tạo bản ghi ThanhToan
+                thanh_toan = ThanhToan.objects.create(
+                    fk_MaDonHang=order_id,
+                    PhuongThucThanhToan=payment_method,
+                    NgayThanhToan=timezone.now().date(),
+                    TrangThaiThanhToan=status
+                )
 
-            # Acknowledge message
+                logger.info(f"Created ThanhToan for order #{order_id}: {thanh_toan.pk_MaThanhToan}")
+
+                # Publish sự kiện payment.created
+                client = get_rabbitmq_client()
+                payment_data = {
+                    'payment_id': thanh_toan.pk_MaThanhToan,
+                    'order_id': order_id,
+                    'status': status,
+                    'payment_method': payment_method,
+                    'created_at': thanh_toan.NgayThanhToan.isoformat()
+                }
+                client.publish('payment.created', payment_data)
+                client.close()
+
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
     except Exception as e:
         logger.error(f"Error processing message: {str(e)}", exc_info=True)
-        # Reject message
         ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
 def start_consumer():
-    """
-    Start consuming messages from RabbitMQ
-    """
     try:
         client = get_rabbitmq_client()
-
-        # Payment service is interested in order.created events
         queue_name = 'payment_service_queue'
         routing_keys = ['order.created']
-
         client.consume(queue_name, routing_keys, message_callback)
     except Exception as e:
         logger.error(f"Error starting RabbitMQ consumer: {str(e)}", exc_info=True)
 
 def start_consumer_thread():
-    """
-    Start RabbitMQ consumer in a separate thread
-    """
     try:
         consumer_thread = threading.Thread(target=start_consumer)
         consumer_thread.daemon = True
