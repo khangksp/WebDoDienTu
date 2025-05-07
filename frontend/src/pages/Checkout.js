@@ -54,6 +54,15 @@ function Checkout() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Check for payment failure
+  useEffect(() => {
+    const query = new URLSearchParams(location.search);
+    if (query.get('payment_failed') === 'true') {
+      const orderId = query.get('order_id');
+      alert(`Thanh toán thất bại cho đơn hàng #${orderId}. Vui lòng thử lại.`);
+    }
+  }, [location.search]);
+
   // Check authentication on mount
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -321,70 +330,93 @@ function Checkout() {
           GiaBan: item.GiaBan || item.price,
           quantity: item.quantity,
           HinhAnh_URL: item.HinhAnh_URL || item.image_url
-        }))
+        })),
+        status: paymentMethod === 'stripe' ? 'Chờ thanh toán' : 'Chờ xác nhận'
       };
 
+      // Create order in order_service
+      const orderResponse = await fetch(`${API_BASE_URL}/orders/create/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      const orderResponseText = await orderResponse.text();
+      if (!orderResponse.ok) {
+        if (orderResponse.status === 401) {
+          alert('Session expired. Please log in again.');
+          navigate('/login');
+          return;
+        }
+        try {
+          const errorData = JSON.parse(orderResponseText);
+          throw new Error(errorData.message || `HTTP Error: ${orderResponse.status}`);
+        } catch (e) {
+          throw new Error(`HTTP Error: ${orderResponse.status}`);
+        }
+      }
+
+      const orderResult = JSON.parse(orderResponseText);
+      const orderId = orderResult.order_id;
+
       if (paymentMethod === 'stripe') {
-        const response = await fetch(`${API_BASE_URL}/payments/create-checkout-session/`, {
+        const stripeResponse = await fetch(`${API_BASE_URL}/payments/create-checkout-session/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            order_id: `temp_${Date.now()}`,
+            order_id: orderId,
             amount: grandTotal,
             currency: 'vnd',
             items: orderData.items,
             user_id: orderData.user_id,
             recipient_name: orderData.recipient_name,
             phone_number: orderData.phone_number,
-            address: orderData.address
+            address: orderData.address,
+            metadata: { order_id: orderId.toString() }
           })
         });
 
-        const result = await response.json();
-        if (!response.ok) {
-          throw new Error(result.error || 'Error creating Stripe checkout session');
+        const stripeResult = await stripeResponse.json();
+        if (!stripeResponse.ok) {
+          // Update order status to failed if Stripe session creation fails
+          await fetch(`${API_BASE_URL}/orders/update/${orderId}/`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ status: 'Thất bại' })
+          });
+          throw new Error(stripeResult.error || 'Error creating Stripe checkout session');
         }
 
         const stripe = await stripePromise;
-        const { error } = await stripe.redirectToCheckout({ sessionId: result.session_id });
+        const { error } = await stripe.redirectToCheckout({ sessionId: stripeResult.session_id });
         if (error) {
+          // Update order status to failed if redirect fails
+          await fetch(`${API_BASE_URL}/orders/update/${orderId}/`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ status: 'Thất bại' })
+          });
           throw new Error(error.message);
         }
       } else {
-        const response = await fetch(`${API_BASE_URL}/orders/create/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(orderData)
-        });
-
-        const responseText = await response.text();
-        if (!response.ok) {
-          if (response.status === 401) {
-            alert('Session expired. Please log in again.');
-            navigate('/login');
-            return;
-          }
-          try {
-            const errorData = JSON.parse(responseText);
-            throw new Error(errorData.message || `HTTP Error: ${response.status}`);
-          } catch (e) {
-            throw new Error(`HTTP Error: ${response.status}`);
-          }
-        }
-
-        const result = JSON.parse(responseText);
         await clearCart(cartItems);
         alert('Order placed successfully! Thank you for shopping.');
         navigate('/order-confirmation', { 
           state: { 
-            orderId: result.order_id,
-            totalAmount: result.total_amount
+            orderId: orderResult.order_id,
+            totalAmount: orderResult.total_amount
           } 
         });
       }

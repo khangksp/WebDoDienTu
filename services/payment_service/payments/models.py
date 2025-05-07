@@ -11,8 +11,9 @@ class ThanhToan(models.Model):
     ])
     NgayThanhToan = models.DateField()
     TrangThaiThanhToan = models.CharField(max_length=50, choices=[
-        ('Chờ xử lý', 'Chờ xử lý'),
-        ('Hoàn tất', 'Hoàn tất'),
+        ('Chờ thanh toán', 'Chờ thanh toán'),
+        ('Đã thanh toán', 'Đã thanh toán'),
+        ('Đã hoàn tiền', 'Đã hoàn tiền'),
         ('Thất bại', 'Thất bại')
     ])
     stripe_payment_intent_id = models.CharField(max_length=100, null=True, blank=True)

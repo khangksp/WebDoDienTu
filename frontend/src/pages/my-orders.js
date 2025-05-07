@@ -47,6 +47,7 @@ function MyOrders() {
   };
 
   const paymentMethodMap = {
+    stripe: t("stripe"),
     elecpay: t("viDienTu"),
     cash: t("tienMat"),
     banking: t("RandchuyenKhoan"),
@@ -170,29 +171,37 @@ function MyOrders() {
         throw new Error(t("khongTimThayDonHangHoacTongTien"));
       }
 
-      // Bước 1: Hủy đơn hàng
-      await axios.put(
-        `${API_BASE_URL}/orders/update-status/${orderId}/`,
-        { MaTrangThai: 6 },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      // Kiểm tra nếu là Stripe và trạng thái là "Đang xử lý" (MaTrangThai: 3)
+      if (order.PhuongThucThanhToan === "stripe" && order.MaTrangThai === 3) {
+        // Gọi API hoàn tiền qua Stripe
+        const refundResponse = await axios.post(
+          `${API_BASE_URL}/payments/refund/`,
+          { order_id: orderId },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-      // Bước 2: Chỉ hoàn tiền nếu phương thức thanh toán là ví điện tử (ewallet)
-      if (order.PhuongThucThanhToan === "ewallet") {
-        console.log("User info:", user);
-        console.log("User ID:", user.mataikhoan);
-        console.log("Order total:", order.TongTien);
+        console.log("Refund response:", refundResponse.data);
 
+        // Cập nhật trạng thái đơn hàng thành "Hoàn tiền" (MaTrangThai: 7)
+        await axios.put(
+          `${API_BASE_URL}/orders/update-status/${orderId}/`,
+          { MaTrangThai: 7 },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        alert(t("huyDonHangThanhCong") + t("vaHoanTien"));
+      } else if (order.PhuongThucThanhToan === "elecpay") {
+        // Hoàn tiền cho ví điện tử
         const payload = {
           manguoidung: user.mataikhoan,
           sotien: order.TongTien.toString(),
         };
 
-        console.log("Balance add payload:", payload);
-
-        const response = await axios.post(
+        const balanceResponse = await axios.post(
           `${API_BASE_URL}/auth/balance/add/`,
           payload,
           {
@@ -200,16 +209,43 @@ function MyOrders() {
           }
         );
 
-        console.log("Balance add response:", response.data);
+        console.log("Balance add response:", balanceResponse.data);
+
+        // Cập nhật trạng thái đơn hàng thành "Hoàn tiền" (MaTrangThai: 7)
+        await axios.put(
+          `${API_BASE_URL}/orders/update-status/${orderId}/`,
+          { MaTrangThai: 7 },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        alert(t("huyDonHangThanhCong") + t("vaHoanTien"));
       } else {
-        console.log("No refund processed for payment method:", order.PhuongThucThanhToan);
+        // Hủy đơn hàng cho các phương thức khác (cash, banking)
+        await axios.put(
+          `${API_BASE_URL}/orders/update-status/${orderId}/`,
+          { MaTrangThai: 6 },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        alert(t("huyDonHangThanhCong"));
       }
 
       // Cập nhật state orders
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           order.MaDonHang === orderId
-            ? { ...order, MaTrangThai: 6 }
+            ? {
+                ...order,
+                MaTrangThai:
+                  order.PhuongThucThanhToan === "stripe" ||
+                  order.PhuongThucThanhToan === "elecpay"
+                    ? 7
+                    : 6,
+              }
             : order
         )
       );
@@ -219,6 +255,7 @@ function MyOrders() {
         const newStatuses = { ...prevStats.statuses };
         const processingLabel = statusMap[3].label;
         const cancelledLabel = statusMap[6].label;
+        const refundLabel = statusMap[7].label;
 
         if (newStatuses[processingLabel]) {
           newStatuses[processingLabel] = Math.max(
@@ -226,25 +263,21 @@ function MyOrders() {
             newStatuses[processingLabel] - 1
           );
         }
-        newStatuses[cancelledLabel] = (newStatuses[cancelledLabel] || 0) + 1;
+        if (
+          order.PhuongThucThanhToan === "stripe" ||
+          order.PhuongThucThanhToan === "elecpay"
+        ) {
+          newStatuses[refundLabel] = (newStatuses[refundLabel] || 0) + 1;
+        } else {
+          newStatuses[cancelledLabel] = (newStatuses[cancelledLabel] || 0) + 1;
+        }
 
         return { ...prevStats, statuses: newStatuses };
       });
 
       setError("");
-      alert(t("huyDonHangThanhCong") + (order.PhuongThucThanhToan === "ewallet" ? t("vaHoanTien") : ""));
     } catch (err) {
       console.error("Error cancelling order or refunding:", err);
-      if (err.response) {
-        console.error("Error response data:", err.response.data);
-        console.error("Error response status:", err.response.status);
-        console.error("Error response headers:", err.response.headers);
-      } else if (err.request) {
-        console.error("Error request:", err.request);
-      } else {
-        console.error("Error message:", err.message);
-      }
-
       setError(
         t("loiKhiHuyDonHangHoacHoanTien") +
           ": " +
@@ -285,7 +318,7 @@ function MyOrders() {
       console.log("Status update response:", statusResponse.data);
 
       // Chỉ hoàn tiền nếu phương thức thanh toán là ewallet
-      if (order.PhuongThucThanhToan === "ewallet") {
+      if (order.PhuongThucThanhToan === "elecpay") {
         console.log("User info:", user);
         console.log("User ID:", user.mataikhoan);
         console.log("Order total:", order.TongTien);

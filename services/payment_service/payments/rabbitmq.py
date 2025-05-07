@@ -1,3 +1,5 @@
+#payment_service/payments/rabbitmq.py
+
 import json
 import threading
 import logging
@@ -31,23 +33,18 @@ def message_callback(ch, method, properties, body):
                 return
 
             with transaction.atomic():
-                if payment_method == 'ewallet':
-                    # Kiểm tra và trừ số dư
-                    try:
-                        user_balance = UserBalance.objects.get(user_id=user_id)
-                        if user_balance.balance >= total_amount:
-                            user_balance.balance -= total_amount
-                            user_balance.save()
-                            status = 'Hoàn tất'
-                        else:
-                            logger.error(f"Insufficient balance for user {user_id}")
-                            status = 'Thất bại'
-                    except UserBalance.DoesNotExist:
-                        logger.error(f"No balance record for user {user_id}")
-                        status = 'Thất bại'
+                # Kiểm tra xem bản ghi ThanhToan đã tồn tại chưa
+                if ThanhToan.objects.filter(fk_MaDonHang=order_id).exists():
+                    logger.warning(f"Payment record for order #{order_id} already exists")
+                    ch.basic_ack(delivery_tag=method.delivery_tag)
+                    return
+
+                if payment_method == 'ewallet' :
+    # Bỏ kiểm tra số dư, luôn đánh dấu là đã thanh toán
+                    status = 'Đã thanh toán'
                 else:
-                    # Cash hoặc Stripe: Đặt trạng thái ban đầu là Chờ xử lý
-                    status = 'Chờ xử lý'
+                    # Cash hoặc Stripe: Đặt trạng thái ban đầu là Chờ thanh toán
+                    status = 'Chờ thanh toán'
 
                 # Tạo bản ghi ThanhToan
                 thanh_toan = ThanhToan.objects.create(
@@ -60,19 +57,25 @@ def message_callback(ch, method, properties, body):
                 logger.info(f"Created ThanhToan for order #{order_id}: {thanh_toan.pk_MaThanhToan}")
 
                 # Publish sự kiện payment.created
-                client = get_rabbitmq_client()
-                payment_data = {
-                    'payment_id': thanh_toan.pk_MaThanhToan,
-                    'order_id': order_id,
-                    'status': status,
-                    'payment_method': payment_method,
-                    'created_at': thanh_toan.NgayThanhToan.isoformat()
-                }
-                client.publish('payment.created', payment_data)
-                client.close()
+                try:
+                    client = get_rabbitmq_client()
+                    payment_data = {
+                        'payment_id': thanh_toan.pk_MaThanhToan,
+                        'order_id': order_id,
+                        'status': status,
+                        'payment_method': payment_method,
+                        'created_at': thanh_toan.NgayThanhToan.isoformat()
+                    }
+                    client.publish('payment.created', payment_data)
+                    client.close()
+                except Exception as e:
+                    logger.error(f"Failed to publish payment.created event for order #{order_id}: {str(e)}")
 
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in message: {body}, error: {str(e)}")
+        ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
     except Exception as e:
         logger.error(f"Error processing message: {str(e)}", exc_info=True)
         ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
@@ -85,6 +88,7 @@ def start_consumer():
         client.consume(queue_name, routing_keys, message_callback)
     except Exception as e:
         logger.error(f"Error starting RabbitMQ consumer: {str(e)}", exc_info=True)
+        raise
 
 def start_consumer_thread():
     try:
@@ -94,3 +98,4 @@ def start_consumer_thread():
         logger.info("Started RabbitMQ consumer thread for payment service")
     except Exception as e:
         logger.error(f"Error starting consumer thread: {str(e)}", exc_info=True)
+        raise

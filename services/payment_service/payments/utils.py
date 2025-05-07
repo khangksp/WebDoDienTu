@@ -1,3 +1,5 @@
+
+#payment_service/payments/utils.py
 import pika
 import json
 import logging
@@ -24,7 +26,7 @@ class RabbitMQClient:
             )
             self.connection = pika.BlockingConnection(parameters)
             self.channel = self.connection.channel()
-            self.channel.exchange_declare(exchange='orders', exchange_type='topic')
+            self.channel.exchange_declare(exchange='microservice_events', exchange_type='topic', durable=True)
         except Exception as e:
             logger.error(f"Failed to connect to RabbitMQ: {str(e)}")
             raise
@@ -32,7 +34,7 @@ class RabbitMQClient:
     def publish(self, routing_key, message):
         try:
             self.channel.basic_publish(
-                exchange='orders',
+                exchange='microservice_events',
                 routing_key=routing_key,
                 body=json.dumps(message),
                 properties=pika.BasicProperties(delivery_mode=2)  # Persistent
@@ -42,7 +44,7 @@ class RabbitMQClient:
             logger.error(f"Failed to publish message: {str(e)}")
             self.connect()
             self.channel.basic_publish(
-                exchange='orders',
+                exchange='microservice_events',
                 routing_key=routing_key,
                 body=json.dumps(message),
                 properties=pika.BasicProperties(delivery_mode=2)
@@ -54,7 +56,7 @@ class RabbitMQClient:
             for routing_key in routing_keys:
                 self.channel.queue_bind(
                     queue=queue_name,
-                    exchange='orders',
+                    exchange='microservice_events',
                     routing_key=routing_key
                 )
             self.channel.basic_qos(prefetch_count=1)
