@@ -1,5 +1,3 @@
-// src/context/CartContext.jsx
-
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import axios from 'axios';
 
@@ -131,17 +129,24 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Xóa toàn bộ giỏ hàng
-  const clearCart = async () => {
+  // Xóa các sản phẩm được chỉ định khỏi giỏ hàng hoặc toàn bộ giỏ hàng nếu không chỉ định
+  const clearCart = async (itemsToRemove = null) => {
     try {
       const token = localStorage.getItem('access_token');
       if (!token) return;
 
-      const response = await axios.delete(`${API_BASE_URL}/api/cart/clear/`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setCart(response.data);
-      return response.data;
+      let response;
+      if (itemsToRemove && Array.isArray(itemsToRemove) && itemsToRemove.length > 0) {
+        for (const item of itemsToRemove) {
+          await removeFromCart(item.id || item.product_id);
+        }
+        await fetchCart(); // Làm mới giỏ hàng sau khi xóa
+      } else {
+        response = await axios.delete(`${API_BASE_URL}/api/cart/clear/`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setCart(response.data);
+      }
     } catch (error) {
       console.error('Error clearing cart:', error);
       throw error;
