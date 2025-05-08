@@ -33,7 +33,7 @@ function HomePage() {
 
   // Fetch danh mục sản phẩm
   useEffect(() => {
-    axios.get("http://localhost:8000/api/products/danh-muc/")
+    axios.get(`${API_BASE_URL}/products/danh-muc/`)
       .then(response => {
         setCategories(response.data);
       })
@@ -45,7 +45,7 @@ function HomePage() {
   // Fetch sản phẩm
   useEffect(() => {
     setLoading(true);
-    axios.get("http://localhost:8000/api/products/san-pham/")
+    axios.get(`${API_BASE_URL}/products/san-pham/`)
       .then(response => {
         console.log("Dữ liệu API:", response.data);
         setProducts(response.data);

@@ -100,14 +100,14 @@ function Detail() {
     const fetchProductData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:8000/api/products/san-pham/${productId}/`);
+        const response = await axios.get(`${API_BASE_URL}/products/san-pham/${productId}/`);
         setProduct(response.data);
         
         // Tạo đánh giá ngẫu nhiên cho sản phẩm
         setRatingData(generateRandomRating());
 
         // Lấy danh sách sản phẩm khác
-        const allProductsResponse = await axios.get(`http://localhost:8000/api/products/san-pham/`);
+        const allProductsResponse = await axios.get(`${API_BASE_URL}/products/san-pham/`);
         
         // Sản phẩm liên quan
         const related = allProductsResponse.data.filter(p => 
