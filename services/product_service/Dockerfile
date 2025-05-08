@@ -2,7 +2,6 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Cài đặt các gói phụ thuộc cho MySQLClient và Pillow
 RUN apt-get update && apt-get install -y \
     default-libmysqlclient-dev \
     build-essential \
