@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useContext, useCallback } fr
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid'; // Thêm thư viện uuid để tạo ID duy nhất
 
-const API_BASE_URL = 'http://localhost:8000';
+import { API_BASE_URL } from '../config'; // Import từ file config
 
 const CartContext = createContext();
 
@@ -32,7 +32,12 @@ export const CartProvider = ({ children }) => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const cartId = token ? null : sessionId; // Nếu không có token, dùng sessionId
 
-      const response = await axios.get(`${API_BASE_URL}/api/cart/`, {
+      // Sử dụng API_BASE_URL từ config, loại bỏ '/api' nếu đã có trong API_BASE_URL
+      const baseUrl = API_BASE_URL.endsWith('/api') 
+        ? API_BASE_URL 
+        : `${API_BASE_URL}`;
+      
+      const response = await axios.get(`${baseUrl}/cart/`, {
         headers,
         params: { session_id: cartId }, // Gửi session_id nếu không đăng nhập
       });
@@ -63,8 +68,13 @@ export const CartProvider = ({ children }) => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const cartId = token ? null : sessionId;
 
+      // Sử dụng API_BASE_URL từ config
+      const baseUrl = API_BASE_URL.endsWith('/api') 
+        ? API_BASE_URL 
+        : `${API_BASE_URL}`;
+
       const response = await axios.post(
-        `${API_BASE_URL}/api/cart/add/`,
+        `${baseUrl}/cart/add/`,
         {
           product_id: product.id,
           name: product.TenSanPham || product.name,
@@ -93,8 +103,13 @@ export const CartProvider = ({ children }) => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const cartId = token ? null : sessionId;
 
+      // Sử dụng API_BASE_URL từ config
+      const baseUrl = API_BASE_URL.endsWith('/api') 
+        ? API_BASE_URL 
+        : `${API_BASE_URL}`;
+
       const response = await axios.put(
-        `${API_BASE_URL}/api/cart/update/`,
+        `${baseUrl}/cart/update/`,
         {
           product_id: productId,
           quantity: quantity,
@@ -117,7 +132,12 @@ export const CartProvider = ({ children }) => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const cartId = token ? null : sessionId;
 
-      const response = await axios.delete(`${API_BASE_URL}/api/cart/remove/${productId}/`, {
+      // Sử dụng API_BASE_URL từ config
+      const baseUrl = API_BASE_URL.endsWith('/api') 
+        ? API_BASE_URL 
+        : `${API_BASE_URL}`;
+
+      const response = await axios.delete(`${baseUrl}/cart/remove/${productId}/`, {
         headers,
         data: { session_id: cartId },
       });
@@ -136,6 +156,11 @@ export const CartProvider = ({ children }) => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const cartId = token ? null : sessionId;
 
+      // Sử dụng API_BASE_URL từ config
+      const baseUrl = API_BASE_URL.endsWith('/api') 
+        ? API_BASE_URL 
+        : `${API_BASE_URL}`;
+
       let response;
       if (itemsToRemove && Array.isArray(itemsToRemove) && itemsToRemove.length > 0) {
         for (const item of itemsToRemove) {
@@ -143,7 +168,7 @@ export const CartProvider = ({ children }) => {
         }
         await fetchCart();
       } else {
-        response = await axios.delete(`${API_BASE_URL}/api/cart/clear/`, {
+        response = await axios.delete(`${baseUrl}/cart/clear/`, {
           headers,
           data: { session_id: cartId },
         });
