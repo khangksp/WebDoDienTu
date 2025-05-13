@@ -74,7 +74,8 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME', 'auth_db'),
         'USER': os.getenv('DB_USER', 'user'),
         'PASSWORD': os.getenv('DB_PASSWORD', 'password'),
-        'HOST': os.getenv('DB_HOST', 'mysql'),
+        # 'HOST': os.getenv('DB_HOST', 'mysql'),
+        'HOST': os.getenv('DB_HOST', 'web1.cb6006uk048c.ap-southeast-2.rds.amazonaws.com'),
         'PORT': os.getenv('DB_PORT', '3306'),
     }
 }

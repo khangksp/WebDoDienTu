@@ -55,7 +55,7 @@ services:
       - DB_NAME=auth_db
       - DB_USER=user
       - DB_PASSWORD=password
-      - DB_HOST=mysql
+      - DB_HOST=web1.cb6006uk048c.ap-southeast-2.rds.amazonaws.com
       - DB_PORT=3306
       - SECRET_KEY=django-insecure-auth-service-key
       - DEBUG=True
@@ -84,7 +84,7 @@ services:
       - DB_NAME=product_db
       - DB_USER=user
       - DB_PASSWORD=password
-      - DB_HOST=mysql
+      - DB_HOST=web1.cb6006uk048c.ap-southeast-2.rds.amazonaws.com
       - DB_PORT=3306
       - SECRET_KEY=django-insecure-product-service-key
       - DEBUG=True
@@ -154,7 +154,7 @@ services:
       - DB_NAME=order_db
       - DB_USER=user
       - DB_PASSWORD=password
-      - DB_HOST=mysql
+      - DB_HOST=web1.cb6006uk048c.ap-southeast-2.rds.amazonaws.com
       - DB_PORT=3306
       - SECRET_KEY=django-insecure-order-service-key
       - DEBUG=True
@@ -186,7 +186,7 @@ services:
       - DB_NAME=payment_db
       - DB_USER=user
       - DB_PASSWORD=password
-      - DB_HOST=mysql
+      - DB_HOST=web1.cb6006uk048c.ap-southeast-2.rds.amazonaws.com
       - DB_PORT=3306
       - SECRET_KEY=django-insecure-payment-service-key
       - DEBUG=True
