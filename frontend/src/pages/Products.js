@@ -23,7 +23,6 @@ const Products = () => {
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     
-    // Khởi tạo hiệu ứng AOS
     useEffect(() => {
         AOS.init({
             duration: 800,
@@ -32,28 +31,24 @@ const Products = () => {
         });
     }, []);
 
-    // Lấy tham số từ URL
     useEffect(() => {
         const queryParams = new URLSearchParams(location.search);
         
-        // Lấy category từ URL nếu có
         const category = queryParams.get('category');
         if (category) {
             setSelectedCategory(parseInt(category));
         } else {
-            setSelectedCategory(null); // Reset nếu không có category
+            setSelectedCategory(null);
         }
         
-        // Lấy search term từ URL nếu có
         const search = queryParams.get('search');
         if (search) {
             setSearchTerm(search);
         } else {
-            setSearchTerm(""); // Reset nếu không có tìm kiếm
+            setSearchTerm("");
         }
     }, [location.search]);
 
-    // Fetch danh mục sản phẩm
     useEffect(() => {
         axios.get(`${API_BASE_URL}/products/danh-muc/`)
             .then(response => {
@@ -64,23 +59,19 @@ const Products = () => {
             });
     }, []);
 
-    // Fetch sản phẩm
     useEffect(() => {
         let url = `${API_BASE_URL}/products/san-pham/`;
         
         const params = new URLSearchParams();
         
-        // Nếu có category được chọn, thêm filter
         if (selectedCategory) {
             params.append('DanhMuc', selectedCategory);
         }
         
-        // Nếu có từ khóa tìm kiếm, thêm filter
         if (searchTerm) {
             params.append('search', searchTerm);
         }
         
-        // Nếu có tham số, thêm vào URL
         if (params.toString()) {
             url += `?${params.toString()}`;
         }
@@ -97,12 +88,10 @@ const Products = () => {
                 setError("Không thể tải dữ liệu sản phẩm");
                 setLoading(false);
             });
-    }, [selectedCategory, searchTerm]); // Chạy lại khi selectedCategory hoặc searchTerm thay đổi
+    }, [selectedCategory, searchTerm]);
 
-    // Xử lý khi chọn danh mục
     const handleCategoryClick = (categoryId) => {
         setSelectedCategory(categoryId === selectedCategory ? null : categoryId);
-        // Cập nhật URL khi chọn danh mục
         const params = new URLSearchParams(location.search);
         if (categoryId === selectedCategory) {
             params.delete('category');
@@ -112,22 +101,31 @@ const Products = () => {
         navigate(`/products?${params.toString()}`);
     };
 
-    // Xử lý khi click vào sản phẩm
     const handleProductClick = (productId) => {
         navigate(`/detail?id=${productId}`);
     };
 
-    // Xử lý khi click vào nút mua ngay
     const handleBuyNow = (e, productId) => {
-        e.stopPropagation(); // Ngăn chặn sự kiện click lan tỏa tới thẻ cha
-        // Có thể điều hướng đến trang thanh toán hoặc thêm vào giỏ hàng
-        console.log(`Mua ngay sản phẩm ID: ${productId}`);
-        // Ví dụ: navigate(`/checkout?product=${productId}`);
+        e.stopPropagation();
+        const product = products.find(p => p.id === productId);
+        if (product) {
+          navigate('/checkout', {
+            state: {
+              cartItems: [{
+                product_id: product.id,
+                TenSanPham: product.TenSanPham,
+                GiaBan: product.GiaBan,
+                quantity: 1,
+                HinhAnh_URL: product.HinhAnh_URL,
+              }],
+              paymentMethod: 'cash' // Default payment method
+            }
+          });
+        }
     };
 
-    // Xử lý khi click vào nút chi tiết
     const handleViewDetails = (e, productId) => {
-        e.stopPropagation(); // Ngăn chặn sự kiện click lan tỏa tới thẻ cha
+        e.stopPropagation();
         navigate(`/detail?id=${productId}`);
     };
 
@@ -145,7 +143,6 @@ const Products = () => {
                 {t('dsSanPham')}
             </h1>
             
-            {/* Hiển thị từ khóa tìm kiếm nếu có */}
             {searchTerm && (
                 <div className="alert alert-secondary mb-4">
                     <FontAwesomeIcon icon={faSearch} className="me-2" />
@@ -164,7 +161,6 @@ const Products = () => {
                 </div>
             )}
             
-            {/* Danh mục sản phẩm */}
             <div className="mb-4" data-aos="fade-up">
                 <div className="d-flex align-items-center mb-2">
                     <FontAwesomeIcon icon={faFilter} className="me-2" />
@@ -194,7 +190,6 @@ const Products = () => {
                 </div>
             </div>
 
-            {/* Hiển thị sản phẩm */}
             {loading ? (
                 <div className="text-center">
                     <div className="spinner-border text-secondary" role="status">
@@ -227,7 +222,7 @@ const Products = () => {
                                             alt={product.TenSanPham}
                                             onError={(e) => {
                                                 e.target.onerror = null;
-                                                e.target.src = '/assets/placeholder.png'; // Ảnh dự phòng
+                                                e.target.src = '/assets/placeholder.png';
                                             }}
                                         />
                                     </div>
@@ -279,7 +274,6 @@ const Products = () => {
     );
 };
 
-// Thêm CSS cho các hiệu ứng và bố cục
 const styles = `
 <style>
     .btn {
@@ -291,11 +285,11 @@ const styles = `
         color: #fff;
         cursor: pointer;
         transition: background-color 0.3s ease;
-        width: auto; /* This replaces width: 100% */
+        width: auto;
     }
 
   .btn-outline-secondary {
-    background-color: #e0e0e0; /* Light light gray */
+    background-color: #e0e0e0;
     color: #6c757d;
     border: 1px solid #d0d0d0;
   }

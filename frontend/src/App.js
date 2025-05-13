@@ -13,7 +13,6 @@ import Cart from "./pages/Cart";
 import Contact from "./pages/Contact";
 import Detail from "./pages/Detail";
 import Checkout from "./pages/Checkout";
-import Login from "./pages/Login";
 import About from "./pages/About";
 import Admin from './pages/admin';
 import Nhanvien from './pages/nhanvien';
@@ -22,29 +21,8 @@ import MyOrders from "./pages/my-orders";
 
 const Layout = ({ children }) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user } = useAuth();
 
-  useEffect(() => {
-    console.log("Layout - Current user:", user);
-    console.log("Layout - Current location:", location.pathname);
-
-    if (user && location.pathname === "/login") {
-      if (user.loaiquyen === "admin") {
-        console.log("Layout - User is admin, navigating to /admin");
-        navigate("/admin", { replace: true });
-      } else if (user.loaiquyen === "nhanvien") {
-        console.log("Layout - User is nhanvien, navigating to /nhanvien");
-        navigate("/nhanvien", { replace: true });
-      } else {
-        console.log("Layout - User is not admin/nhanvien, navigating to /");
-        navigate("/", { replace: true });
-      }
-    }
-  }, [user, location.pathname, navigate]);
-
-  const hideNavbarAndFooterPaths = ['/admin', '/nhanvien'];
-
+  const hideNavbarAndFooterPaths = ['/admin', '/nhanvien']; // Add any other paths where you want to hide the navbar and footer
   return (
     <>
       {!hideNavbarAndFooterPaths.includes(location.pathname) && <Navbar />}
@@ -68,7 +46,6 @@ function App() {
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/detail" element={<Detail />} />
                 <Route path="/checkout" element={<Checkout />} />
-                <Route path="/login" element={<Login />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/order-confirmation" element={<OrderConfirmation />} />
                 <Route path="/my-orders" element={<MyOrders/>} />

@@ -17,7 +17,7 @@ import { API_BASE_URL } from '../config';
 import { useLanguage } from "../context/LanguageContext";
 
 function HomePage() {
-  const { t } = useLanguage(); // Sử dụng hook useLanguage
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -31,7 +31,6 @@ function HomePage() {
     });
   }, []);
 
-  // Fetch danh mục sản phẩm
   useEffect(() => {
     axios.get(`${API_BASE_URL}/products/danh-muc/`)
       .then(response => {
@@ -42,7 +41,6 @@ function HomePage() {
       });
   }, []);
 
-  // Fetch sản phẩm
   useEffect(() => {
     setLoading(true);
     axios.get(`${API_BASE_URL}/products/san-pham/`)
@@ -58,29 +56,36 @@ function HomePage() {
       });
   }, []);
 
-  // Function to handle product click and navigate to detail page
   const handleProductClick = (productId) => {
     navigate(`/detail?id=${productId}`);
   };
 
-  // Function to handle buy now button
   const handleBuyNow = (e, productId) => {
-    e.stopPropagation(); // Prevent triggering the parent onClick
-    // Implement buy now functionality or navigate to checkout
-    console.log(`Mua ngay sản phẩm: ${productId}`);
-    // navigate(`/checkout?product=${productId}`);
+    e.stopPropagation();
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      navigate('/checkout', {
+        state: {
+          cartItems: [{
+            product_id: product.id,
+            TenSanPham: product.TenSanPham,
+            GiaBan: product.GiaBan,
+            quantity: 1,
+            HinhAnh_URL: product.HinhAnh_URL,
+          }],
+          paymentMethod: 'cash' // Default payment method
+        }
+      });
+    }
   };
 
-  // Function to handle view details button
   const handleViewDetails = (e, productId) => {
-    e.stopPropagation(); // Prevent triggering the parent onClick
+    e.stopPropagation();
     navigate(`/detail?id=${productId}`);
   };
 
-  // Lấy 4 sản phẩm mới nhất
   const newProducts = products.slice(0, 8);
   
-  // Map category icon
   const getCategoryIcon = (name) => {
     const iconMap = {
       'Điện Thoại': faMobile,
@@ -94,20 +99,17 @@ function HomePage() {
       'Sách': faBook
     };
     
-    // Tìm icon phù hợp dựa vào tên danh mục (tìm kiếm theo từng phần)
     for (const [key, value] of Object.entries(iconMap)) {
       if (name.toLowerCase().includes(key.toLowerCase())) {
         return value;
       }
     }
     
-    // Nếu không tìm thấy, trả về icon mặc định
     return faListAlt;
   };
 
   return (
     <div className="home-container">
-      {/* Banner or Slider would go here */}
       <div id="carouselExample" className="carousel slide mb-8" data-bs-ride="carousel">
         <div className="carousel-inner">
           <div className="carousel-item active">
@@ -127,7 +129,6 @@ function HomePage() {
         </button>
       </div>
             
-      {/* Categories Section */}
       <section className="categories-section">
         <div className="section-title">
           <h2>{t('danhMuc')}</h2>
@@ -152,7 +153,6 @@ function HomePage() {
         </div>
       </section>
       
-      {/* New Products Section */}
       <section className="new-products-section ">
         <div className="section-title ">
           <h2>{t('sanPhamMoi')}</h2>
@@ -229,12 +229,12 @@ function HomePage() {
         )}
         
         <div className="text-center mt-4">
-        <button 
-          className="btn btn-outline-secondary btn-lg"
-          onClick={() => navigate('/products')}
-        >
-          {t('xemTatCaSanPham')}
-        </button>
+          <button 
+            className="btn btn-outline-secondary btn-lg"
+            onClick={() => navigate('/products')}
+          >
+            {t('xemTatCaSanPham')}
+          </button>
         </div>
       </section>
     </div>

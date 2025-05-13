@@ -169,9 +169,14 @@
   background-color: #c82333;
 }
 
-.btn-add-to-cart:disabled {
-  background-color: #6c757d;
+.btn-add-to-cart.disabled {
+  background-color: #6c757d; /* Màu xám khi disabled */
   cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.btn-add-to-cart.disabled:hover {
+  background-color: #6c757d; /* Không thay đổi khi hover khi disabled */
 }
 
 .ratings-section {
@@ -496,13 +501,47 @@
 /* CSS cần thêm vào file detail.css */
 
 /* Cải thiện hiển thị mô tả sản phẩm */
+/* Add or update these CSS rules to fix the product description display */
+
+/* This targets the product description container */
+.product-description {
+  line-height: 1.6;
+  color: #333;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  margin-bottom: 20px;
+  white-space: pre-line; /* Preserves line breaks */
+}
+
+/* Ensure the actual content is visible */
+.product-description p {
+  margin-bottom: 10px;
+  overflow: visible;
+}
+
+/* In case your description uses this class instead */
 .description-content {
   line-height: 1.6;
   color: #333;
-  white-space: pre-line; /* Giữ nguyên các dòng mới trong văn bản */
-  max-height: none; /* Không giới hạn chiều cao */
-  overflow: visible;
+  white-space: pre-line;
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+  display: block;
   font-size: 1rem;
+}
+
+/* Make sure any parent containers don't restrict height */
+.product-info {
+  height: auto;
+  overflow: visible;
+}
+
+/* If you have tabs for description */
+.tab-content {
+  height: auto;
+  overflow: visible;
 }
 
 /* Cải thiện nút tăng/giảm số lượng */

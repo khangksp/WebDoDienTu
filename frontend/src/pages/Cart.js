@@ -2,15 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faTrash, 
-  faPlus, 
-  faMinus, 
-  faShoppingCart, 
-  faCheckCircle, 
-  faMoneyBill, 
-  faCreditCard, 
-  faWallet,
-  faTimes
+  faTrash, faPlus, faMinus, faShoppingCart, faCheckCircle, faMoneyBill, faCreditCard, faWallet, faTimes
 } from '@fortawesome/free-solid-svg-icons';
 import { faCcVisa, faCcPaypal, faCcApplePay, faGooglePay, faCcStripe } from "@fortawesome/free-brands-svg-icons";
 import { useCart } from "../context/CartContext";
@@ -19,56 +11,67 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'aos/dist/aos.css';
 import "./style/style.css";
 import { useLanguage } from "../context/LanguageContext";
+import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 function Cart() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { cart, loading, updateQuantity, removeFromCart } = useCart();
 
-  // Initialize AOS animation library
+  const [showModal, setShowModal] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [checkedItems, setCheckedItems] = useState({});
+  const [stockData, setStockData] = useState({}); // Lưu SoLuongTon
+
   useEffect(() => {
-    AOS.init({
-      duration: 800,
-      once: true,
-    });
+    AOS.init({ duration: 800, once: true });
   }, []);
 
-  // State for modal
-  const [showModal, setShowModal] = useState(false);
-  // State for selected payment method
-  const [selectedPayment, setSelectedPayment] = useState(null);
-  // State to manage checked items
-  const [checkedItems, setCheckedItems] = useState({});
+  // Lấy SoLuongTon cho các sản phẩm trong giỏ hàng
+  useEffect(() => {
+    const fetchStockData = async () => {
+      try {
+        const productIds = cart.items.map(item => item.product_id);
+        const responses = await Promise.all(
+          productIds.map(id => axios.get(`${API_BASE_URL}/products/san-pham/${id}/`))
+        );
+        const stockMap = {};
+        responses.forEach(response => {
+          stockMap[response.data.id] = response.data.SoLuongTon;
+        });
+        setStockData(stockMap);
+      } catch (error) {
+        console.error('Error fetching stock data:', error);
+      }
+    };
 
-  // Payment methods
-  const paymentMethods = [
-    { id: 'cash', name: 'Tiền mặt', icon: faMoneyBill, description: 'Thanh toán khi nhận hàng (COD)' },
-    { id: 'ewallet', name: 'Ví điện tử', icon: faWallet, description: 'Thanh toán qua ví của electronic store' },
-    { id: 'stripe', name: 'Thẻ tín dụng (Stripe)', icon: faCcStripe, description: 'Thanh toán an toàn qua Stripe' }
-  ];
+    if (cart.items.length > 0) {
+      fetchStockData();
+    }
+  }, [cart.items]);
 
-  // Initialize checked state when cart items change
   useEffect(() => {
     const initialChecked = {};
     cart.items.forEach(item => {
-      initialChecked[item.product_id] = true; // Default all items as checked
+      initialChecked[item.product_id] = true;
     });
     setCheckedItems(initialChecked);
   }, [cart.items]);
 
-  // Function to update quantity
   const handleUpdateQuantity = async (id, increment) => {
     const item = cart.items.find(item => item.product_id === id);
     if (item) {
-      const newQuantity = increment ? item.quantity + 1 : Math.max(1, item.quantity - 1);
+      const maxQuantity = stockData[id] || Infinity; // Nếu không có SoLuongTon, không giới hạn
+      const newQuantity = increment 
+        ? Math.min(item.quantity + 1, maxQuantity) 
+        : Math.max(1, item.quantity - 1);
       await updateQuantity(id, newQuantity);
     }
   };
 
-  // Remove item from cart
   const handleRemoveItem = async (id) => {
     await removeFromCart(id);
-    // Remove the item from checkedItems state
     setCheckedItems(prev => {
       const newChecked = { ...prev };
       delete newChecked[id];
@@ -76,7 +79,6 @@ function Cart() {
     });
   };
 
-  // Update checked state for an item
   const handleCheckboxChange = (id) => {
     setCheckedItems(prev => ({
       ...prev,
@@ -84,17 +86,15 @@ function Cart() {
     }));
   };
 
-  // Handle payment selection
   const handlePaymentSelection = (paymentId) => {
     setSelectedPayment(paymentId);
   };
 
-  // Complete payment - Navigate to checkout with only checked items
   const completePayment = () => {
     const token = localStorage.getItem('access_token');
     if (!token) {
       alert('Vui lòng đăng nhập để thanh toán');
-      navigate('/login', { state: { from: '/cart' } }); // Chuyển hướng đến trang đăng nhập
+      navigate('/login', { state: { from: '/cart' } });
       return;
     }
 
@@ -122,12 +122,10 @@ function Cart() {
     }
   };
 
-  // Format price to VND
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price) + ' VND';
   };
 
-  // Add CSS animation for modal
   const modalAnimation = `
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-20px); }
@@ -224,6 +222,7 @@ function Cart() {
                             <button 
                               className="btn btn-sm btn-outline-secondary" 
                               onClick={() => handleUpdateQuantity(item.product_id, true)}
+                              disabled={item.quantity >= (stockData[item.product_id] || Infinity)}
                             >
                               <FontAwesomeIcon icon={faPlus} />
                             </button>
@@ -344,7 +343,11 @@ function Cart() {
             </div>
             <div className="modal-body p-4">
               <div className="payment-options">
-                {paymentMethods.map(method => (
+                {[
+                  { id: 'cash', name: 'Tiền mặt', icon: faMoneyBill, description: 'Thanh toán khi nhận hàng (COD)' },
+                  { id: 'ewallet', name: 'Ví điện tử', icon: faWallet, description: 'Thanh toán qua ví của electronic store' },
+                  { id: 'stripe', name: 'Thẻ tín dụng (Stripe)', icon: faCcStripe, description: 'Thanh toán an toàn qua Stripe' }
+                ].map(method => (
                   <div 
                     key={method.id}
                     className={`payment-option p-3 mb-3 rounded ${selectedPayment === method.id ? 'border' : 'border'}`}

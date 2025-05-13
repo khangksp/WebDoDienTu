@@ -313,7 +313,7 @@
 }
 
 .login-modal-header {
-  padding: 20px;
+  padding: 20px 100px 20px;
   border-bottom: 1px solid #e5e7eb;
   background-color: #f8fafc;
   position: relative;

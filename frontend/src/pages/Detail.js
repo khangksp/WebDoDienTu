@@ -40,21 +40,17 @@ function Detail() {
 
   // Hàm tạo đánh giá ngẫu nhiên
   const generateRandomRating = () => {
-    // Sinh điểm trung bình từ 3.5 đến 5.0
-    const average = (Math.random() * 1.5 + 3.5).toFixed(1); // 3.5 đến 5.0, làm tròn 1 chữ số thập phân
-    // Sinh tổng số đánh giá từ 50 đến 500
+    const average = (Math.random() * 1.5 + 3.5).toFixed(1); // 3.5 đến 5.0
     const totalReviews = Math.floor(Math.random() * 451) + 50; // 50 đến 500
-
-    // Phân phối số lượng đánh giá (ưu tiên 4-5 sao)
-    const counts = [0, 0, 0, 0, 0]; // [1 sao, 2 sao, 3 sao, 4 sao, 5 sao]
-    const weights = [0.05, 0.1, 0.15, 0.3, 0.4]; // Tỷ lệ: 5% 1 sao, 10% 2 sao, 15% 3 sao, 30% 4 sao, 40% 5 sao
+    const counts = [0, 0, 0, 0, 0];
+    const weights = [0.05, 0.1, 0.15, 0.3, 0.4];
     let remaining = totalReviews;
 
     for (let i = 4; i >= 0; i--) {
       if (i === 0) {
-        counts[i] = remaining; // Đổ tất cả số còn lại vào 1 sao
+        counts[i] = remaining;
       } else {
-        const count = Math.floor(totalReviews * weights[i] * (0.8 + Math.random() * 0.4)); // Biến thiên ±20%
+        const count = Math.floor(totalReviews * weights[i] * (0.8 + Math.random() * 0.4));
         counts[i] = Math.min(count, remaining);
         remaining -= counts[i];
       }
@@ -62,13 +58,19 @@ function Detail() {
 
     return {
       average: parseFloat(average),
-      counts: counts.reverse(), // Đảo ngược để khớp với hiển thị (5 sao, 4 sao, ..., 1 sao)
+      counts: counts.reverse(),
     };
   };
 
   const handleAddToCart = async () => {
     if (!product) return;
-    
+  
+    const stock = product.SoLuongTon ?? 0;
+    if (stock <= 0) {
+      alert(t('sanPhamDaHetHang'));
+      return;
+    }
+  
     try {
       const productData = {
         id: product.id,
@@ -85,11 +87,53 @@ function Detail() {
       alert(t('daThemVaoGioHang'));
     } catch (error) {
       console.error('Error adding to cart:', error);
-      alert(t('loiThemVaoGioHang'));
+      alert(error.response?.data?.error || t('loiThemVaoGioHang'));
     }
   };
 
-  // Fetch product data and generate random rating
+  // Hàm lấy dữ liệu sản phẩm
+  const fetchProductData = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_BASE_URL}/products/san-pham/${productId}/`);
+      setProduct(response.data);
+      
+      setRatingData(generateRandomRating());
+
+      const allProductsResponse = await axios.get(`${API_BASE_URL}/products/san-pham/`);
+      const related = allProductsResponse.data.filter(p => 
+        p.DanhMuc === response.data.DanhMuc && p.id !== response.data.id
+      );
+      setRelatedProducts(related.slice(0, 4));
+      
+      const otherProducts = allProductsResponse.data.filter(p => p.id !== response.data.id);
+      const shuffled = [...otherProducts].sort(() => 0.5 - Math.random());
+      const randomProductsData = shuffled.slice(0, 12);
+      setRandomProducts(randomProductsData);
+      setTotalSlides(Math.ceil(randomProductsData.length / productsPerSlide));
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching product data:', error);
+      setError(t('khongTheTaiThongTinSanPham'));
+      setLoading(false);
+    }
+  };
+
+  // Hàm kiểm tra và cập nhật số lượng tồn kho
+  const checkStockUpdate = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/products/san-pham/${productId}/`);
+      setProduct(prevProduct => ({
+        ...prevProduct,
+        SoLuongTon: response.data.SoLuongTon
+      }));
+    } catch (error) {
+      console.error('Error checking stock update:', error);
+    }
+  };
+
+  // Fetch product data ban đầu và thiết lập polling
   useEffect(() => {
     if (!productId) {
       setError(t('khongTimThayIDSanPham'));
@@ -97,40 +141,13 @@ function Detail() {
       return;
     }
 
-    const fetchProductData = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get(`${API_BASE_URL}/products/san-pham/${productId}/`);
-        setProduct(response.data);
-        
-        // Tạo đánh giá ngẫu nhiên cho sản phẩm
-        setRatingData(generateRandomRating());
-
-        // Lấy danh sách sản phẩm khác
-        const allProductsResponse = await axios.get(`${API_BASE_URL}/products/san-pham/`);
-        
-        // Sản phẩm liên quan
-        const related = allProductsResponse.data.filter(p => 
-          p.DanhMuc === response.data.DanhMuc && p.id !== response.data.id
-        );
-        setRelatedProducts(related.slice(0, 4));
-        
-        // Sản phẩm ngẫu nhiên cho slider
-        const otherProducts = allProductsResponse.data.filter(p => p.id !== response.data.id);
-        const shuffled = [...otherProducts].sort(() => 0.5 - Math.random());
-        const randomProductsData = shuffled.slice(0, 12);
-        setRandomProducts(randomProductsData);
-        setTotalSlides(Math.ceil(randomProductsData.length / productsPerSlide));
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching product data:', error);
-        setError(t('khongTheTaiThongTinSanPham'));
-        setLoading(false);
-      }
-    };
-  
     fetchProductData();
+
+    const stockCheckInterval = setInterval(() => {
+      checkStockUpdate();
+    }, 10000); // Kiểm tra mỗi 10 giây
+
+    return () => clearInterval(stockCheckInterval);
   }, [productId, productsPerSlide, t]);
 
   const handleRelatedProductClick = (relatedProductId) => {
@@ -271,22 +288,22 @@ function Detail() {
                   <button 
                     className="btn btn-outline-secondary quantity-btn"
                     onClick={() => setQuantity(quantity + 1)}
-                    disabled={quantity >= (product.SoLuongTon || product.stock)}
+                    disabled={quantity >= (product.SoLuongTon ?? 0)}
                   >
                     <FontAwesomeIcon icon={faPlus} />
                   </button>
                 </div>
-                <p className="mt-2 text-muted">{t('con')} {product.SoLuongTon || product.stock} {t('sp')}</p>
+                <p className="mt-2 text-muted">{t('con')} {product.SoLuongTon ?? 0} {t('sp')}</p>
               </div>
               
               <div className="add-to-cart-section">
                 <button 
-                  className="btn-add-to-cart" 
+                  className={`btn-add-to-cart ${((product.SoLuongTon ?? 0) <= 0) ? 'btn-secondary disabled' : ''}`}
                   onClick={handleAddToCart}
-                  disabled={(product.SoLuongTon || product.stock) <= 0}
+                  disabled={(product.SoLuongTon ?? 0) <= 0}
                 >
                   <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
-                  {(product.SoLuongTon || product.stock) > 0 ? t('themVaoGioHang') : t('hetHang')}
+                  {(product.SoLuongTon ?? 0) > 0 ? t('themVaoGioHang') : t('hetHang')}
                 </button>
               </div>
             </div>
